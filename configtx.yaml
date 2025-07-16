@@ -1,0 +1,357 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererMSP
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/example.com/msp
+  - &Org1
+    Name: Org1MSP
+    ID: Org1MSP
+    MSPDir: crypto-config/peerOrganizations/org1.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org1MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org1MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org1MSP.admin')"
+  - &Org2
+    Name: Org2MSP
+    ID: Org2MSP
+    MSPDir: crypto-config/peerOrganizations/org2.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org2MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org2MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org2MSP.admin')"
+  - &Org3
+    Name: Org3MSP
+    ID: Org3MSP
+    MSPDir: crypto-config/peerOrganizations/org3.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org3MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org3MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org3MSP.admin')"
+  - &Org4
+    Name: Org4MSP
+    ID: Org4MSP
+    MSPDir: crypto-config/peerOrganizations/org4.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org4MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org4MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org4MSP.admin')"
+  - &Org5
+    Name: Org5MSP
+    ID: Org5MSP
+    MSPDir: crypto-config/peerOrganizations/org5.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org5MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org5MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org5MSP.admin')"
+  - &Org6
+    Name: Org6MSP
+    ID: Org6MSP
+    MSPDir: crypto-config/peerOrganizations/org6.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org6MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org6MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org6MSP.admin')"
+  - &Org7
+    Name: Org7MSP
+    ID: Org7MSP
+    MSPDir: crypto-config/peerOrganizations/org7.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org7MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org7MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org7MSP.admin')"
+  - &Org8
+    Name: Org8MSP
+    ID: Org8MSP
+    MSPDir: crypto-config/peerOrganizations/org8.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org8MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org8MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org8MSP.admin')"
+Application:
+  Organizations:
+    - *Org1
+    - *Org2
+    - *Org3
+    - *Org4
+    - *Org5
+    - *Org6
+    - *Org7
+    - *Org8
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    - V2_0
+Orderer:
+  OrdererType: etcdraft
+  Addresses:
+    - orderer1.example.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+    - *OrdererOrg
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    - V2_0
+Profiles:
+  NetworkGenesis:
+    Orderer:
+      <<: *Orderer
+      Organizations:
+        - *OrdererOrg
+    Consortiums:
+      SampleConsortium:
+        Organizations:
+          - *Org1
+          - *Org2
+          - *Org3
+          - *Org4
+          - *Org5
+          - *Org6
+          - *Org7
+          - *Org8
+  Org1Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+  Org2Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org2
+  Org3Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org3
+  Org4Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org4
+  Org5Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org5
+  Org6Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org6
+  Org7Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org7
+  Org8Channel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org8
+  GeneralOperationsChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  IoTChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  SecurityChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  AuditChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  BillingChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  ResourceChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  PerformanceChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  SessionChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  ConnectivityChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
+  PolicyChannel:
+    Consortium: SampleConsortium
+    Application:
+      <<: *Application
+      Organizations:
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
