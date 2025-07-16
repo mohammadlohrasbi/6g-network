@@ -1,0 +1,40 @@
+test:
+  name: 6g-fabric-benchmark
+  description: Benchmark for 6G Fabric Network
+  workers:
+    type: local
+    number: 1
+  rounds:
+    - label: invoke
+      description: Test invoke performance
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: workload/LocationBasedAssignment.js
+    - label: query
+      description: Test query performance
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: workload/LocationBasedAssignment.js
+  monitors:
+    resource:
+      - module: docker
+        options:
+          interval: 1
+          containers:
+            - orderer1.example.com
+            - peer0.org1.example.com
+            - peer0.org2.example.com
+            - peer0.org3.example.com
+            - peer0.org4.example.com
+            - peer0.org5.example.com
+            - peer0.org6.example.com
+            - peer0.org7.example.com
+            - peer0.org8.example.com
