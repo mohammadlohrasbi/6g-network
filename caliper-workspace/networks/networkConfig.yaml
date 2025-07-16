@@ -1,0 +1,233 @@
+caliper:
+  blockchain: fabric
+  sut:
+    version: 2.5.0
+    fabric:
+      network:
+        orderers:
+          - orderer1.example.com:7050
+        peers:
+          peer0.org1.example.com:
+            url: grpcs://165.232.71.90:7051
+            grpcOptions:
+              ssl-target-name-override: peer0.org1.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+          peer0.org2.example.com:
+            url: grpcs://165.232.71.90:8051
+            grpcOptions:
+              ssl-target-name-override: peer0.org2.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+          peer0.org3.example.com:
+            url: grpcs://165.232.71.90:9051
+            grpcOptions:
+              ssl-target-name-override: peer0.org3.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
+          peer0.org4.example.com:
+            url: grpcs://165.232.71.90:10051
+            grpcOptions:
+              ssl-target-name-override: peer0.org4.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls/ca.crt
+          peer0.org5.example.com:
+            url: grpcs://165.232.71.90:11051
+            grpcOptions:
+              ssl-target-name-override: peer0.org5.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls/ca.crt
+          peer0.org6.example.com:
+            url: grpcs://165.232.71.90:12051
+            grpcOptions:
+              ssl-target-name-override: peer0.org6.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls/ca.crt
+          peer0.org7.example.com:
+            url: grpcs://165.232.71.90:13051
+            grpcOptions:
+              ssl-target-name-override: peer0.org7.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls/ca.crt
+          peer0.org8.example.com:
+            url: grpcs://165.232.71.90:14051
+            grpcOptions:
+              ssl-target-name-override: peer0.org8.example.com
+            tlsCACerts:
+              path: crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls/ca.crt
+      client:
+        - organization: Org1MSP
+          credentialStore:
+            path: ./caliper-workspace/credentials
+          connection:
+            path: crypto-config/peerOrganizations/org1.example.com/connection-org1.yaml
+      channels:
+        - channelName: Org1Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org2Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org3Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org4Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org5Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org6Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org7Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: Org8Channel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: AssignRole
+            - id: LogUserActivity
+            - id: TrackSession
+        - channelName: GeneralOperationsChannel
+          contracts:
+            - id: LocationBasedAssignment
+            - id: LocationBasedAntennaConfig
+            - id: AssignRole
+            - id: GenerateReport
+        - channelName: IoTChannel
+          contracts:
+            - id: LocationBasedIoTConnection
+            - id: LocationBasedIoTBandwidth
+            - id: LocationBasedIoTStatus
+            - id: LocationBasedIoTFault
+            - id: LocationBasedIoTSession
+            - id: LocationBasedIoTAuthentication
+            - id: LocationBasedIoTRegistration
+            - id: LocationBasedIoTRevocation
+            - id: LocationBasedIoTResource
+            - id: AuthenticateIoT
+            - id: ConnectIoT
+            - id: RegisterIoT
+            - id: RevokeIoT
+            - id: AllocateIoTBandwidth
+            - id: UpdateIoTStatus
+            - id: DetectIoTFault
+            - id: TrackIoTSession
+            - id: EncryptIoTData
+        - channelName: SecurityChannel
+          contracts:
+            - id: AuthenticateUser
+            - id: RegisterUser
+            - id: RevokeUser
+            - id: EncryptData
+            - id: DetectIntrusion
+            - id: ManageKey
+            - id: AuthenticateAntenna
+            - id: CreateSecureChannel
+        - channelName: AuditChannel
+          contracts:
+            - id: LocationBasedFault
+            - id: LocationBasedUserActivity
+            - id: LogIdentityAudit
+            - id: LogResourceAudit
+            - id: LogConnectionAudit
+            - id: LogSecurityAudit
+            - id: LogTransaction
+            - id: LogAccess
+            - id: LogNetworkAudit
+        - channelName: BillingChannel
+          contracts:
+            - id: GenerateBill
+        - channelName: ResourceChannel
+          contracts:
+            - id: LocationBasedBandwidth
+            - id: LocationBasedResourceAllocation
+            - id: RequestResource
+            - id: ShareSpectrum
+            - id: AllocateDynamic
+            - id: AllocateNetworkResource
+        - channelName: PerformanceChannel
+          contracts:
+            - id: LocationBasedQoS
+            - id: LocationBasedTraffic
+            - id: LocationBasedLatency
+            - id: LocationBasedEnergy
+            - id: LocationBasedSignalStrength
+            - id: LocationBasedCoverage
+            - id: LocationBasedNetworkHealth
+            - id: LocationBasedNetworkPerformance
+            - id: UpdateAntennaLoad
+            - id: BalanceLoad
+            - id: TrackLatency
+            - id: MonitorEnergy
+            - id: DetectAntennaFault
+            - id: MonitorAntennaTraffic
+            - id: MonitorNetworkCongestion
+            - id: MonitorNetworkHealth
+        - channelName: SessionChannel
+          contracts:
+            - id: LocationBasedSessionManagement
+            - id: TrackSession
+            - id: TrackIoTSession
+        - channelName: ConnectivityChannel
+          contracts:
+            - id: LocationBasedConnection
+            - id: LocationBasedRoaming
+            - id: LocationBasedDynamicRouting
+            - id: LocationBasedChannelAllocation
+            - id: ConnectUser
+            - id: DisconnectEntity
+            - id: PerformRoaming
+        - channelName: PolicyChannel
+          contracts:
+            - id: LocationBasedPriority
+            - id: AssignGeneralPriority
+            - id: GrantAccess
+            - id: SetPolicy
+            - id: ManageNetworkPolicy
