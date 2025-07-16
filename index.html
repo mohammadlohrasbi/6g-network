@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6G Fabric Network Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="https://adminlte.io/themes/v3/dist/css/adminlte.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            height: 100vh;
+            position: fixed
+            top: 0;
+            left: 0;
+            background-color: #343a40;
+            color: white;
+        }
+        .navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .report-section {
+            margin-top: 30px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+        .checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="p-3">
+            <h4 class="text-center mb-4">6G Fabric Dashboard</h4>
+            <nav class="nav flex-column">
+                <a class="nav-link text-white" href="#"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                <a class="nav-link text-white" href="#"><i class="fas fa-cog me-2"></i> Settings</a>
+                <a class="nav-link text-white" href="#"><i class="fas fa-chart-bar me-2"></i> Reports</a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid">
+            <!-- Settings Form -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>Network Test Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="testForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="tps" class="form-label">TPS</label>
+                                <input type="number" class="form-control" id="tps" placeholder="Enter TPS" value="5">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="txNumber" class="form-label">Number of Transactions</label>
+                                <input type="number" class="form-control" id="txNumber" placeholder="Enter txNumber" value="50">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contract" class="form-label">Contract Name</label>
+                                <select class="form-control" id="contract">
+                                    <option>LocationBasedAssignment</option>
+                                    <option>AuthenticateUser</option>
+                                    <option>LocationBasedConnection</option>
+                                    <option>LocationBasedBandwidth</option>
+                                    <option>LocationBasedQoS</option>
+                                    <option>LocationBasedPriority</option>
+                                    <option>LocationBasedStatus</option>
+                                    <option>LocationBasedFault</option>
+                                    <option>LocationBasedTraffic</option>
+                                    <option>LocationBasedLatency</option>
+                                    <option>LocationBasedEnergy</option>
+                                    <option>LocationBasedRoaming</option>
+                                    <option>LocationBasedSignalStrength</option>
+                                    <option>LocationBasedCoverage</option>
+                                    <option>LocationBasedInterference</option>
+                                    <option>LocationBasedResourceAllocation</option>
+                                    <option>LocationBasedNetworkLoad</option>
+                                    <option>LocationBasedCongestion</option>
+                                    <option>LocationBasedDynamicRouting</option>
+                                    <option>LocationBasedAntennaConfig</option>
+                                    <option>LocationBasedSignalQuality</option>
+                                    <option>LocationBasedNetworkHealth</option>
+                                    <option>LocationBasedPowerManagement</option>
+                                    <option>LocationBasedChannelAllocation</option>
+                                    <option>LocationBasedSessionManagement</option>
+                                    <option>LocationBasedIoTConnection</option>
+                                    <option>LocationBasedIoTBandwidth</option>
+                                    <option>LocationBasedIoTStatus</option>
+                                    <option>LocationBasedIoTFault</option>
+                                    <option>LocationBasedIoTSession</option>
+                                    <option>LocationBasedIoTAuthentication</option>
+                                    <option>LocationBasedIoTRegistration</option>
+                                    <option>LocationBasedIoTRevocation</option>
+                                    <option>LocationBasedIoTResource</option>
+                                    <option>LocationBasedNetworkPerformance</option>
+                                    <option>LocationBasedUserActivity</option>
+                                    <option>AuthenticateIoT</option>
+                                    <option>ConnectUser</option>
+                                    <option>ConnectIoT</option>
+                                    <option>RegisterUser</option>
+                                    <option>RegisterIoT</option>
+                                    <option>RevokeUser</option>
+                                    <option>RevokeIoT</option>
+                                    <option>AssignRole</option>
+                                    <option>GrantAccess</option>
+                                    <option>LogIdentityAudit</option>
+                                    <option>AllocateIoTBandwidth</option>
+                                    <option>UpdateAntennaLoad</option>
+                                    <option>RequestResource</option>
+                                    <option>ShareSpectrum</option>
+                                    <option>AssignGeneralPriority</option>
+                                    <option>LogResourceAudit</option>
+                                    <option>BalanceLoad</option>
+                                    <option>AllocateDynamic</option>
+                                    <option>UpdateAntennaStatus</option>
+                                    <option>UpdateIoTStatus</option>
+                                    <option>LogNetworkPerformance</option>
+                                    <option>LogUserActivity</option>
+                                    <option>DetectAntennaFault</option>
+                                    <option>DetectIoTFault</option>
+                                    <option>MonitorAntennaTraffic</option>
+                                    <option>GenerateReport</option>
+                                    <option>TrackLatency</option>
+                                    <option>MonitorEnergy</option>
+                                    <option>PerformRoaming</option>
+                                    <option>TrackSession</option>
+                                    <option>TrackIoTSession</option>
+                                    <option>DisconnectEntity</option>
+                                    <option>GenerateBill</option>
+                                    <option>LogTransaction</option>
+                                    <option>LogConnectionAudit</option>
+                                    <option>EncryptData</option>
+                                    <option>EncryptIoTData</option>
+                                    <option>LogAccess</option>
+                                    <option>DetectIntrusion</option>
+                                    <option>ManageKey</option>
+                                    <option>SetPolicy</option>
+                                    <option>CreateSecureChannel</option>
+                                    <option>LogSecurityAudit</option>
+                                    <option>AuthenticateAntenna</option>
+                                    <option>MonitorNetworkCongestion</option>
+                                    <option>AllocateNetworkResource</option>
+                                    <option>MonitorNetworkHealth</option>
+                                    <option>ManageNetworkPolicy</option>
+                                    <option>LogNetworkAudit</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="users" class="form-label">Number of Users</label>
+                                <input type="number" class="form-control" id="users" placeholder="Enter number of users" value="10">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="iot" class="form-label">Number of IoT Devices</label>
+                                <input type="number" class="form-control" id="iot" placeholder="Enter number of IoT devices" value="5">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Select Channels</label>
+                                <div class="checkbox-list border p-3">
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org1Channel"> Org1Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org2Channel"> Org2Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org3Channel"> Org3Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org4Channel"> Org4Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org5Channel"> Org5Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org6Channel"> Org6Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org7Channel"> Org7Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="Org8Channel"> Org8Channel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="GeneralOperationsChannel"> GeneralOperationsChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="IoTChannel"> IoTChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="SecurityChannel"> SecurityChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="AuditChannel"> AuditChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="BillingChannel"> BillingChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="ResourceChannel"> ResourceChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="PerformanceChannel"> PerformanceChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="SessionChannel"> SessionChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="ConnectivityChannel"> ConnectivityChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" value="PolicyChannel"> PolicyChannel
+                                    </label>
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" id="selectAllChannels"> Select All
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="testMethod" class="form-label">Test Method</label>
+                                <select class="form-control" id="testMethod">
+                                    <option>Caliper</option>
+                                    <option>Tape</option>
+                                    <option>Both</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary mt-3" id="submitBtn">Run Test</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Report Section -->
+            <div class="report-section card">
+                <div class="card-header bg-success text-white">
+                    <h5>Test Report</h5>
+                </div>
+                <div class="card-body">
+                    <div id="reportOutput"></div>
+                    <iframe id="caliperReport" src="report.html" style="width:100%; height:500px;" class="mt-3"></iframe>
+                    <pre id="tapeLog" class="mt-3"></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE JS -->
+    <script src="https://adminlte.io/themes/v3/dist/js/adminlte.min.js"></script>
+    <script>
+        document.getElementById('selectAllChannels').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.checkbox-list input[type="checkbox"]:not(#selectAllChannels)');
+            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const tps = document.getElementById('tps').value;
+            const txNumber = document.getElementById('txNumber').value;
+            const contract = document.getElementById('contract').value;
+            const users = document.getElementById('users').value;
+            const iot = document.getElementById('iot').value;
+            const testMethod = document.getElementById('testMethod').value;
+            const channels = [];
+            document.querySelectorAll('.checkbox-list input[type="checkbox"]:checked:not(#selectAllChannels)').forEach(checkbox => channels.push(checkbox.value));
+
+            const data = { tps, txNumber, contract, users, iot, channels, testMethod };
+
+            fetch('/run-test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                document.getElementById('reportOutput').innerText = result.output || result.error;
+                document.getElementById('caliperReport').src = 'report.html'; // Refresh report
+                fetch('/tape-log')
+                .then(res => res.text())
+                .then(log => document.getElementById('tapeLog').innerText = log);
+            })
+            .catch(error => {
+                document.getElementById('reportOutput').innerText = 'Error: ' + error;
+            });
+        });
+    </script>
+</body>
+</html>
