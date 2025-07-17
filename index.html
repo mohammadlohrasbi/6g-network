@@ -1,832 +1,206 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>6G Fabric Network Dashboard</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- AdminLTE CSS -->
-    <link rel="stylesheet" href="https://adminlte.io/themes/v3/dist/css/adminlte.min.css">
-    <!-- Chart.js for visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            background-color: #343a40;
-            color: white;
-        }
-        .navbar {
-            background-color: #ffffff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .form-label {
-            font-weight: 500;
-        }
-        .report-section, .dashboard-section, .blocks-section, .transactions-section, .peers-section, .chaincodes-section {
-            margin-top: 30px;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-        .btn-primary:hover {
-            background-color: #0069d9;
-            border-color: #0062cc;
-        }
-        .checkbox-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ced4da;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .chart-container {
-            height: 300px;
-        }
-        .table-responsive {
-            max-height: 400px;
-        }
-        .theme-toggle {
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="p-3">
-            <h4 class="text-center mb-4">6G Fabric Dashboard</h4>
-            <nav class="nav flex-column">
-                <a class="nav-link text-white" href="#dashboard"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
-                <a class="nav-link text-white" href="#settings"><i class="fas fa-cog me-2"></i> Test Settings</a>
-                <a class="nav-link text-white" href="#reports"><i class="fas fa-chart-bar me-2"></i> Reports</a>
-                <a class="nav-link text-white" href="#blocks"><i class="fas fa-cube me-2"></i> Blocks</a>
-                <a class="nav-link text-white" href="#transactions"><i class="fas fa-exchange-alt me-2"></i> Transactions</a>
-                <a class="nav-link text-white" href="#channels"><i class="fas fa-sitemap me-2"></i> Channels</a>
-                <a class="nav-link text-white" href="#peers"><i class="fas fa-server me-2"></i> Peers</a>
-                <a class="nav-link text-white" href="#chaincodes"><i class="fas fa-code me-2"></i> Chaincodes</a>
-            </nav>
-        </div>
-    </aside>
+const express = require('express');
+const { exec } = require('child_process');
+const fs = require('fs');
+const app = express();
+const port = 3000;
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link theme-toggle" id="themeToggle"><i class="fas fa-moon"></i> Toggle Theme</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+app.use(express.json());
+app.use(express.static('.'));
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container-fluid">
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="dashboard-section card">
-                <div class="card-header bg-info text-white">
-                    <h5>Network Dashboard</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Blocks</h5>
-                                    <p class="card-text" id="blockCount">Loading...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Transactions</h5>
-                                    <p class="card-text" id="txCount">Loading...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Channels</h5>
-                                    <p class="card-text" id="channelCount">18</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Chaincodes</h5>
-                                    <p class="card-text" id="chaincodeCount">85</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">TPS Over Time</h5>
-                                    <canvas id="tpsChart" class="chart-container"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Latency Over Time</h5>
-                                    <canvas id="latencyChart" class="chart-container"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+const profiles = []; // Temporary storage for test profiles
 
-            <!-- Settings Form -->
-            <div id="settings" class="card mt-4">
-                <div class="card-header bg-primary text-white">
-                    <h5>Network Test Settings</h5>
-                </div>
-                <div class="card-body">
-                    <form id="testForm">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="tps" class="form-label">TPS</label>
-                                <input type="number" class="form-control" id="tps" placeholder="Enter TPS (1-10)" min="1" max="10" value="5">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="txNumber" class="form-label">Number of Transactions</label>
-                                <input type="number" class="form-control" id="txNumber" placeholder="Enter txNumber (10-100)" min="10" max="100" value="50">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="maxDistance" class="form-label">Max Distance (km)</label>
-                                <input type="number" class="form-control" id="maxDistance" placeholder="Enter max distance" value="100">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="contract" class="form-label">Contract Name</label>
-                                <select class="form-control" id="contract">
-                                    <option value="">Select Contract</option>
-                                    <option>LocationBasedAssignment</option>
-                                    <option>AuthenticateUser</option>
-                                    <!-- Add all 85 contracts dynamically via JS -->
-                                    <option>LocationBasedConnection</option>
-                                    <option>LocationBasedBandwidth</option>
-                                    <option>LocationBasedQoS</option>
-                                    <option>LocationBasedPriority</option>
-                                    <option>LocationBasedStatus</option>
-                                    <option>LocationBasedFault</option>
-                                    <option>LocationBasedTraffic</option>
-                                    <option>LocationBasedLatency</option>
-                                    <option>LocationBasedEnergy</option>
-                                    <option>LocationBasedRoaming</option>
-                                    <option>LocationBasedSignalStrength</option>
-                                    <option>LocationBasedCoverage</option>
-                                    <option>LocationBasedInterference</option>
-                                    <option>LocationBasedResourceAllocation</option>
-                                    <option>LocationBasedNetworkLoad</option>
-                                    <option>LocationBasedCongestion</option>
-                                    <option>LocationBasedDynamicRouting</option>
-                                    <option>LocationBasedAntennaConfig</option>
-                                    <option>LocationBasedSignalQuality</option>
-                                    <option>LocationBasedNetworkHealth</option>
-                                    <option>LocationBasedPowerManagement</option>
-                                    <option>LocationBasedChannelAllocation</option>
-                                    <option>LocationBasedSessionManagement</option>
-                                    <option>LocationBasedIoTConnection</option>
-                                    <option>LocationBasedIoTBandwidth</option>
-                                    <option>LocationBasedIoTStatus</option>
-                                    <option>LocationBasedIoTFault</option>
-                                    <option>LocationBasedIoTSession</option>
-                                    <option>LocationBasedIoTAuthentication</option>
-                                    <option>LocationBasedIoTRegistration</option>
-                                    <option>LocationBasedIoTRevocation</option>
-                                    <option>LocationBasedIoTResource</option>
-                                    <option>LocationBasedNetworkPerformance</option>
-                                    <option>LocationBasedUserActivity</option>
-                                    <option>AuthenticateIoT</option>
-                                    <option>ConnectUser</option>
-                                    <option>ConnectIoT</option>
-                                    <option>RegisterUser</option>
-                                    <option>RegisterIoT</option>
-                                    <option>RevokeUser</option>
-                                    <option>RevokeIoT</option>
-                                    <option>AssignRole</option>
-                                    <option>GrantAccess</option>
-                                    <option>LogIdentityAudit</option>
-                                    <option>AllocateIoTBandwidth</option>
-                                    <option>UpdateAntennaLoad</option>
-                                    <option>RequestResource</option>
-                                    <option>ShareSpectrum</option>
-                                    <option>AssignGeneralPriority</option>
-                                    <option>LogResourceAudit</option>
-                                    <option>BalanceLoad</option>
-                                    <option>AllocateDynamic</option>
-                                    <option>UpdateAntennaStatus</option>
-                                    <option>UpdateIoTStatus</option>
-                                    <option>LogNetworkPerformance</option>
-                                    <option>LogUserActivity</option>
-                                    <option>DetectAntennaFault</option>
-                                    <option>DetectIoTFault</option>
-                                    <option>MonitorAntennaTraffic</option>
-                                    <option>GenerateReport</option>
-                                    <option>TrackLatency</option>
-                                    <option>MonitorEnergy</option>
-                                    <option>PerformRoaming</option>
-                                    <option>TrackSession</option>
-                                    <option>TrackIoTSession</option>
-                                    <option>DisconnectEntity</option>
-                                    <option>GenerateBill</option>
-                                    <option>LogTransaction</option>
-                                    <option>LogConnectionAudit</option>
-                                    <option>EncryptData</option>
-                                    <option>EncryptIoTData</option>
-                                    <option>LogAccess</option>
-                                    <option>DetectIntrusion</option>
-                                    <option>ManageKey</option>
-                                    <option>SetPolicy</option>
-                                    <option>CreateSecureChannel</option>
-                                    <option>LogSecurityAudit</option>
-                                    <option>AuthenticateAntenna</option>
-                                    <option>MonitorNetworkCongestion</option>
-                                    <option>AllocateNetworkResource</option>
-                                    <option>MonitorNetworkHealth</option>
-                                    <option>ManageNetworkPolicy</option>
-                                    <option>LogNetworkAudit</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="users" class="form-label">Number of Users</label>
-                                <input type="number" class="form-control" id="users" placeholder="Enter number of users (1-10)" min="1" max="10" value="10">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="iot" class="form-label">Number of IoT Devices</label>
-                                <input type="number" class="form-control" id="iot" placeholder="Enter number of IoT devices (1-5)" min="1" max="5" value="5">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="testType" class="form-label">Test Type</label>
-                                <select class="form-control" id="testType">
-                                    <option value="both">Invoke & Query</option>
-                                    <option value="invoke">Invoke Only</option>
-                                    <option value="query">Query Only</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="batchSize" class="form-label">Batch Size</label>
-                                <input type="number" class="form-control" id="batchSize" placeholder="Enter batch size (1-20)" min="1" max="20" value="10">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="timeout" class="form-label">Timeout (seconds)</label>
-                                <input type="number" class="form-control" id="timeout" placeholder="Enter timeout (10-60)" min="10" max="60" value="30">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Select Channels</label>
-                                <div class="checkbox-list border p-3">
-                                    <input type="text" class="form-control mb-2" id="channelSearch" placeholder="Search channels...">
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org1Channel"> Org1Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org2Channel"> Org2Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org3Channel"> Org3Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org4Channel"> Org4Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org5Channel"> Org5Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org6Channel"> Org6Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org7Channel"> Org7Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org8Channel"> Org8Channel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="GeneralOperationsChannel"> GeneralOperationsChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="IoTChannel"> IoTChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="SecurityChannel"> SecurityChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="AuditChannel"> AuditChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="BillingChannel"> BillingChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="ResourceChannel"> ResourceChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="PerformanceChannel"> PerformanceChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="SessionChannel"> SessionChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="ConnectivityChannel"> ConnectivityChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input channel-checkbox" value="PolicyChannel"> PolicyChannel
-                                    </label>
-                                    <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" id="selectAllChannels"> Select All
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="testMethod" class="form-label">Test Method</label>
-                                <select class="form-control" id="testMethod">
-                                    <option value="Caliper">Caliper</option>
-                                    <option value="Tape">Tape</option>
-                                    <option value="Both">Both</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="profileName" class="form-label">Save as Profile</label>
-                                <input type="text" class="form-control" id="profileName" placeholder="Enter profile name">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="loadProfile" class="form-label">Load Profile</label>
-                                <select class="form-control" id="loadProfile">
-                                    <option value="">Select Profile</option>
-                                    <!-- Profiles loaded dynamically -->
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-primary" id="submitBtn">Run Test</button>
-                            <button type="button" class="btn btn-success" id="saveProfileBtn">Save Profile</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+app.post('/run-test', (req, res) => {
+    const { tps, txNumber, contract, users, iot, testMethod, testType, maxDistance, batchSize, timeout, channels } = req.body;
 
-            <!-- Blocks Section -->
-            <div id="blocks" class="blocks-section card mt-4">
-                <div class="card-header bg-warning text-white">
-                    <h5>Blocks</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Block Height</th>
-                                    <th>Block Hash</th>
-                                    <th>Tx Count</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="blockTable">
-                                <!-- Blocks loaded dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    // Update docker-compose.yml for batchSize
+    let dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8');
+    dockerCompose = dockerCompose.replace(/MaxMessageCount: \d+/, `MaxMessageCount: ${batchSize}`);
+    fs.writeFileSync('docker-compose.yml', dockerCompose);
 
-            <!-- Transactions Section -->
-            <div id="transactions" class="transactions-section card mt-4">
-                <div class="card-header bg-danger text-white">
-                    <h5>Transactions</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control mb-2" id="txSearch" placeholder="Search transactions by ID, contract, or channel...">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Tx ID</th>
-                                    <th>Contract</th>
-                                    <th>Channel</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="txTable">
-                                <!-- Transactions loaded dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    // Update myAssetBenchmark.yaml
+    let benchmarkContent = `
+test:
+  name: 6g-fabric-benchmark
+  description: Benchmark for 6G Fabric Network
+  workers:
+    type: local
+    number: 1
+  rounds:
+    ${testType === 'invoke' || testType === 'both' ? `
+    - label: invoke
+      description: Test invoke performance
+      txNumber: ${txNumber}
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: ${tps}
+      workload:
+        module: workload/${contract}.js` : ''}
+    ${testType === 'query' || testType === 'both' ? `
+    - label: query
+      description: Test query performance
+      txNumber: ${txNumber}
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: ${tps}
+      workload:
+        module: workload/${contract}.js` : ''}
+  monitors:
+    resource:
+      - module: docker
+        options:
+          interval: 1
+          containers:
+            - orderer1.example.com
+            - peer0.org1.example.com
+            - peer0.org2.example.com
+            - peer0.org3.example.com
+            - peer0.org4.example.com
+            - peer0.org5.example.com
+            - peer0.org6.example.com
+            - peer0.org7.example.com
+            - peer0.org8.example.com
+`;
+    fs.writeFileSync('caliper-workspace/benchmarks/myAssetBenchmark.yaml', benchmarkContent);
 
-            <!-- Peers Section -->
-            <div id="peers" class="peers-section card mt-4">
-                <div class="card-header bg-secondary text-white">
-                    <h5>Peers</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Peer Name</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="peerTable">
-                                <!-- Peers loaded dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chaincodes Section -->
-            <div id="chaincodes" class="chaincodes-section card mt-4">
-                <div class="card-header bg-dark text-white">
-                    <h5>Chaincodes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Version</th>
-                                    <th>Channel</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="chaincodeTable">
-                                <!-- Chaincodes loaded dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Report Section -->
-            <div id="reports" class="report-section card mt-4">
-                <div class="card-header bg-success text-white">
-                    <h5>Test Reports</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Caliper Report</h5>
-                            <iframe id="caliperReport" src="report.html" style="width:100%; height:500px;" class="mt-3"></iframe>
-                            <a href="/download-report" class="btn btn-primary mt-2">Download Caliper Report</a>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Tape Log</h5>
-                            <pre id="tapeLog" class="mt-3"></pre>
-                            <a href="/download-tape-log" class="btn btn-primary mt-2">Download Tape Log</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- AdminLTE JS -->
-    <script src="https://adminlte.io/themes/v3/dist/js/adminlte.min.js"></script>
-    <script>
-        // Theme Toggle
-        document.getElementById('themeToggle').addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            this.innerHTML = document.body.classList.contains('dark-mode') ? 
-                '<i class="fas fa-sun"></i> Light Theme' : 
-                '<i class="fas fa-moon"></i> Dark Theme';
-        });
-
-        // Select All Channels
-        document.getElementById('selectAllChannels').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.channel-checkbox');
-            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-        });
-
-        // Channel Search
-        document.getElementById('channelSearch').addEventListener('input', function() {
-            const searchValue = this.value.toLowerCase();
-            document.querySelectorAll('.checkbox-list label').forEach(label => {
-                const channel = label.textContent.toLowerCase();
-                label.style.display = channel.includes(searchValue) ? 'block' : 'none';
-            });
-        });
-
-        // Submit Test
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            const tps = document.getElementById('tps').value;
-            const txNumber = document.getElementById('txNumber').value;
-            const contract = document.getElementById('contract').value;
-            const users = document.getElementById('users').value;
-            const iot = document.getElementById('iot').value;
-            const testMethod = document.getElementById('testMethod').value;
-            const testType = document.getElementById('testType').value;
-            const maxDistance = document.getElementById('maxDistance').value;
-            const batchSize = document.getElementById('batchSize').value;
-            const timeout = document.getElementById('timeout').value;
-            const channels = [];
-            document.querySelectorAll('.channel-checkbox:checked').forEach(checkbox => channels.push(checkbox.value));
-
-            const data = { tps, txNumber, contract, users, iot, testMethod, testType, maxDistance, batchSize, timeout, channels };
-
-            fetch('/run-test', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                document.getElementById('reportOutput').innerText = result.output || result.error;
-                document.getElementById('caliperReport').src = 'report.html?' + new Date().getTime();
-                fetch('/tape-log').then(res => res.text()).then(log => document.getElementById('tapeLog').innerText = log);
-                updateDashboard();
-            })
-            .catch(error => {
-                document.getElementById('reportOutput').innerText = 'Error: ' + error;
-            });
-        });
-
-        // Save Profile
-        document.getElementById('saveProfileBtn').addEventListener('click', function() {
-            const profileName = document.getElementById('profileName').value;
-            if (!profileName) return alert('Please enter a profile name');
-            const data = {
-                tps: document.getElementById('tps').value,
-                txNumber: document.getElementById('txNumber').value,
-                contract: document.getElementById('contract').value,
-                users: document.getElementById('users').value,
-                iot: document.getElementById('iot').value,
-                testMethod: document.getElementById('testMethod').value,
-                testType: document.getElementById('testType').value,
-                maxDistance: document.getElementById('maxDistance').value,
-                batchSize: document.getElementById('batchSize').value,
-                timeout: document.getElementById('timeout').value,
-                channels: Array.from(document.querySelectorAll('.channel-checkbox:checked')).map(cb => cb.value)
+    // Update workload.js for users, IoT, and maxDistance
+    let workloadContent = fs.readFileSync(`caliper-workspace/workload/${contract}.js`, 'utf8');
+    workloadContent = workloadContent.replace(/const entityID = .*/g, `const entityID = \`user\${this.workerIndex}_\${Math.floor(Math.random() * ${users})}\``);
+    workloadContent = workloadContent.replace(/const antennaID = .*/g, `const antennaID = \`Antenna\${Math.floor(Math.random() * ${iot})}\``);
+    if (contract.includes('LocationBased')) {
+        workloadContent = workloadContent.replace(/timeout: \d+/g, `timeout: ${timeout}`);
+        workloadContent += `
+        async validateDistance() {
+            const args = {
+                contractId: this.chaincodeID,
+                contractFunction: 'Validate${contract}Distance',
+                contractArguments: [entityID, '${maxDistance}'],
+                readOnly: true
             };
-            fetch('/save-profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: profileName, config: data })
-            })
-            .then(response => response.json())
-            .then(result => alert(result.message))
-            .catch(error => alert('Error saving profile: ' + error));
-        });
-
-        // Load Profiles
-        function loadProfiles() {
-            fetch('/load-profiles')
-            .then(response => response.json())
-            .then(profiles => {
-                const select = document.getElementById('loadProfile');
-                select.innerHTML = '<option value="">Select Profile</option>';
-                profiles.forEach(profile => {
-                    const option = document.createElement('option');
-                    option.value = profile.name;
-                    option.textContent = profile.name;
-                    select.appendChild(option);
-                });
+            await this.sutAdapter.sendRequests({
+                contractId: this.chaincodeID,
+                channel: this.channel,
+                args: args,
+                timeout: ${timeout}
             });
+        }`;
+    }
+    fs.writeFileSync(`caliper-workspace/workload/${contract}.js`, workloadContent);
+
+    // Run test for selected channels
+    let command = '';
+    channels.forEach(channel => {
+        if (testMethod === 'Caliper' || testMethod === 'Both') {
+            command += `cd caliper-workspace && npx caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/myAssetBenchmark.yaml --caliper-flow-only-test; `;
         }
-
-        document.getElementById('loadProfile').addEventListener('change', function() {
-            const profileName = this.value;
-            if (!profileName) return;
-            fetch(`/load-profile/${profileName}`)
-            .then(response => response.json())
-            .then(profile => {
-                document.getElementById('tps').value = profile.config.tps;
-                document.getElementById('txNumber').value = profile.config.txNumber;
-                document.getElementById('contract').value = profile.config.contract;
-                document.getElementById('users').value = profile.config.users;
-                document.getElementById('iot').value = profile.config.iot;
-                document.getElementById('testMethod').value = profile.config.testMethod;
-                document.getElementById('testType').value = profile.config.testType;
-                document.getElementById('maxDistance').value = profile.config.maxDistance;
-                document.getElementById('batchSize').value = profile.config.batchSize;
-                document.getElementById('timeout').value = profile.config.timeout;
-                document.querySelectorAll('.channel-checkbox').forEach(cb => cb.checked = profile.config.channels.includes(cb.value));
-            });
-        });
-
-        // Update Dashboard
-        function updateDashboard() {
-            fetch('/network-stats')
-            .then(response => response.json())
-            .then(stats => {
-                document.getElementById('blockCount').textContent = stats.blockCount;
-                document.getElementById('txCount').textContent = stats.txCount;
-                updateCharts(stats.tpsData, stats.latencyData);
-            });
+        if (testMethod === 'Tape' || testMethod === 'Both') {
+            command += `node ../generateTapeArgs.js && tape --config ../tape-config.yaml; `;
         }
+    });
 
-        // Update Charts
-        function updateCharts(tpsData, latencyData) {
-            const tpsChart = new Chart(document.getElementById('tpsChart'), {
-                type: 'line',
-                data: {
-                    labels: tpsData.labels,
-                    datasets: [{
-                        label: 'TPS',
-                        data: tpsData.values,
-                        borderColor: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-
-            const latencyChart = new Chart(document.getElementById('latencyChart'), {
-                type: 'line',
-                data: {
-                    labels: latencyData.labels,
-                    datasets: [{
-                        label: 'Latency (ms)',
-                        data: latencyData.values,
-                        borderColor: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            res.status(500).send({ error: stderr });
+            return;
         }
+        res.send({ output: stdout });
+    });
+});
 
-        // Load Blocks
-        function loadBlocks() {
-            fetch('/blocks')
-            .then(response => response.json())
-            .then(blocks => {
-                const table = document.getElementById('blockTable');
-                table.innerHTML = '';
-                blocks.forEach(block => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${block.height}</td>
-                        <td>${block.hash}</td>
-                        <td>${block.txCount}</td>
-                        <td>${block.timestamp}</td>
-                    `;
-                    table.appendChild(row);
-                });
-            });
-        }
+app.get('/network-stats', (req, res) => {
+    // Mock data for dashboard (replace with actual Fabric SDK calls)
+    res.json({
+        blockCount: 100, // Replace with actual block count
+        txCount: 500, // Replace with actual transaction count
+        tpsData: { labels: ['1m', '2m', '3m'], values: [5, 7, 6] },
+        latencyData: { labels: ['1m', '2m', '3m'], values: [10, 12, 11] }
+    });
+});
 
-        // Load Transactions
-        function loadTransactions() {
-            fetch('/transactions')
-            .then(response => response.json())
-            .then(transactions => {
-                const table = document.getElementById('txTable');
-                table.innerHTML = '';
-                transactions.forEach(tx => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${tx.id}</td>
-                        <td>${tx.contract}</td>
-                        <td>${tx.channel}</td>
-                        <td>${tx.timestamp}</td>
-                    `;
-                    table.appendChild(row);
-                });
-            });
-        }
+app.get('/blocks', (req, res) => {
+    // Mock data (replace with Fabric SDK to fetch blocks)
+    res.json([
+        { height: 1, hash: 'abc123', txCount: 10, timestamp: '2025-07-17T14:00:00Z' },
+        { height: 2, hash: 'def456', txCount: 15, timestamp: '2025-07-17T14:01:00Z' }
+    ]);
+});
 
-        // Transaction Search
-        document.getElementById('txSearch').addEventListener('input', function() {
-            const searchValue = this.value.toLowerCase();
-            document.querySelectorAll('#txTable tr').forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchValue) ? '' : 'none';
-            });
-        });
+app.get('/transactions', (req, res) => {
+    // Mock data (replace with Fabric SDK to fetch transactions)
+    res.json([
+        { id: 'tx1', contract: 'LocationBasedAssignment', channel: 'GeneralOperationsChannel', timestamp: '2025-07-17T14:00:00Z' },
+        { id: 'tx2', contract: 'AuthenticateUser', channel: 'SecurityChannel', timestamp: '2025-07-17T14:01:00Z' }
+    ]);
+});
 
-        // Load Peers
-        function loadPeers() {
-            fetch('/peers')
-            .then(response => response.json())
-            .then(peers => {
-                const table = document.getElementById('peerTable');
-                table.innerHTML = '';
-                peers.forEach(peer => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${peer.name}</td>
-                        <td>${peer.status}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary start-peer" data-peer="${peer.name}">Start</button>
-                            <button class="btn btn-sm btn-danger stop-peer" data-peer="${peer.name}">Stop</button>
-                        </td>
-                    `;
-                    table.appendChild(row);
-                });
-                document.querySelectorAll('.start-peer').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        fetch(`/start-peer/${btn.dataset.peer}`, { method: 'POST' })
-                        .then(() => loadPeers());
-                    });
-                });
-                document.querySelectorAll('.stop-peer').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        fetch(`/stop-peer/${btn.dataset.peer}`, { method: 'POST' })
-                        .then(() => loadPeers());
-                    });
-                });
-            });
-        }
+app.get('/peers', (req, res) => {
+    // Mock data (replace with Docker API or Fabric SDK)
+    res.json([
+        { name: 'peer0.org1.example.com', status: 'Running' },
+        { name: 'peer0.org2.example.com', status: 'Stopped' }
+    ]);
+});
 
-        // Load Chaincodes
-        function loadChaincodes() {
-            fetch('/chaincodes')
-            .then(response => response.json())
-            .then(chaincodes => {
-                const table = document.getElementById('chaincodeTable');
-                table.innerHTML = '';
-                chaincodes.forEach(cc => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${cc.name}</td>
-                        <td>${cc.version}</td>
-                        <td>${cc.channel}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary install-chaincode" data-cc="${cc.name}">Install</button>
-                            <button class="btn btn-sm btn-warning upgrade-chaincode" data-cc="${cc.name}">Upgrade</button>
-                        </td>
-                    `;
-                    table.appendChild(row);
-                });
-                document.querySelectorAll('.install-chaincode').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        fetch(`/install-chaincode/${btn.dataset.cc}`, { method: 'POST' })
-                        .then(() => loadChaincodes());
-                    });
-                });
-                document.querySelectorAll('.upgrade-chaincode').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        fetch(`/upgrade-chaincode/${btn.dataset.cc}`, { method: 'POST' })
-                        .then(() => loadChaincodes());
-                    });
-                });
-            });
-        }
+app.get('/chaincodes', (req, res) => {
+    // Mock data (replace with Fabric SDK)
+    res.json([
+        { name: 'LocationBasedAssignment', version: '1.0', channel: 'GeneralOperationsChannel' },
+        { name: 'AuthenticateUser', version: '1.0', channel: 'SecurityChannel' }
+    ]);
+});
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            updateDashboard();
-            loadBlocks();
-            loadTransactions();
-            loadPeers();
-            loadChaincodes();
-            loadProfiles();
-        });
-    </script>
-</body>
-</html>
+app.post('/start-peer/:peer', (req, res) => {
+    exec(`docker start ${req.params.peer}`, (error, stdout, stderr) => {
+        if (error) return res.status(500).send({ error: stderr });
+        res.json({ message: `Peer ${req.params.peer} started` });
+    });
+});
+
+app.post('/stop-peer/:peer', (req, res) => {
+    exec(`docker stop ${req.params.peer}`, (error, stdout, stderr) => {
+        if (error) return res.status(500).send({ error: stderr });
+        res.json({ message: `Peer ${req.params.peer} stopped` });
+    });
+});
+
+app.post('/install-chaincode/:cc', (req, res) => {
+    exec(`docker exec peer0.org1.example.com peer chaincode install -n ${req.params.cc} -v 1.0 -p github.com/chaincode/${req.params.cc}`, (error, stdout, stderr) => {
+        if (error) return res.status(500).send({ error: stderr });
+        res.json({ message: `Chaincode ${req.params.cc} installed` });
+    });
+});
+
+app.post('/upgrade-chaincode/:cc', (req, res) => {
+    exec(`docker exec peer0.org1.example.com peer chaincode upgrade -o orderer1.example.com:7050 --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C GeneralOperationsChannel -n ${req.params.cc} -v 1.1 -c '{"Args":["init"]}'`, (error, stdout, stderr) => {
+        if (error) return res.status(500).send({ error: stderr });
+        res.json({ message: `Chaincode ${req.params.cc} upgraded` });
+    });
+});
+
+app.get('/download-report', (req, res) => {
+    res.download('caliper-workspace/report.html');
+});
+
+app.get('/download-tape-log', (req, res) => {
+    res.download('tape.log');
+});
+
+app.post('/save-profile', (req, res) => {
+    profiles.push(req.body);
+    res.json({ message: `Profile ${req.body.name} saved` });
+});
+
+app.get('/load-profiles', (req, res) => {
+    res.json(profiles);
+});
+
+app.get('/load-profile/:name', (req, res) => {
+    const profile = profiles.find(p => p.name === req.params.name);
+    if (!profile) return res.status(404).send({ error: 'Profile not found' });
+    res.json(profile);
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://165.232.71.90:${port}`);
+});
