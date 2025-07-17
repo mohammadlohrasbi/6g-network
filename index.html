@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="https://adminlte.io/themes/v3/dist/css/adminlte.min.css">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,9 +19,10 @@
         }
         .sidebar {
             height: 100vh;
-            position: fixed
+            position: fixed;
             top: 0;
             left: 0;
+            width: 250px;
             background-color: #343a40;
             color: white;
         }
@@ -35,11 +38,15 @@
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
         }
         .form-label {
             font-weight: 500;
         }
-        .report-section {
+        .report-section, .dashboard-section, .blocks-section, .transactions-section, .peers-section, .chaincodes-section {
             margin-top: 30px;
         }
         .btn-primary {
@@ -53,6 +60,18 @@
         .checkbox-list {
             max-height: 200px;
             overflow-y: auto;
+            border: 1px solid #ced4da;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .chart-container {
+            height: 300px;
+        }
+        .table-responsive {
+            max-height: 400px;
+        }
+        .theme-toggle {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -62,9 +81,14 @@
         <div class="p-3">
             <h4 class="text-center mb-4">6G Fabric Dashboard</h4>
             <nav class="nav flex-column">
-                <a class="nav-link text-white" href="#"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
-                <a class="nav-link text-white" href="#"><i class="fas fa-cog me-2"></i> Settings</a>
-                <a class="nav-link text-white" href="#"><i class="fas fa-chart-bar me-2"></i> Reports</a>
+                <a class="nav-link text-white" href="#dashboard"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                <a class="nav-link text-white" href="#settings"><i class="fas fa-cog me-2"></i> Test Settings</a>
+                <a class="nav-link text-white" href="#reports"><i class="fas fa-chart-bar me-2"></i> Reports</a>
+                <a class="nav-link text-white" href="#blocks"><i class="fas fa-cube me-2"></i> Blocks</a>
+                <a class="nav-link text-white" href="#transactions"><i class="fas fa-exchange-alt me-2"></i> Transactions</a>
+                <a class="nav-link text-white" href="#channels"><i class="fas fa-sitemap me-2"></i> Channels</a>
+                <a class="nav-link text-white" href="#peers"><i class="fas fa-server me-2"></i> Peers</a>
+                <a class="nav-link text-white" href="#chaincodes"><i class="fas fa-code me-2"></i> Chaincodes</a>
             </nav>
         </div>
     </aside>
@@ -81,6 +105,9 @@
                         <a class="nav-link" href="#">Profile</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link theme-toggle" id="themeToggle"><i class="fas fa-moon"></i> Toggle Theme</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#">Logout</a>
                     </li>
                 </ul>
@@ -91,27 +118,94 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="container-fluid">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="dashboard-section card">
+                <div class="card-header bg-info text-white">
+                    <h5>Network Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Blocks</h5>
+                                    <p class="card-text" id="blockCount">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Transactions</h5>
+                                    <p class="card-text" id="txCount">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Channels</h5>
+                                    <p class="card-text" id="channelCount">18</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">Chaincodes</h5>
+                                    <p class="card-text" id="chaincodeCount">85</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">TPS Over Time</h5>
+                                    <canvas id="tpsChart" class="chart-container"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Latency Over Time</h5>
+                                    <canvas id="latencyChart" class="chart-container"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Settings Form -->
-            <div class="card">
+            <div id="settings" class="card mt-4">
                 <div class="card-header bg-primary text-white">
                     <h5>Network Test Settings</h5>
                 </div>
                 <div class="card-body">
                     <form id="testForm">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="tps" class="form-label">TPS</label>
-                                <input type="number" class="form-control" id="tps" placeholder="Enter TPS" value="5">
+                                <input type="number" class="form-control" id="tps" placeholder="Enter TPS (1-10)" min="1" max="10" value="5">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="txNumber" class="form-label">Number of Transactions</label>
-                                <input type="number" class="form-control" id="txNumber" placeholder="Enter txNumber" value="50">
+                                <input type="number" class="form-control" id="txNumber" placeholder="Enter txNumber (10-100)" min="10" max="100" value="50">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="maxDistance" class="form-label">Max Distance (km)</label>
+                                <input type="number" class="form-control" id="maxDistance" placeholder="Enter max distance" value="100">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="contract" class="form-label">Contract Name</label>
                                 <select class="form-control" id="contract">
+                                    <option value="">Select Contract</option>
                                     <option>LocationBasedAssignment</option>
                                     <option>AuthenticateUser</option>
+                                    <!-- Add all 85 contracts dynamically via JS -->
                                     <option>LocationBasedConnection</option>
                                     <option>LocationBasedBandwidth</option>
                                     <option>LocationBasedQoS</option>
@@ -197,99 +291,235 @@
                                     <option>LogNetworkAudit</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="users" class="form-label">Number of Users</label>
-                                <input type="number" class="form-control" id="users" placeholder="Enter number of users" value="10">
+                                <input type="number" class="form-control" id="users" placeholder="Enter number of users (1-10)" min="1" max="10" value="10">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="iot" class="form-label">Number of IoT Devices</label>
-                                <input type="number" class="form-control" id="iot" placeholder="Enter number of IoT devices" value="5">
+                                <input type="number" class="form-control" id="iot" placeholder="Enter number of IoT devices (1-5)" min="1" max="5" value="5">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="testType" class="form-label">Test Type</label>
+                                <select class="form-control" id="testType">
+                                    <option value="both">Invoke & Query</option>
+                                    <option value="invoke">Invoke Only</option>
+                                    <option value="query">Query Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="batchSize" class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" id="batchSize" placeholder="Enter batch size (1-20)" min="1" max="20" value="10">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="timeout" class="form-label">Timeout (seconds)</label>
+                                <input type="number" class="form-control" id="timeout" placeholder="Enter timeout (10-60)" min="10" max="60" value="30">
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">Select Channels</label>
                                 <div class="checkbox-list border p-3">
+                                    <input type="text" class="form-control mb-2" id="channelSearch" placeholder="Search channels...">
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org1Channel"> Org1Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org1Channel"> Org1Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org2Channel"> Org2Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org2Channel"> Org2Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org3Channel"> Org3Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org3Channel"> Org3Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org4Channel"> Org4Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org4Channel"> Org4Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org5Channel"> Org5Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org5Channel"> Org5Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org6Channel"> Org6Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org6Channel"> Org6Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org7Channel"> Org7Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org7Channel"> Org7Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="Org8Channel"> Org8Channel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="Org8Channel"> Org8Channel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="GeneralOperationsChannel"> GeneralOperationsChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="GeneralOperationsChannel"> GeneralOperationsChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="IoTChannel"> IoTChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="IoTChannel"> IoTChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="SecurityChannel"> SecurityChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="SecurityChannel"> SecurityChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="AuditChannel"> AuditChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="AuditChannel"> AuditChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="BillingChannel"> BillingChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="BillingChannel"> BillingChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="ResourceChannel"> ResourceChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="ResourceChannel"> ResourceChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="PerformanceChannel"> PerformanceChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="PerformanceChannel"> PerformanceChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="SessionChannel"> SessionChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="SessionChannel"> SessionChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="ConnectivityChannel"> ConnectivityChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="ConnectivityChannel"> ConnectivityChannel
                                     </label>
                                     <label class="form-check-label">
-                                        <input type="checkbox" class="form-check-input" value="PolicyChannel"> PolicyChannel
+                                        <input type="checkbox" class="form-check-input channel-checkbox" value="PolicyChannel"> PolicyChannel
                                     </label>
                                     <label class="form-check-label">
                                         <input type="checkbox" class="form-check-input" id="selectAllChannels"> Select All
                                     </label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="testMethod" class="form-label">Test Method</label>
                                 <select class="form-control" id="testMethod">
-                                    <option>Caliper</option>
-                                    <option>Tape</option>
-                                    <option>Both</option>
+                                    <option value="Caliper">Caliper</option>
+                                    <option value="Tape">Tape</option>
+                                    <option value="Both">Both</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="profileName" class="form-label">Save as Profile</label>
+                                <input type="text" class="form-control" id="profileName" placeholder="Enter profile name">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="loadProfile" class="form-label">Load Profile</label>
+                                <select class="form-control" id="loadProfile">
+                                    <option value="">Select Profile</option>
+                                    <!-- Profiles loaded dynamically -->
                                 </select>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary mt-3" id="submitBtn">Run Test</button>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" id="submitBtn">Run Test</button>
+                            <button type="button" class="btn btn-success" id="saveProfileBtn">Save Profile</button>
+                        </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Report Section -->
-            <div class="report-section card">
-                <div class="card-header bg-success text-white">
-                    <h5>Test Report</h5>
+            <!-- Blocks Section -->
+            <div id="blocks" class="blocks-section card mt-4">
+                <div class="card-header bg-warning text-white">
+                    <h5>Blocks</h5>
                 </div>
                 <div class="card-body">
-                    <div id="reportOutput"></div>
-                    <iframe id="caliperReport" src="report.html" style="width:100%; height:500px;" class="mt-3"></iframe>
-                    <pre id="tapeLog" class="mt-3"></pre>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Block Height</th>
+                                    <th>Block Hash</th>
+                                    <th>Tx Count</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blockTable">
+                                <!-- Blocks loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div id="transactions" class="transactions-section card mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5>Transactions</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" class="form-control mb-2" id="txSearch" placeholder="Search transactions by ID, contract, or channel...">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Tx ID</th>
+                                    <th>Contract</th>
+                                    <th>Channel</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txTable">
+                                <!-- Transactions loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Peers Section -->
+            <div id="peers" class="peers-section card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5>Peers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Peer Name</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="peerTable">
+                                <!-- Peers loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chaincodes Section -->
+            <div id="chaincodes" class="chaincodes-section card mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h5>Chaincodes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Version</th>
+                                    <th>Channel</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chaincodeTable">
+                                <!-- Chaincodes loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Section -->
+            <div id="reports" class="report-section card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5>Test Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Caliper Report</h5>
+                            <iframe id="caliperReport" src="report.html" style="width:100%; height:500px;" class="mt-3"></iframe>
+                            <a href="/download-report" class="btn btn-primary mt-2">Download Caliper Report</a>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Tape Log</h5>
+                            <pre id="tapeLog" class="mt-3"></pre>
+                            <a href="/download-tape-log" class="btn btn-primary mt-2">Download Tape Log</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -300,11 +530,30 @@
     <!-- AdminLTE JS -->
     <script src="https://adminlte.io/themes/v3/dist/js/adminlte.min.js"></script>
     <script>
+        // Theme Toggle
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            this.innerHTML = document.body.classList.contains('dark-mode') ? 
+                '<i class="fas fa-sun"></i> Light Theme' : 
+                '<i class="fas fa-moon"></i> Dark Theme';
+        });
+
+        // Select All Channels
         document.getElementById('selectAllChannels').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.checkbox-list input[type="checkbox"]:not(#selectAllChannels)');
+            const checkboxes = document.querySelectorAll('.channel-checkbox');
             checkboxes.forEach(checkbox => checkbox.checked = this.checked);
         });
 
+        // Channel Search
+        document.getElementById('channelSearch').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            document.querySelectorAll('.checkbox-list label').forEach(label => {
+                const channel = label.textContent.toLowerCase();
+                label.style.display = channel.includes(searchValue) ? 'block' : 'none';
+            });
+        });
+
+        // Submit Test
         document.getElementById('submitBtn').addEventListener('click', function() {
             const tps = document.getElementById('tps').value;
             const txNumber = document.getElementById('txNumber').value;
@@ -312,29 +561,271 @@
             const users = document.getElementById('users').value;
             const iot = document.getElementById('iot').value;
             const testMethod = document.getElementById('testMethod').value;
+            const testType = document.getElementById('testType').value;
+            const maxDistance = document.getElementById('maxDistance').value;
+            const batchSize = document.getElementById('batchSize').value;
+            const timeout = document.getElementById('timeout').value;
             const channels = [];
-            document.querySelectorAll('.checkbox-list input[type="checkbox"]:checked:not(#selectAllChannels)').forEach(checkbox => channels.push(checkbox.value));
+            document.querySelectorAll('.channel-checkbox:checked').forEach(checkbox => channels.push(checkbox.value));
 
-            const data = { tps, txNumber, contract, users, iot, channels, testMethod };
+            const data = { tps, txNumber, contract, users, iot, testMethod, testType, maxDistance, batchSize, timeout, channels };
 
             fetch('/run-test', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(result => {
                 document.getElementById('reportOutput').innerText = result.output || result.error;
-                document.getElementById('caliperReport').src = 'report.html'; // Refresh report
-                fetch('/tape-log')
-                .then(res => res.text())
-                .then(log => document.getElementById('tapeLog').innerText = log);
+                document.getElementById('caliperReport').src = 'report.html?' + new Date().getTime();
+                fetch('/tape-log').then(res => res.text()).then(log => document.getElementById('tapeLog').innerText = log);
+                updateDashboard();
             })
             .catch(error => {
                 document.getElementById('reportOutput').innerText = 'Error: ' + error;
             });
+        });
+
+        // Save Profile
+        document.getElementById('saveProfileBtn').addEventListener('click', function() {
+            const profileName = document.getElementById('profileName').value;
+            if (!profileName) return alert('Please enter a profile name');
+            const data = {
+                tps: document.getElementById('tps').value,
+                txNumber: document.getElementById('txNumber').value,
+                contract: document.getElementById('contract').value,
+                users: document.getElementById('users').value,
+                iot: document.getElementById('iot').value,
+                testMethod: document.getElementById('testMethod').value,
+                testType: document.getElementById('testType').value,
+                maxDistance: document.getElementById('maxDistance').value,
+                batchSize: document.getElementById('batchSize').value,
+                timeout: document.getElementById('timeout').value,
+                channels: Array.from(document.querySelectorAll('.channel-checkbox:checked')).map(cb => cb.value)
+            };
+            fetch('/save-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: profileName, config: data })
+            })
+            .then(response => response.json())
+            .then(result => alert(result.message))
+            .catch(error => alert('Error saving profile: ' + error));
+        });
+
+        // Load Profiles
+        function loadProfiles() {
+            fetch('/load-profiles')
+            .then(response => response.json())
+            .then(profiles => {
+                const select = document.getElementById('loadProfile');
+                select.innerHTML = '<option value="">Select Profile</option>';
+                profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile.name;
+                    option.textContent = profile.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        document.getElementById('loadProfile').addEventListener('change', function() {
+            const profileName = this.value;
+            if (!profileName) return;
+            fetch(`/load-profile/${profileName}`)
+            .then(response => response.json())
+            .then(profile => {
+                document.getElementById('tps').value = profile.config.tps;
+                document.getElementById('txNumber').value = profile.config.txNumber;
+                document.getElementById('contract').value = profile.config.contract;
+                document.getElementById('users').value = profile.config.users;
+                document.getElementById('iot').value = profile.config.iot;
+                document.getElementById('testMethod').value = profile.config.testMethod;
+                document.getElementById('testType').value = profile.config.testType;
+                document.getElementById('maxDistance').value = profile.config.maxDistance;
+                document.getElementById('batchSize').value = profile.config.batchSize;
+                document.getElementById('timeout').value = profile.config.timeout;
+                document.querySelectorAll('.channel-checkbox').forEach(cb => cb.checked = profile.config.channels.includes(cb.value));
+            });
+        });
+
+        // Update Dashboard
+        function updateDashboard() {
+            fetch('/network-stats')
+            .then(response => response.json())
+            .then(stats => {
+                document.getElementById('blockCount').textContent = stats.blockCount;
+                document.getElementById('txCount').textContent = stats.txCount;
+                updateCharts(stats.tpsData, stats.latencyData);
+            });
+        }
+
+        // Update Charts
+        function updateCharts(tpsData, latencyData) {
+            const tpsChart = new Chart(document.getElementById('tpsChart'), {
+                type: 'line',
+                data: {
+                    labels: tpsData.labels,
+                    datasets: [{
+                        label: 'TPS',
+                        data: tpsData.values,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            const latencyChart = new Chart(document.getElementById('latencyChart'), {
+                type: 'line',
+                data: {
+                    labels: latencyData.labels,
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        data: latencyData.values,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Load Blocks
+        function loadBlocks() {
+            fetch('/blocks')
+            .then(response => response.json())
+            .then(blocks => {
+                const table = document.getElementById('blockTable');
+                table.innerHTML = '';
+                blocks.forEach(block => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${block.height}</td>
+                        <td>${block.hash}</td>
+                        <td>${block.txCount}</td>
+                        <td>${block.timestamp}</td>
+                    `;
+                    table.appendChild(row);
+                });
+            });
+        }
+
+        // Load Transactions
+        function loadTransactions() {
+            fetch('/transactions')
+            .then(response => response.json())
+            .then(transactions => {
+                const table = document.getElementById('txTable');
+                table.innerHTML = '';
+                transactions.forEach(tx => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${tx.id}</td>
+                        <td>${tx.contract}</td>
+                        <td>${tx.channel}</td>
+                        <td>${tx.timestamp}</td>
+                    `;
+                    table.appendChild(row);
+                });
+            });
+        }
+
+        // Transaction Search
+        document.getElementById('txSearch').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            document.querySelectorAll('#txTable tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+
+        // Load Peers
+        function loadPeers() {
+            fetch('/peers')
+            .then(response => response.json())
+            .then(peers => {
+                const table = document.getElementById('peerTable');
+                table.innerHTML = '';
+                peers.forEach(peer => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${peer.name}</td>
+                        <td>${peer.status}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary start-peer" data-peer="${peer.name}">Start</button>
+                            <button class="btn btn-sm btn-danger stop-peer" data-peer="${peer.name}">Stop</button>
+                        </td>
+                    `;
+                    table.appendChild(row);
+                });
+                document.querySelectorAll('.start-peer').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        fetch(`/start-peer/${btn.dataset.peer}`, { method: 'POST' })
+                        .then(() => loadPeers());
+                    });
+                });
+                document.querySelectorAll('.stop-peer').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        fetch(`/stop-peer/${btn.dataset.peer}`, { method: 'POST' })
+                        .then(() => loadPeers());
+                    });
+                });
+            });
+        }
+
+        // Load Chaincodes
+        function loadChaincodes() {
+            fetch('/chaincodes')
+            .then(response => response.json())
+            .then(chaincodes => {
+                const table = document.getElementById('chaincodeTable');
+                table.innerHTML = '';
+                chaincodes.forEach(cc => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${cc.name}</td>
+                        <td>${cc.version}</td>
+                        <td>${cc.channel}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary install-chaincode" data-cc="${cc.name}">Install</button>
+                            <button class="btn btn-sm btn-warning upgrade-chaincode" data-cc="${cc.name}">Upgrade</button>
+                        </td>
+                    `;
+                    table.appendChild(row);
+                });
+                document.querySelectorAll('.install-chaincode').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        fetch(`/install-chaincode/${btn.dataset.cc}`, { method: 'POST' })
+                        .then(() => loadChaincodes());
+                    });
+                });
+                document.querySelectorAll('.upgrade-chaincode').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        fetch(`/upgrade-chaincode/${btn.dataset.cc}`, { method: 'POST' })
+                        .then(() => loadChaincodes());
+                    });
+                });
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDashboard();
+            loadBlocks();
+            loadTransactions();
+            loadPeers();
+            loadChaincodes();
+            loadProfiles();
         });
     </script>
 </body>
