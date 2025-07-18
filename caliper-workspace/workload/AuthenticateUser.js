@@ -1,4 +1,7 @@
+'use strict';
+
 const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
+const { generateRandomID } = require('./utils.js');
 
 class AuthenticateUserWorkload extends WorkloadModuleBase {
     constructor() {
@@ -12,31 +15,8 @@ class AuthenticateUserWorkload extends WorkloadModuleBase {
     }
 
     async submitTransaction() {
-        const userID = `user${this.workerIndex}_${Math.floor(Math.random() * 1000)}`;
-        const token = `token${Math.floor(Math.random() * 10000)}`;
-
+        const entityID = generateRandomID('user', 1000);
+        const token = generateRandomID('token', 1000);
         const args = {
             contractId: this.chaincodeID,
-            contractFunction: 'AuthenticateUser',
-            contractArguments: [userID, token],
-            readOnly: false
-        };
-
-        await this.sutAdapter.sendRequests({
-            contractId: this.chaincodeID,
-            channel: this.channel,
-            args: args,
-            timeout: 30
-        });
-    }
-
-    async cleanupWorkloadModule() {
-        // Cleanup logic if needed
-    }
-}
-
-function createWorkloadModule() {
-    return new AuthenticateUserWorkload();
-}
-
-module.exports.createWorkloadModule = createWorkloadModule;
+            contractFunction: 'CreateAsset
