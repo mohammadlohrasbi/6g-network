@@ -17,6 +17,13 @@ peer:
   fileSystemPath: /var/hyperledger/production
   ledger:
     state:
-      stateDatabase: LevelDB
+      stateDatabase: CouchDB
+      couchDBConfig:
+        couchDBAddress: couchdb-org1:5984
+        username: admin
+        password: adminpw
+        maxRetries: 3
+        maxRetriesOnStartup: 10
+        requestTimeout: 35s
   logging:
     level: error
