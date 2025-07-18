@@ -3,6 +3,13 @@
 # تولید گواهی‌های رمزنگاری
 cryptogen generate --config=./crypto-config.yaml
 
+# تولید فایل‌های core.yaml
+./generateCoreyamls.sh
+
+# تولید فایل‌های connection profile (yaml و json)
+./generateConnectionProfiles.sh
+./generateConnectionJson.sh
+
 # تولید بلاک جنسیس و فایل‌های کانال
 configtxgen -profile NetworkGenesis -outputBlock ./genesis.block
 for channel in Org1Channel Org2Channel Org3Channel Org4Channel Org5Channel Org6Channel Org7Channel Org8Channel GeneralOperationsChannel IoTChannel SecurityChannel AuditChannel BillingChannel ResourceChannel PerformanceChannel SessionChannel ConnectivityChannel PolicyChannel; do
@@ -11,6 +18,11 @@ done
 
 # راه‌اندازی شبکه
 docker-compose -f docker-compose.yml up -d
+
+# ثبت کاربران admin برای CAها
+for org in {1..8}; do
+    docker exec ca-org${org}.example.com fabric-ca-client register --caname ca-org${org} --id.name admin-org${org} --id.secret adminpw --id.type admin --url https://165.232.71.90:$((7054 + (org-1)*1000)) --tls.certfiles /etc/hyperledger/fabric-ca-server-config/ca.org${org}.example.com-cert.pem
+done
 
 # ایجاد کانال‌ها
 for channel in Org1Channel Org2Channel Org3Channel Org4Channel Org5Channel Org6Channel Org7Channel Org8Channel GeneralOperationsChannel IoTChannel SecurityChannel AuditChannel BillingChannel ResourceChannel PerformanceChannel SessionChannel ConnectivityChannel PolicyChannel; do
@@ -75,6 +87,9 @@ for contract in "${contracts[@]}"; do
     done
 done
 
+# تولید فایل‌های workload
+./generateWorkloadFiles.sh
+
 # اجرای تست‌های Caliper
 cd caliper-workspace
 npx caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/myAssetBenchmark.yaml
@@ -83,7 +98,12 @@ npx caliper launch manager --caliper-workspace . --caliper-networkconfig network
 node ../generateTapeArgs.js
 tape --config ../tape-config.yaml
 
+# تنظیم Nginx برای HTTPS
+sudo cp nginx.conf /etc/nginx/sites-available/6gfabric.local
+sudo ln -s /etc/nginx/sites-available/6gfabric.local /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+
 # تولید فایل زیپ
 cd ..
-zip -r 6g-fabric-network.zip chaincode caliper-workspace crypto-config *.tx *.block *.yaml *.sh *.js
+zip -r 6g-fabric-network.zip chaincode caliper-workspace crypto-config *.tx *.block *.yaml *.sh *.js nginx.conf
 mv 6g-fabric-network.zip $HOME/
