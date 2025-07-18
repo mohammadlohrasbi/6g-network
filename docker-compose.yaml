@@ -14,14 +14,160 @@ services:
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_MAXMESSAGECOUNT=10
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls:/var/hyperledger/orderer/tls
       - ./genesis.block:/var/hyperledger/orderer/genesis.block
+      - ./core.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 7050:7050
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org1.example.com:
+    container_name: ca-org1.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org1
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=7054
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 7054:7054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org2.example.com:
+    container_name: ca-org2.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org2
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=8054
+    volumes:
+      - ./crypto-config/peerOrganizations/org2.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 8054:8054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org3.example.com:
+    container_name: ca-org3.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org3
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=9054
+    volumes:
+      - ./crypto-config/peerOrganizations/org3.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 9054:9054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org4.example.com:
+    container_name: ca-org4.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org4
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org4.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=10054
+    volumes:
+      - ./crypto-config/peerOrganizations/org4.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 10054:10054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org5.example.com:
+    container_name: ca-org5.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org5
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org5.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=11054
+    volumes:
+      - ./crypto-config/peerOrganizations/org5.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 11054:11054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org6.example.com:
+    container_name: ca-org6.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org6
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org6.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=12054
+    volumes:
+      - ./crypto-config/peerOrganizations/org6.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 12054:12054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org7.example.com:
+    container_name: ca-org7.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org7
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org7.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=13054
+    volumes:
+      - ./crypto-config/peerOrganizations/org7.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 13054:13054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+  ca-org8.example.com:
+    container_name: ca-org8.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org8
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org8.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=14054
+    volumes:
+      - ./crypto-config/peerOrganizations/org8.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 14054:14054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     mem_limit: 100m
     networks:
       - 6g-network
@@ -50,6 +196,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/var/hyperledger/tls
+      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 7051:7051
     mem_limit: 100m
@@ -80,6 +227,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/var/hyperledger/tls
+      - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 8051:8051
     mem_limit: 100m
@@ -110,6 +258,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/var/hyperledger/tls
+      - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 9051:9051
     mem_limit: 100m
@@ -140,6 +289,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/var/hyperledger/tls
+      - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 10051:10051
     mem_limit: 100m
@@ -170,6 +320,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/var/hyperledger/tls
+      - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 11051:11051
     mem_limit: 100m
@@ -200,6 +351,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/var/hyperledger/tls
+      - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 12051:12051
     mem_limit: 100m
@@ -230,6 +382,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/var/hyperledger/tls
+      - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 13051:13051
     mem_limit: 100m
@@ -260,6 +413,7 @@ services:
       - /var/run:/host/var/run
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/var/hyperledger/msp
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/var/hyperledger/tls
+      - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 14051:14051
     mem_limit: 100m
