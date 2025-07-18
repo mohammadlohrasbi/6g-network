@@ -1,233 +1,230 @@
+name: 6g-fabric-network
+version: 1.0.0
+client:
+  organization: Org1MSP
+  credentialStore:
+    path: ./wallet
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+      orderer: '300'
 caliper:
   blockchain: fabric
   sut:
-    version: 2.5.0
     fabric:
-      network:
-        orderers:
-          - orderer1.example.com:7050
-        peers:
-          peer0.org1.example.com:
-            url: grpcs://165.232.71.90:7051
-            grpcOptions:
-              ssl-target-name-override: peer0.org1.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-          peer0.org2.example.com:
-            url: grpcs://165.232.71.90:8051
-            grpcOptions:
-              ssl-target-name-override: peer0.org2.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-          peer0.org3.example.com:
-            url: grpcs://165.232.71.90:9051
-            grpcOptions:
-              ssl-target-name-override: peer0.org3.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
-          peer0.org4.example.com:
-            url: grpcs://165.232.71.90:10051
-            grpcOptions:
-              ssl-target-name-override: peer0.org4.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls/ca.crt
-          peer0.org5.example.com:
-            url: grpcs://165.232.71.90:11051
-            grpcOptions:
-              ssl-target-name-override: peer0.org5.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls/ca.crt
-          peer0.org6.example.com:
-            url: grpcs://165.232.71.90:12051
-            grpcOptions:
-              ssl-target-name-override: peer0.org6.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls/ca.crt
-          peer0.org7.example.com:
-            url: grpcs://165.232.71.90:13051
-            grpcOptions:
-              ssl-target-name-override: peer0.org7.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls/ca.crt
-          peer0.org8.example.com:
-            url: grpcs://165.232.71.90:14051
-            grpcOptions:
-              ssl-target-name-override: peer0.org8.example.com
-            tlsCACerts:
-              path: crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls/ca.crt
-      client:
-        - organization: Org1MSP
-          credentialStore:
-            path: ./caliper-workspace/credentials
-          connection:
-            path: crypto-config/peerOrganizations/org1.example.com/connection-org1.yaml
+      gateway:
+        enabled: true
+        discovery: true
+        asLocalhost: false
+      chaincodes:
+        - id: LocationBasedAssignment
+          channel: GeneralOperationsChannel
+        - id: AuthenticateUser
+          channel: SecurityChannel
       channels:
-        - channelName: Org1Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org2Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org3Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org4Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org5Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org6Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org7Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
-        - channelName: Org8Channel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: AssignRole
-            - id: LogUserActivity
-            - id: TrackSession
         - channelName: GeneralOperationsChannel
-          contracts:
-            - id: LocationBasedAssignment
-            - id: LocationBasedAntennaConfig
-            - id: AssignRole
-            - id: GenerateReport
+          chaincodes:
+            - LocationBasedAssignment
+            - AssignRole
+            - GenerateReport
         - channelName: IoTChannel
-          contracts:
-            - id: LocationBasedIoTConnection
-            - id: LocationBasedIoTBandwidth
-            - id: LocationBasedIoTStatus
-            - id: LocationBasedIoTFault
-            - id: LocationBasedIoTSession
-            - id: LocationBasedIoTAuthentication
-            - id: LocationBasedIoTRegistration
-            - id: LocationBasedIoTRevocation
-            - id: LocationBasedIoTResource
-            - id: AuthenticateIoT
-            - id: ConnectIoT
-            - id: RegisterIoT
-            - id: RevokeIoT
-            - id: AllocateIoTBandwidth
-            - id: UpdateIoTStatus
-            - id: DetectIoTFault
-            - id: TrackIoTSession
-            - id: EncryptIoTData
+          chaincodes:
+            - LocationBasedIoTConnection
+            - LocationBasedIoTBandwidth
+            - LocationBasedIoTStatus
+            - LocationBasedIoTFault
+            - LocationBasedIoTSession
+            - LocationBasedIoTAuthentication
+            - LocationBasedIoTRegistration
+            - LocationBasedIoTRevocation
+            - LocationBasedIoTResource
+            - AuthenticateIoT
+            - ConnectIoT
+            - RegisterIoT
+            - RevokeIoT
+            - AllocateIoTBandwidth
+            - UpdateIoTStatus
+            - DetectIoTFault
+            - TrackIoTSession
+            - EncryptIoTData
         - channelName: SecurityChannel
-          contracts:
-            - id: AuthenticateUser
-            - id: RegisterUser
-            - id: RevokeUser
-            - id: EncryptData
-            - id: DetectIntrusion
-            - id: ManageKey
-            - id: AuthenticateAntenna
-            - id: CreateSecureChannel
+          chaincodes:
+            - AuthenticateUser
+            - RegisterUser
+            - RevokeUser
+            - EncryptData
+            - DetectIntrusion
+            - ManageKey
+            - AuthenticateAntenna
+            - CreateSecureChannel
         - channelName: AuditChannel
-          contracts:
-            - id: LocationBasedFault
-            - id: LocationBasedUserActivity
-            - id: LogIdentityAudit
-            - id: LogResourceAudit
-            - id: LogConnectionAudit
-            - id: LogSecurityAudit
-            - id: LogTransaction
-            - id: LogAccess
-            - id: LogNetworkAudit
+          chaincodes:
+            - LocationBasedFault
+            - LocationBasedUserActivity
+            - LogIdentityAudit
+            - LogResourceAudit
+            - LogConnectionAudit
+            - LogSecurityAudit
+            - LogTransaction
+            - LogAccess
+            - LogNetworkAudit
         - channelName: BillingChannel
-          contracts:
-            - id: GenerateBill
+          chaincodes:
+            - GenerateBill
         - channelName: ResourceChannel
-          contracts:
-            - id: LocationBasedBandwidth
-            - id: LocationBasedResourceAllocation
-            - id: RequestResource
-            - id: ShareSpectrum
-            - id: AllocateDynamic
-            - id: AllocateNetworkResource
+          chaincodes:
+            - LocationBasedBandwidth
+            - LocationBasedResourceAllocation
+            - RequestResource
+            - ShareSpectrum
+            - AllocateDynamic
+            - AllocateNetworkResource
         - channelName: PerformanceChannel
-          contracts:
-            - id: LocationBasedQoS
-            - id: LocationBasedTraffic
-            - id: LocationBasedLatency
-            - id: LocationBasedEnergy
-            - id: LocationBasedSignalStrength
-            - id: LocationBasedCoverage
-            - id: LocationBasedNetworkHealth
-            - id: LocationBasedNetworkPerformance
-            - id: UpdateAntennaLoad
-            - id: BalanceLoad
-            - id: TrackLatency
-            - id: MonitorEnergy
-            - id: DetectAntennaFault
-            - id: MonitorAntennaTraffic
-            - id: MonitorNetworkCongestion
-            - id: MonitorNetworkHealth
+          chaincodes:
+            - LocationBasedQoS
+            - LocationBasedTraffic
+            - LocationBasedLatency
+            - LocationBasedEnergy
+            - LocationBasedSignalStrength
+            - LocationBasedCoverage
+            - LocationBasedNetworkHealth
+            - LocationBasedNetworkPerformance
+            - UpdateAntennaLoad
+            - BalanceLoad
+            - TrackLatency
+            - MonitorEnergy
+            - DetectAntennaFault
+            - MonitorAntennaTraffic
+            - MonitorNetworkCongestion
+            - MonitorNetworkHealth
         - channelName: SessionChannel
-          contracts:
-            - id: LocationBasedSessionManagement
-            - id: TrackSession
-            - id: TrackIoTSession
+          chaincodes:
+            - LocationBasedSessionManagement
+            - TrackSession
+            - TrackIoTSession
         - channelName: ConnectivityChannel
-          contracts:
-            - id: LocationBasedConnection
-            - id: LocationBasedRoaming
-            - id: LocationBasedDynamicRouting
-            - id: LocationBasedChannelAllocation
-            - id: ConnectUser
-            - id: DisconnectEntity
-            - id: PerformRoaming
+          chaincodes:
+            - LocationBasedConnection
+            - LocationBasedRoaming
+            - LocationBasedDynamicRouting
+            - LocationBasedChannelAllocation
+            - ConnectUser
+            - DisconnectEntity
+            - PerformRoaming
         - channelName: PolicyChannel
-          contracts:
-            - id: LocationBasedPriority
-            - id: AssignGeneralPriority
-            - id: GrantAccess
-            - id: SetPolicy
-            - id: ManageNetworkPolicy
+          chaincodes:
+            - LocationBasedPriority
+            - AssignGeneralPriority
+            - GrantAccess
+            - SetPolicy
+            - ManageNetworkPolicy
+networks:
+  fabric:
+    - name: 6g-fabric-network
+      type: fabric
+      version: 2.5
+      mutual-tls: true
+      organizations:
+        - mspid: Org1MSP
+          peers:
+            - url: grpcs://165.232.71.90:7051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org1.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:7054
+              caName: ca-org1
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+        - mspid: Org2MSP
+          peers:
+            - url: grpcs://165.232.71.90:8051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org2.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:8054
+              caName: ca-org2
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org2.example.com/ca/ca.org2.example.com-cert.pem
+        - mspid: Org3MSP
+          peers:
+            - url: grpcs://165.232.71.90:9051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org3.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:9054
+              caName: ca-org3
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org3.example.com/ca/ca.org3.example.com-cert.pem
+        - mspid: Org4MSP
+          peers:
+            - url: grpcs://165.232.71.90:10051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org4.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:10054
+              caName: ca-org4
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org4.example.com/ca/ca.org4.example.com-cert.pem
+        - mspid: Org5MSP
+          peers:
+            - url: grpcs://165.232.71.90:11051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org5.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:11054
+              caName: ca-org5
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org5.example.com/ca/ca.org5.example.com-cert.pem
+        - mspid: Org6MSP
+          peers:
+            - url: grpcs://165.232.71.90:12051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org6.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:12054
+              caName: ca-org6
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org6.example.com/ca/ca.org6.example.com-cert.pem
+        - mspid: Org7MSP
+          peers:
+            - url: grpcs://165.232.71.90:13051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org7.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:13054
+              caName: ca-org7
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org7.example.com/ca/ca.org7.example.com-cert.pem
+        - mspid: Org8MSP
+          peers:
+            - url: grpcs://165.232.71.90:14051
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls/ca.crt
+              grpcOptions:
+                ssl-target-name-override: peer0.org8.example.com
+          certificateAuthorities:
+            - url: https://165.232.71.90:14054
+              caName: ca-org8
+              tlsCACerts:
+                path: crypto-config/peerOrganizations/org8.example.com/ca/ca.org8.example.com-cert.pem
+orderers:
+  - url: grpcs://165.232.71.90:7050
+    tlsCACerts:
+      path: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
+    grpcOptions:
+      ssl-target-name-override: orderer1.example.com
