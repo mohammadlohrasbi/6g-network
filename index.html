@@ -513,6 +513,8 @@
             .then(response => response.json())
             .then(result => {
                 if (result.message === 'Login successful') {
+                    localStorage.setItem('loggedIn', true);
+                    localStorage.setItem('username', username);
                     document.querySelector('.main-content').classList.add('logged-in');
                     document.getElementById('userInfo').innerText = `Logged in as ${username}`;
                     document.getElementById('logoutBtn').style.display = 'block';
@@ -534,6 +536,8 @@
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('loggedIn');
+            localStorage.removeItem('username');
             document.querySelector('.main-content').classList.remove('logged-in');
             document.getElementById('userInfo').innerText = '';
             document.getElementById('logoutBtn').style.display = 'none';
