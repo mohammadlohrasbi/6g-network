@@ -152,11 +152,15 @@ app.get('/network-stats', async (req, res) => {
     try {
         const { gateway, network } = await connectToNetwork(1, 'admin-org1');
         const contract = network.getContract('qscc');
-        const chainInfo = await contract.evaluateTransaction('GetChainInfo', 'GeneralOperationsChannel');
-        const blockCount = JSON.parse(chainInfo.toString()).height;
-        const txCount = (await contract.evaluateTransaction('GetBlockByNumber', 'GeneralOperationsChannel', '1')).data.transactions.length;
-        const tpsData = { labels: ['1m', '2m', '3m'], values: [5, 7, 6] }; // Placeholder, replace with real data
-        const latencyData = { labels: ['1m', '2m', '3m'], values: [10, 12, 11] }; // Placeholder
+        const chainInfo = JSON.parse((await contract.evaluateTransaction('GetChainInfo', 'GeneralOperationsChannel')).toString());
+        const blockCount = chainInfo.height;
+        let txCount = 0;
+        for (let i = 0; i < blockCount; i++) {
+            const block = JSON.parse((await contract.evaluateTransaction('GetBlockByNumber', 'GeneralOperationsChannel', i.toString())).toString());
+            txCount += block.data.transactions.length;
+        }
+        const tpsData = { labels: ['1m', '2m', '3m'], values: [5, 7, 6] }; // Replace with real data from Caliper
+        const latencyData = { labels: ['1m', '2m', '3m'], values: [10, 12, 11] }; // Replace with real data
         res.json({ blockCount, txCount, tpsData, latencyData });
         gateway.disconnect();
     } catch (error) {
