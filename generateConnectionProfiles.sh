@@ -2,6 +2,7 @@
 
 for org in {1..8}; do
     cat > crypto-config/peerOrganizations/org${org}.example.com/connection-org${org}.yaml <<EOF
+---
 name: 6g-fabric-network-org${org}
 version: 1.0.0
 client:
