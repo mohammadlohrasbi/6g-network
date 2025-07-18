@@ -1,14 +1,14 @@
 #!/bin/bash
 
-for org in {1..8}; do
-    cat > core-org${org}.yaml <<EOF
+for i in {1..8}; do
+    cat > core-org${i}.yaml <<EOF
 peer:
-  id: peer0.org${org}.example.com
+  id: peer0.org${i}.example.com
   networkId: 6g-fabric
-  listenAddress: 0.0.0.0:$((7051 + (org-1)*1000))
-  chaincodeListenAddress: 0.0.0.0:$((7052 + (org-1)*1000))
-  address: 165.232.71.90:$((7051 + (org-1)*1000))
-  localMspId: Org${org}MSP
+  listenAddress: 0.0.0.0:$((7051 + (i-1)*1000))
+  chaincodeListenAddress: 0.0.0.0:$((7052 + (i-1)*1000))
+  address: 165.232.71.90:$((7051 + (i-1)*1000))
+  localMspId: Org${i}MSP
   mspConfigPath: /var/hyperledger/msp
   tls:
     enabled: true
@@ -21,7 +21,14 @@ peer:
   fileSystemPath: /var/hyperledger/production
   ledger:
     state:
-      stateDatabase: LevelDB
+      stateDatabase: CouchDB
+      couchDBConfig:
+        couchDBAddress: couchdb-org${i}:$((5984 + (i-1)*1000))
+        username: admin
+        password: adminpw
+        maxRetries: 3
+        maxRetriesOnStartup: 10
+        requestTimeout: 35s
   logging:
     level: error
 EOF
