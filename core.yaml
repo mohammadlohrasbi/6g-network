@@ -1,0 +1,22 @@
+peer:
+  id: peer0.org1.example.com
+  networkId: 6g-fabric
+  listenAddress: 0.0.0.0:7051
+  chaincodeListenAddress: 0.0.0.0:7052
+  address: 165.232.71.90:7051
+  localMspId: Org1MSP
+  mspConfigPath: /var/hyperledger/msp
+  tls:
+    enabled: true
+    cert:
+      file: /var/hyperledger/tls/server.crt
+    key:
+      file: /var/hyperledger/tls/server.key
+    rootcert:
+      file: /var/hyperledger/tls/ca.crt
+  fileSystemPath: /var/hyperledger/production
+  ledger:
+    state:
+      stateDatabase: LevelDB
+  logging:
+    level: error
