@@ -11,17 +11,17 @@ contracts=(
     "LocationBasedIoTConnection" "LocationBasedIoTBandwidth" "LocationBasedIoTStatus"
     "LocationBasedIoTFault" "LocationBasedIoTSession" "LocationBasedIoTAuthentication"
     "LocationBasedIoTRegistration" "LocationBasedIoTRevocation" "LocationBasedIoTResource"
-    "LocationBasedNetworkPerformance" "LocationBasedUserActivity" "AuthenticateUser" "AuthenticateIoT"
-    "ConnectUser" "ConnectIoT" "RegisterUser" "RegisterIoT" "RevokeUser" "RevokeIoT" "AssignRole"
-    "GrantAccess" "LogIdentityAudit" "AllocateIoTBandwidth" "UpdateAntennaLoad" "RequestResource"
-    "ShareSpectrum" "AssignGeneralPriority" "LogResourceAudit" "BalanceLoad" "AllocateDynamic"
-    "UpdateAntennaStatus" "UpdateIoTStatus" "LogNetworkPerformance" "LogUserActivity"
-    "DetectAntennaFault" "DetectIoTFault" "MonitorAntennaTraffic" "GenerateReport" "TrackLatency"
-    "MonitorEnergy" "PerformRoaming" "TrackSession" "TrackIoTSession" "DisconnectEntity"
-    "GenerateBill" "LogTransaction" "LogConnectionAudit" "EncryptData" "EncryptIoTData" "LogAccess"
-    "DetectIntrusion" "ManageKey" "SetPolicy" "CreateSecureChannel" "LogSecurityAudit"
-    "AuthenticateAntenna" "MonitorNetworkCongestion" "AllocateNetworkResource" "MonitorNetworkHealth"
-    "ManageNetworkPolicy" "LogNetworkAudit"
+    "LocationBasedNetworkPerformance" "LocationBasedUserActivity"
+    "AuthenticateUser" "AuthenticateIoT" "ConnectUser" "ConnectIoT" "RegisterUser" "RegisterIoT"
+    "RevokeUser" "RevokeIoT" "AssignRole" "GrantAccess" "LogIdentityAudit" "AllocateIoTBandwidth"
+    "UpdateAntennaLoad" "RequestResource" "ShareSpectrum" "AssignGeneralPriority" "LogResourceAudit"
+    "BalanceLoad" "AllocateDynamic" "UpdateAntennaStatus" "UpdateIoTStatus" "LogNetworkPerformance"
+    "LogUserActivity" "DetectAntennaFault" "DetectIoTFault" "MonitorAntennaTraffic" "GenerateReport"
+    "TrackLatency" "MonitorEnergy" "PerformRoaming" "TrackSession" "TrackIoTSession"
+    "DisconnectEntity" "GenerateBill" "LogTransaction" "LogConnectionAudit" "EncryptData"
+    "EncryptIoTData" "LogAccess" "DetectIntrusion" "ManageKey" "SetPolicy" "CreateSecureChannel"
+    "LogSecurityAudit" "AuthenticateAntenna" "MonitorNetworkCongestion" "AllocateNetworkResource"
+    "MonitorNetworkHealth" "ManageNetworkPolicy" "LogNetworkAudit"
 )
 
 for contract in "${contracts[@]}"; do
@@ -32,8 +32,8 @@ package main
 import (
     "encoding/json"
     "fmt"
-    "github.com/hyperledger/fabric-contract-api-go/contractapi"
     "time"
+    "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
 type ${contract} struct {
@@ -43,9 +43,9 @@ type ${contract} struct {
 type Asset struct {
     EntityID   string \`json:"entityID"\`
     Value      string \`json:"value"\`
-    X          string \`json:"x"\`
-    Y          string \`json:"y"\`
-    Distance   string \`json:"distance"\`
+    X          string \`json:"x"\` // برای قراردادهای LocationBased*
+    Y          string \`json:"y"\` // برای قراردادهای LocationBased*
+    Distance   string \`json:"distance"\` // برای قراردادهای LocationBased*
     Timestamp  string \`json:"timestamp"\`
 }
 
@@ -85,6 +85,29 @@ func (s *${contract}) QueryAsset(ctx contractapi.TransactionContextInterface, en
     return &asset, nil
 }
 
+func (s *${contract}) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
+    resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+    if err != nil {
+        return nil, err
+    }
+    defer resultsIterator.Close()
+
+    var assets []*Asset
+    for resultsIterator.HasNext() {
+        queryResponse, err := resultsIterator.Next()
+        if err != nil {
+            return nil, err
+        }
+        var asset Asset
+        err = json.Unmarshal(queryResponse.Value, &asset)
+        if err != nil {
+            return nil, err
+        }
+        assets = append(assets, &asset)
+    }
+    return assets, nil
+}
+
 func main() {
     chaincode, err := contractapi.NewChaincode(&${contract}{})
     if err != nil {
@@ -95,4 +118,13 @@ func main() {
     }
 }
 EOF
+done
+
+echo "Generated chaincode for ${#contracts[@]} contracts:"
+for contract in "${contracts[@]}"; do
+    if [ -f "chaincode/$contract/chaincode.go" ]; then
+        echo " - $contract: OK"
+    else
+        echo " - $contract: Failed"
+    fi
 done
