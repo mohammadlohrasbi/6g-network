@@ -7,22 +7,34 @@ test:
   rounds:
     - label: invoke
       description: Test invoke performance
-      txNumber: 50
+      txNumber: 100
       rateControl:
         type: fixed-rate
         opts:
-          tps: 5
+          tps: 10
       workload:
         module: workload/LocationBasedAssignment.js
+        arguments:
+          centerX: 0
+          centerY: 0
+          sideLength: 100
+          users: 10
+          iot: 5
     - label: query
       description: Test query performance
-      txNumber: 50
+      txNumber: 100
       rateControl:
         type: fixed-rate
         opts:
-          tps: 5
+          tps: 10
       workload:
         module: workload/LocationBasedAssignment.js
+        arguments:
+          centerX: 0
+          centerY: 0
+          sideLength: 100
+          users: 10
+          iot: 5
   monitors:
     resource:
       - module: docker
@@ -31,10 +43,18 @@ test:
           containers:
             - orderer1.example.com
             - peer0.org1.example.com
+            - couchdb-org1
             - peer0.org2.example.com
+            - couchdb-org2
             - peer0.org3.example.com
+            - couchdb-org3
             - peer0.org4.example.com
+            - couchdb-org4
             - peer0.org5.example.com
+            - couchdb-org5
             - peer0.org6.example.com
+            - couchdb-org6
             - peer0.org7.example.com
+            - couchdb-org7
             - peer0.org8.example.com
+            - couchdb-org8
