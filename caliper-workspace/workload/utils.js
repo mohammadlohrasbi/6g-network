@@ -12,4 +12,10 @@ const generateRandomCoords = (centerX = 0, centerY = 0, sideLength = 100, seed =
     return { x, y };
 };
 
-module.exports = { generateRandomID, generateRandomCoords };
+const calculateDistance = (x1, y1, x2, y2) => {
+    const dx = parseFloat(x2) - parseFloat(x1);
+    const dy = parseFloat(y2) - parseFloat(y1);
+    return Math.sqrt(dx * dx + dy * dy).toFixed(4);
+};
+
+module.exports = { generateRandomID, generateRandomCoords, calculateDistance };
