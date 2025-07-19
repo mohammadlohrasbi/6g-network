@@ -26,8 +26,8 @@ class LocationBasedAssignmentWorkload extends WorkloadModuleBase {
         const { x, y } = generateRandomCoords(this.centerX, this.centerY, this.sideLength);
         const args = {
             contractId: this.chaincodeID,
-            contractFunction: 'CreateAsset',
-            contractArguments: [entityID, antennaID, x, y, '100'],
+            contractFunction: 'AssignAntenna',
+            contractArguments: [entityID, antennaID, x, y],
             readOnly: false
         };
         await this.sutAdapter.sendRequests({
