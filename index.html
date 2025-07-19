@@ -14,6 +14,8 @@
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .chart-container { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); padding: 20px; }
         .tooltip { position: absolute; background: rgba(0, 0, 0, 0.8); color: white; padding: 8px; border-radius: 4px; pointer-events: none; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body>
@@ -22,4 +24,225 @@
         const { useState, useEffect } = React;
 
         const contracts = [
-            "LocationBasedAssignment", "Location
+            "LocationBasedAssignment", "LocationBasedConnection", "LocationBasedBandwidth", "LocationBasedQoS",
+            "LocationBasedPriority", "LocationBasedStatus", "LocationBasedFault", "LocationBasedTraffic",
+            "LocationBasedLatency", "LocationBasedEnergy", "LocationBasedRoaming", "LocationBasedSignalStrength",
+            "LocationBasedCoverage", "LocationBasedInterference", "LocationBasedResourceAllocation",
+            "LocationBasedNetworkLoad", "LocationBasedCongestion", "LocationBasedDynamicRouting",
+            "LocationBasedAntennaConfig", "LocationBasedSignalQuality", "LocationBasedNetworkHealth",
+            "LocationBasedPowerManagement", "LocationBasedChannelAllocation", "LocationBasedSessionManagement",
+            "LocationBasedIoTConnection", "LocationBasedIoTBandwidth", "LocationBasedIoTStatus",
+            "LocationBasedIoTFault", "LocationBasedIoTSession", "LocationBasedIoTAuthentication",
+            "LocationBasedIoTRegistration", "LocationBasedIoTRevocation", "LocationBasedIoTResource",
+            "LocationBasedNetworkPerformance", "LocationBasedUserActivity",
+            "AuthenticateUser", "AuthenticateIoT", "ConnectUser", "ConnectIoT", "RegisterUser", "RegisterIoT",
+            "RevokeUser", "RevokeIoT", "AssignRole", "GrantAccess", "LogIdentityAudit", "AllocateIoTBandwidth",
+            "UpdateAntennaLoad", "RequestResource", "ShareSpectrum", "AssignGeneralPriority", "LogResourceAudit",
+            "BalanceLoad", "AllocateDynamic", "UpdateAntennaStatus", "UpdateIoTStatus", "LogNetworkPerformance",
+            "LogUserActivity", "DetectAntennaFault", "DetectIoTFault", "MonitorAntennaTraffic", "GenerateReport",
+            "TrackLatency", "MonitorEnergy", "PerformRoaming", "TrackSession", "TrackIoTSession",
+            "DisconnectEntity", "GenerateBill", "LogTransaction", "LogConnectionAudit", "EncryptData",
+            "EncryptIoTData", "LogAccess", "DetectIntrusion", "ManageKey", "SetPolicy", "CreateSecureChannel",
+            "LogSecurityAudit", "AuthenticateAntenna", "MonitorNetworkCongestion", "AllocateNetworkResource",
+            "MonitorNetworkHealth", "ManageNetworkPolicy", "LogNetworkAudit"
+        ];
+        const channels = [
+            "GeneralOperationsChannel", "IoTChannel", "SecurityChannel", "AuditChannel", "BillingChannel",
+            "ResourceChannel", "PerformanceChannel", "SessionChannel", "ConnectivityChannel", "PolicyChannel",
+            "Org1Channel", "Org2Channel", "Org3Channel", "Org4Channel", "Org5Channel", "Org6Channel",
+            "Org7Channel", "Org8Channel"
+        ];
+
+        const NetworkMap = () => {
+            const [entities, setEntities] = useState([]);
+            const [centerX, setCenterX] = useState(0);
+            const [centerY, setCenterY] = useState(0);
+            const [sideLength, setSideLength] = useState(100);
+
+            useEffect(() => {
+                fetch('/api/entities')
+                    .then(res => res.json())
+                    .then(data => setEntities(data))
+                    .catch(err => console.error('Error fetching entities:', err));
+
+                const svg = d3.select('#network-map')
+                    .attr('width', 600)
+                    .attr('height', 600)
+                    .style('background', '#e5e7eb')
+                    .style('border-radius', '8px');
+
+                const xScale = d3.scaleLinear()
+                    .domain([centerX - sideLength / 2, centerX + sideLength / 2])
+                    .range([50, 550]);
+                const yScale = d3.scaleLinear()
+                    .domain([centerY - sideLength / 2, centerY + sideLength / 2])
+                    .range([550, 50]);
+
+                const tooltip = d3.select('body').append('div').attr('class', 'tooltip').style('opacity', 0);
+
+                svg.selectAll('circle')
+                    .data(entities)
+                    .enter()
+                    .append('circle')
+                    .attr('cx', d => xScale(d.x))
+                    .attr('cy', d => yScale(d.y))
+                    .attr('r', d => d.type === 'Antenna' ? 10 : 5)
+                    .attr('fill', d => d.type === 'Antenna' ? '#ef4444' : d.type === 'User' ? '#3b82f6' : '#10b981')
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 2)
+                    .on('mouseover', (event, d) => {
+                        tooltip.transition().duration(200).style('opacity', 0.9);
+                        tooltip.html(`ID: ${d.id}<br>Type: ${d.type}<br>X: ${d.x}<br>Y: ${d.y}`)
+                            .style('left', (event.pageX + 10) + 'px')
+                            .style('top', (event.pageY - 28) + 'px');
+                    })
+                    .on('mouseout', () => tooltip.transition().duration(500).style('opacity', 0));
+
+                svg.append('rect')
+                    .attr('x', xScale(centerX - sideLength / 2))
+                    .attr('y', yScale(centerY + sideLength / 2))
+                    .attr('width', xScale(centerX + sideLength / 2) - xScale(centerX - sideLength / 2))
+                    .attr('height', yScale(centerY - sideLength / 2) - yScale(centerY + sideLength / 2))
+                    .attr('fill', 'none')
+                    .attr('stroke', '#1f2937')
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '5,5');
+            }, [entities, centerX, centerY, sideLength]);
+
+            return (
+                <div className="chart-container">
+                    <h2 className="text-2xl font-bold mb-4">Network Map</h2>
+                    <div className="flex gap-4 mb-4">
+                        <input
+                            type="number"
+                            value={centerX}
+                            onChange={e => setCenterX(parseFloat(e.target.value))}
+                            placeholder="Center X"
+                            className="border p-2 rounded"
+                        />
+                        <input
+                            type="number"
+                            value={centerY}
+                            onChange={e => setCenterY(parseFloat(e.target.value))}
+                            placeholder="Center Y"
+                            className="border p-2 rounded"
+                        />
+                        <input
+                            type="number"
+                            value={sideLength}
+                            onChange={e => setSideLength(parseFloat(e.target.value))}
+                            placeholder="Side Length (km)"
+                            className="border p-2 rounded"
+                        />
+                    </div>
+                    <svg id="network-map"></svg>
+                </div>
+            );
+        };
+
+        const TestSettings = () => {
+            const [status, setStatus] = useState('');
+            const runTest = async () => {
+                setStatus('Running test...');
+                const testConfig = {
+                    contract: document.getElementById('contract').value,
+                    channel: document.getElementById('channel').value,
+                    tps: parseInt(document.getElementById('tps').value) || 10,
+                    txNumber: parseInt(document.getElementById('txNumber').value) || 100,
+                    users: parseInt(document.getElementById('users').value) || 10,
+                    iot: parseInt(document.getElementById('iot').value) || 5,
+                    centerX: parseFloat(document.getElementById('centerX').value) || 0,
+                    centerY: parseFloat(document.getElementById('centerY').value) || 0,
+                    sideLength: parseFloat(document.getElementById('sideLength').value) || 100
+                };
+                try {
+                    const response = await fetch('/api/run-test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(testConfig)
+                    });
+                    const result = await response.json();
+                    setStatus(result.message);
+                } catch (err) {
+                    setStatus(`Error: ${err.message}`);
+                }
+            };
+
+            return (
+                <div className="chart-container mt-6">
+                    <h2 className="text-2xl font-bold mb-4">Test Settings</h2>
+                    <div className="flex gap-4 mb-4">
+                        <select id="contract" className="border p-2 rounded">
+                            {contracts.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <select id="channel" className="border p-2 rounded">
+                            {channels.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <input type="number" id="tps" placeholder="TPS (1-50)" className="border p-2 rounded" min="1" max="50" />
+                        <input type="number" id="txNumber" placeholder="Transactions (10-1000)" className="border p-2 rounded" min="10" max="1000" />
+                        <input type="number" id="users" placeholder="Users (1-50)" className="border p-2 rounded" min="1" max="50" />
+                        <input type="number" id="iot" placeholder="IoT Devices (1-50)" className="border p-2 rounded" min="1" max="50" />
+                        <input type="number" id="centerX" placeholder="Center X" className="border p-2 rounded" />
+                        <input type="number" id="centerY" placeholder="Center Y" className="border p-2 rounded" />
+                        <input type="number" id="sideLength" placeholder="Side Length (km)" className="border p-2 rounded" />
+                    </div>
+                    <button onClick={runTest} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Run Test</button>
+                    <p className="mt-2">{status}</p>
+                </div>
+            );
+        };
+
+        const Dashboard = () => {
+            const [stats, setStats] = useState({ blocks: 0, transactions: 0, channels: 18, chaincodes: 85 });
+            useEffect(() => {
+                fetch('/api/stats')
+                    .then(res => res.json())
+                    .then(data => setStats(data))
+                    .catch(err => console.error('Error fetching stats:', err));
+            }, []);
+
+            return (
+                <div className="dashboard-grid">
+                    <div className="card">
+                        <h3 className="text-lg font-bold">Blocks</h3>
+                        <p>{stats.blocks}</p>
+                    </div>
+                    <div className="card">
+                        <h3 className="text-lg font-bold">Transactions</h3>
+                        <p>{stats.transactions}</p>
+                    </div>
+                    <div className="card">
+                        <h3 className="text-lg font-bold">Channels</h3>
+                        <p>{stats.channels}</p>
+                    </div>
+                    <div className="card">
+                        <h3 className="text-lg font-bold">Chaincodes</h3>
+                        <p>{stats.chaincodes}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold mb-6">6G Fabric Network Dashboard</h1>
+                    <Dashboard />
+                    <NetworkMap />
+                    <TestSettings />
+                    <div className="chart-container mt-6">
+                        <h2 className="text-2xl font-bold mb-4">Blocks & Transactions</h2>
+                        {/* نمایش بلاک‌ها و تراکنش‌ها مشابه Hyperledger Explorer */}
+                    </div>
+                    <div className="chart-container mt-6">
+                        <h2 className="text-2xl font-bold mb-4">Reports</h2>
+                        {/* نمایش گزارش‌های Caliper و Tape */}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
