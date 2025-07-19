@@ -27,6 +27,7 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+
   ca-org1.example.com:
     container_name: ca-org1.example.com
     image: hyperledger/fabric-ca:1.5
@@ -45,132 +46,20 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
-  ca-org2.example.com:
-    container_name: ca-org2.example.com
-    image: hyperledger/fabric-ca:1.5
+
+  couchdb-org1:
+    container_name: couchdb-org1
+    image: hyperledger/fabric-couchdb:0.4.20
     environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org2
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=8054
-    volumes:
-      - ./crypto-config/peerOrganizations/org2.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
     ports:
-      - 8054:8054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+      - 5984:5984
     mem_limit: 100m
     networks:
       - 6g-network
-  ca-org3.example.com:
-    container_name: ca-org3.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org3
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=9054
-    volumes:
-      - ./crypto-config/peerOrganizations/org3.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 9054:9054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-  ca-org4.example.com:
-    container_name: ca-org4.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org4
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org4.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=10054
-    volumes:
-      - ./crypto-config/peerOrganizations/org4.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 10054:10054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-  ca-org5.example.com:
-    container_name: ca-org5.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org5
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org5.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=11054
-    volumes:
-      - ./crypto-config/peerOrganizations/org5.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 11054:11054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-  ca-org6.example.com:
-    container_name: ca-org6.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org6
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org6.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=12054
-    volumes:
-      - ./crypto-config/peerOrganizations/org6.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 12054:12054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-  ca-org7.example.com:
-    container_name: ca-org7.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org7
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org7.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=13054
-    volumes:
-      - ./crypto-config/peerOrganizations/org7.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 13054:13054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-  ca-org8.example.com:
-    container_name: ca-org8.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org8
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org8.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=14054
-    volumes:
-      - ./crypto-config/peerOrganizations/org8.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 14054:14054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
+
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -189,7 +78,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org1:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -202,6 +97,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org1
+
+  ca-org2.example.com:
+    container_name: ca-org2.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org2
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=8054
+    volumes:
+      - ./crypto-config/peerOrganizations/org2.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 8054:8054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org2:
+    container_name: couchdb-org2
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 6984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -220,7 +150,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org2:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -233,6 +169,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org2
+
+  ca-org3.example.com:
+    container_name: ca-org3.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org3
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=9054
+    volumes:
+      - ./crypto-config/peerOrganizations/org3.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 9054:9054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org3:
+    container_name: couchdb-org3
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 7984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
@@ -251,7 +222,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org3:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -264,6 +241,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org3
+
+  ca-org4.example.com:
+    container_name: ca-org4.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org4
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org4.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=10054
+    volumes:
+      - ./crypto-config/peerOrganizations/org4.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 10054:10054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org4:
+    container_name: couchdb-org4
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 8984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
@@ -282,7 +294,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org4:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -295,6 +313,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org4
+
+  ca-org5.example.com:
+    container_name: ca-org5.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org5
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org5.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=11054
+    volumes:
+      - ./crypto-config/peerOrganizations/org5.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 11054:11054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org5:
+    container_name: couchdb-org5
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 9984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
@@ -313,7 +366,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org5:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -326,6 +385,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org5
+
+  ca-org6.example.com:
+    container_name: ca-org6.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org6
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org6.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=12054
+    volumes:
+      - ./crypto-config/peerOrganizations/org6.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 12054:12054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org6:
+    container_name: couchdb-org6
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 10984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
@@ -344,7 +438,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org6:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -357,6 +457,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org6
+
+  ca-org7.example.com:
+    container_name: ca-org7.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org7
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org7.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=13054
+    volumes:
+      - ./crypto-config/peerOrganizations/org7.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 13054:13054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org7:
+    container_name: couchdb-org7
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 11984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
@@ -375,7 +510,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org7:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -388,6 +529,41 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org7
+
+  ca-org8.example.com:
+    container_name: ca-org8.example.com
+    image: hyperledger/fabric-ca:1.5
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org8
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org8.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=14054
+    volumes:
+      - ./crypto-config/peerOrganizations/org8.example.com/ca:/etc/hyperledger/fabric-ca-server-config
+    ports:
+      - 14054:14054
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
+  couchdb-org8:
+    container_name: couchdb-org8
+    image: hyperledger/fabric-couchdb:0.4.20
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_MAX_MEMORY=50m
+    ports:
+      - 12984:5984
+    mem_limit: 100m
+    networks:
+      - 6g-network
+
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
@@ -406,7 +582,13 @@ services:
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
       - FABRIC_LOGGING_SPEC=ERROR
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=LevelDB
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org8:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     volumes:
@@ -419,6 +601,9 @@ services:
     mem_limit: 100m
     networks:
       - 6g-network
+    depends_on:
+      - couchdb-org8
+
 networks:
   6g-network:
     driver: bridge
