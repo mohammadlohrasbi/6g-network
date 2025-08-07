@@ -1,72 +1,75 @@
 #!/bin/bash
 
-contracts=(
-    "LocationBasedAssignment" "LocationBasedConnection" "LocationBasedBandwidth" "LocationBasedQoS"
-    "LocationBasedPriority" "LocationBasedStatus" "LocationBasedFault" "LocationBasedTraffic"
-    "LocationBasedLatency" "LocationBasedEnergy" "LocationBasedRoaming" "LocationBasedSignalStrength"
-    "LocationBasedCoverage" "LocationBasedInterference" "LocationBasedResourceAllocation"
-    "LocationBasedNetworkLoad" "LocationBasedCongestion" "LocationBasedDynamicRouting"
-    "LocationBasedAntennaConfig" "LocationBasedSignalQuality" "LocationBasedNetworkHealth"
-    "LocationBasedPowerManagement" "LocationBasedChannelAllocation" "LocationBasedSessionManagement"
-    "LocationBasedIoTConnection" "LocationBasedIoTBandwidth" "LocationBasedIoTStatus"
-    "LocationBasedIoTFault" "LocationBasedIoTSession" "LocationBasedIoTAuthentication"
-    "LocationBasedIoTRegistration" "LocationBasedIoTRevocation" "LocationBasedIoTResource"
-    "LocationBasedNetworkPerformance" "LocationBasedUserActivity" "AuthenticateUser" "AuthenticateIoT"
-    "ConnectUser" "ConnectIoT" "RegisterUser" "RegisterIoT" "RevokeUser" "RevokeIoT" "AssignRole"
-    "GrantAccess" "LogIdentityAudit" "AllocateIoTBandwidth" "UpdateAntennaLoad" "RequestResource"
-    "ShareSpectrum" "AssignGeneralPriority" "LogResourceAudit" "BalanceLoad" "AllocateDynamic"
-    "UpdateAntennaStatus", "UpdateIoTStatus" "LogNetworkPerformance" "LogUserActivity"
-    "DetectAntennaFault" "DetectIoTFault" "MonitorAntennaTraffic" "GenerateReport" "TrackLatency"
-    "MonitorEnergy" "PerformRoaming" "TrackSession" "TrackIoTSession" "DisconnectEntity"
-    "GenerateBill" "LogTransaction" "LogConnectionAudit" "EncryptData" "EncryptIoTData" "LogAccess"
-    "DetectIntrusion" "ManageKey" "SetPolicy" "CreateSecureChannel" "LogSecurityAudit"
-    "AuthenticateAntenna" "MonitorNetworkCongestion" "AllocateNetworkResource" "MonitorNetworkHealth"
-    "ManageNetworkPolicy" "LogNetworkAudit"
-)
-
-for contract in "${contracts[@]}"; do
-    cat > caliper-workspace/workload/${contract}.js <<EOF
-'use strict';
-
-const { WorkloadModuleBase } = require('@hyperledger/caliper-core');
-const { generateRandomID, generateRandomCoords } = require('./utils.js');
-
-class ${contract}Workload extends WorkloadModuleBase {
-    constructor() {
-        super();
-        this.chaincodeID = '${contract}';
-        this.channel = 'GeneralOperationsChannel';
+# تولید فایل‌های بار کاری
+mkdir -p test/workloads
+cat > test/workloads/workload.json <<EOF
+{
+  "numUsers": 50,
+  "numTx": 1000,
+  "targetTPS": 50,
+  "contracts": [
+    {
+      "channel": "IoTChannel",
+      "contract": "LocationBasedIoTBandwidth",
+      "function": "AllocateIoTBandwidth",
+      "argsTemplate": ["iot{id}", "Antenna{rand:10}", "{rand:100}Mbps", "{rand:180:-90}", "{rand:360:-180}"]
+    },
+    {
+      "channel": "AuditChannel",
+      "contract": "LogPerformanceAudit",
+      "function": "Log",
+      "argsTemplate": ["entity{id}", "Latency", "{rand:100}ms"]
+    },
+    {
+      "channel": "NetworkChannel",
+      "contract": "AssetManagement",
+      "function": "CreateAsset",
+      "argsTemplate": ["asset{id}", "Network", "{rand:1000}"]
+    },
+    {
+      "channel": "AuthChannel",
+      "contract": "AuthenticateUser",
+      "function": "Authenticate",
+      "argsTemplate": ["user{id}", "password{rand:1000}"]
+    },
+    {
+      "channel": "SecurityChannel",
+      "contract": "EncryptData",
+      "function": "Encrypt",
+      "argsTemplate": ["entity{id}", "data{rand:1000}"]
+    },
+    {
+      "channel": "ResourceChannel",
+      "contract": "LocationBasedResource",
+      "function": "Allocate",
+      "argsTemplate": ["entity{id}", "resource{rand:1000}", "{rand:100}", "{rand:180:-90}", "{rand:360:-180}"]
+    },
+    {
+      "channel": "PerformanceChannel",
+      "contract": "LogPerformance",
+      "function": "Log",
+      "argsTemplate": ["entity{id}", "Performance", "{rand:100}"]
+    },
+    {
+      "channel": "SessionChannel",
+      "contract": "LogSession",
+      "function": "Log",
+      "argsTemplate": ["session{id}", "start", "{rand:1000}"]
+    },
+    {
+      "channel": "PolicyChannel",
+      "contract": "SetPolicy",
+      "function": "Set",
+      "argsTemplate": ["policy{id}", "rule{rand:1000}"]
+    },
+    {
+      "channel": "MonitoringChannel",
+      "contract": "MonitorNetwork",
+      "function": "Monitor",
+      "argsTemplate": ["network{id}", "{rand:100}"]
     }
-
-    async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
-        await super.initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext);
-    }
-
-    async submitTransaction() {
-        const entityID = generateRandomID('user', 1000);
-        const antennaID = generateRandomID('Antenna', 100);
-        const { x, y } = generateRandomCoords();
-        const args = {
-            contractId: this.chaincodeID,
-            contractFunction: 'CreateAsset',
-            contractArguments: [entityID, antennaID, x, y, '100'],
-            readOnly: false
-        };
-        await this.sutAdapter.sendRequests({
-            contractId: this.chaincodeID,
-            channel: this.channel,
-            args: args,
-            timeout: 30
-        });
-    }
-
-    async cleanupWorkloadModule() {}
+  ]
 }
-
-function createWorkloadModule() {
-    return new ${contract}Workload();
-}
-
-module.exports.createWorkloadModule = createWorkloadModule;
 EOF
-done
+
+echo "Generated test/workloads/workload.json"
