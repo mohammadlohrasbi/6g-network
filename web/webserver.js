@@ -1,130 +1,56 @@
 const express = require('express');
-const { Wallets, Gateway } = require('fabric-network');
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
+const { invokeContract, queryContract } = require('./utils.js');
 const app = express();
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 app.use(express.json());
 
-async function connectToNetwork(org, username, channelName) {
-    const walletPath = path.join(__dirname, 'wallet');
-    const wallet = await Wallets.newFileSystemWallet(walletPath);
-    const connectionProfile = JSON.parse(fs.readFileSync(`crypto-config/peerOrganizations/org${org}.example.com/connection-org${org}.json`, 'utf8'));
-    const gateway = new Gateway();
-    await gateway.connect(connectionProfile, {
-        wallet,
-        identity: username,
-        discovery: { enabled: false }
-    });
-    return { gateway, network: await gateway.getNetwork(channelName) };
-}
-
-app.get('/api/entities', async (req, res) => {
+app.post('/invoke', async (req, res) => {
+    const { channelName, contractName, functionName, orgNumber, args } = req.body;
     try {
-        const { gateway, network } = await connectToNetwork(1, 'admin-org1', 'GeneralOperationsChannel');
-        const contract = network.getContract('LocationBasedAssignment');
-        const result = await contract.evaluateTransaction('QueryAllAssets');
-        const entities = JSON.parse(result.toString()).map(asset => ({
-            id: asset.EntityID,
-            type: asset.EntityID.startsWith('Antenna') ? 'Antenna' : asset.EntityID.startsWith('user') ? 'User' : 'IoT',
-            x: parseFloat(asset.X),
-            y: parseFloat(asset.Y)
-        }));
-        gateway.disconnect();
-        res.json(entities);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        const result = await invokeContract(channelName, contractName, functionName, orgNumber || 1, ...args);
+        res.json({ status: 'success', result });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
     }
 });
 
-app.get('/api/stats', async (req, res) => {
+app.get('/query', async (req, res) => {
+    const { channelName, contractName, functionName, orgNumber, args } = req.query;
     try {
-        const { gateway, network } = await connectToNetwork(1, 'admin-org1', 'GeneralOperationsChannel');
-        const channel = network.getChannel();
-        const chainInfo = await channel.queryInfo();
-        const blocks = parseInt(chainInfo.height.low);
-        const transactions = parseInt(chainInfo.currentBlockHash.length); // تقریبی
-        gateway.disconnect();
-        res.json({ blocks, transactions, channels: 18, chaincodes: 85 });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        const result = await queryContract(channelName, contractName, functionName, orgNumber || 1, ...args);
+        res.json({ status: 'success', result });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
     }
 });
 
-app.post('/api/run-test', async (req, res) => {
-    const { contract, channel, tps, txNumber, users, iot, centerX, centerY, sideLength } = req.body;
-    const benchmarkConfig = `
-test:
-  name: 6g-fabric-benchmark
-  description: Benchmark for 6G Fabric Network
-  workers:
-    type: local
-    number: 1
-  rounds:
-    - label: invoke
-      description: Test invoke performance
-      txNumber: ${txNumber}
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: ${tps}
-      workload:
-        module: workload/${contract}.js
-        arguments:
-          centerX: ${centerX}
-          centerY: ${centerY}
-          sideLength: ${sideLength}
-          users: ${users}
-          iot: ${iot}
-    - label: query
-      description: Test query performance
-      txNumber: ${txNumber}
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: ${tps}
-      workload:
-        module: workload/${contract}.js
-        arguments:
-          centerX: ${centerX}
-          centerY: ${centerY}
-          sideLength: ${sideLength}
-          users: ${users}
-          iot: ${iot}
-  monitors:
-    resource:
-      - module: docker
-        options:
-          interval: 1
-          containers:
-            - orderer1.example.com
-            - peer0.org1.example.com
-            - couchdb-org1
-            - peer0.org2.example.com
-            - couchdb-org2
-            - peer0.org3.example.com
-            - couchdb-org3
-            - peer0.org4.example.com
-            - couchdb-org4
-            - peer0.org5.example.com
-            - couchdb-org5
-            - peer0.org6.example.com
-            - couchdb-org6
-            - peer0.org7.example.com
-            - couchdb-org7
-            - peer0.org8.example.com
-            - couchdb-org8
-`;
-    fs.writeFileSync('caliper-workspace/benchmarks/myAssetBenchmark.yaml', benchmarkConfig);
-    exec('cd caliper-workspace && npx caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/myAssetBenchmark.yaml', (err, stdout, stderr) => {
-        if (err) {
-            res.status(500).json({ error: stderr });
-            return;
-        }
-        res.json({ message: 'Test started', log: stdout });
-    });
+app.get('/contracts', (req, res) => {
+    const contracts = [
+        'AssetManagement', 'UserManagement', 'IoTManagement', 'AntennaManagement', 'NetworkManagement',
+        'ResourceManagement', 'PerformanceManagement', 'SessionManagement', 'PolicyManagement',
+        'LocationBasedAccess', 'LocationBasedResource', 'LocationBasedPerformance', 'LocationBasedSession',
+        'LocationBasedPolicy', 'LocationBasedConnectivity', 'LocationBasedAudit', 'LocationBasedSecurity',
+        'LocationBasedNetwork', 'LocationBasedCongestion', 'LocationBasedIoTConnection',
+        'LocationBasedIoTPerformance', 'LocationBasedIoTSecurity', 'LocationBasedIoTAudit',
+        'LocationBasedIoTAccess', 'LocationBasedIoTResource', 'LocationBasedIoTNetwork',
+        'LocationBasedIoTActivity', 'LocationBasedIoTBandwidth', 'LocationBasedIoTStatus',
+        'LocationBasedIoTFault', 'LocationBasedIoTSession', 'LocationBasedIoTAuthentication',
+        'LocationBasedIoTRegistration', 'LocationBasedIoTRevocation', 'LocationBasedIoTResource',
+        'LocationBasedUserActivity', 'AuthenticateUser', 'AuthenticateIoT', 'ConnectUser', 'ConnectIoT',
+        'RegisterUser', 'RegisterIoT', 'RevokeUser', 'RevokeIoT', 'AssignRole', 'MonitorNetwork',
+        'MonitorIoT', 'LogFault', 'LogPerformance', 'LogSession', 'LogTraffic', 'LogInterference',
+        'LogResourceAudit', 'BalanceLoad', 'AllocateResource', 'OptimizeNetwork', 'ManageSession',
+        'LogNetworkPerformance', 'LogUserActivity', 'LogIoTActivity', 'LogSessionAudit',
+        'LogConnectionAudit', 'EncryptData', 'DecryptData', 'SecureCommunication', 'VerifyIdentity',
+        'SetPolicy', 'GetPolicy', 'UpdatePolicy', 'LogPolicyAudit', 'ManageNetwork', 'ManageAntenna',
+        'ManageIoTDevice', 'ManageUser', 'MonitorTraffic', 'MonitorInterference', 'MonitorResourceUsage',
+        'LogSecurityEvent', 'LogAccessControl', 'LogNetworkAudit', 'LogAntennaAudit', 'LogIoTAudit',
+        'LogUserAudit', 'LogPolicyChange', 'LogAccessAudit', 'LogPerformanceAudit', 'LogComplianceAudit'
+    ];
+    res.json({ contracts });
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+});
