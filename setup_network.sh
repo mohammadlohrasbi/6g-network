@@ -1,109 +1,140 @@
 #!/bin/bash
 
-# تولید گواهی‌های رمزنگاری
-cryptogen generate --config=./crypto-config.yaml
+# تعداد سازمان‌ها (قابل تنظیم)
+ORG_COUNT=${ORG_COUNT:-3}
 
-# تولید فایل‌های core.yaml
-./generateCoreyamls.sh
+# لیست 20 کانال
+CHANNELS=("NetworkChannel" "ResourceChannel" "PerformanceChannel" "IoTChannel" "AuthChannel" "ConnectivityChannel" "SessionChannel" "PolicyChannel" "AuditChannel" "SecurityChannel" "DataChannel" "AnalyticsChannel" "MonitoringChannel" "ManagementChannel" "OptimizationChannel" "FaultChannel" "TrafficChannel" "AccessChannel" "ComplianceChannel" "IntegrationChannel")
 
-# تولید فایل‌های connection profile (yaml و json)
-./generateConnectionProfiles.sh
-./generateConnectionJson.sh
+# تنظیم متغیرهای محیطی برای Org1 (برای ایجاد کانال‌ها)
+export FABRIC_CFG_PATH=${PWD}/config
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
 
-# تولید بلاک جنسیس و فایل‌های کانال
-configtxgen -profile NetworkGenesis -outputBlock ./genesis.block
-for channel in Org1Channel Org2Channel Org3Channel Org4Channel Org5Channel Org6Channel Org7Channel Org8Channel GeneralOperationsChannel IoTChannel SecurityChannel AuditChannel BillingChannel ResourceChannel PerformanceChannel SessionChannel ConnectivityChannel PolicyChannel; do
-    configtxgen -profile $channel -outputCreateChannelTx ./${channel}.tx -channelID $channel
-done
-
-# راه‌اندازی شبکه
-docker-compose -f docker-compose.yml up -d
-
-# ثبت کاربران admin برای CAها
-for org in {1..8}; do
-    docker exec ca-org${org}.example.com fabric-ca-client register --caname ca-org${org} --id.name admin-org${org} --id.secret adminpw --id.type admin --url https://165.232.71.90:$((7054 + (org-1)*1000)) --tls.certfiles /etc/hyperledger/fabric-ca-server-config/ca.org${org}.example.com-cert.pem
-done
-
-# ایجاد کانال‌ها
-for channel in Org1Channel Org2Channel Org3Channel Org4Channel Org5Channel Org6Channel Org7Channel Org8Channel GeneralOperationsChannel IoTChannel SecurityChannel AuditChannel BillingChannel ResourceChannel PerformanceChannel SessionChannel ConnectivityChannel PolicyChannel; do
-    docker exec peer0.org1.example.com peer channel create -o orderer1.example.com:7050 -c $channel -f ./${channel}.tx --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-    for org in {1..8}; do
-        docker exec peer0.org${org}.example.com peer channel join -b ${channel}.block
-    done
-done
-
-# نصب و اجرای قراردادها
-contracts=(
-    "LocationBasedAssignment" "LocationBasedConnection" "LocationBasedBandwidth" "LocationBasedQoS"
-    "LocationBasedPriority" "LocationBasedStatus" "LocationBasedFault" "LocationBasedTraffic"
-    "LocationBasedLatency" "LocationBasedEnergy" "LocationBasedRoaming" "LocationBasedSignalStrength"
-    "LocationBasedCoverage" "LocationBasedInterference" "LocationBasedResourceAllocation"
-    "LocationBasedNetworkLoad" "LocationBasedCongestion" "LocationBasedDynamicRouting"
-    "LocationBasedAntennaConfig" "LocationBasedSignalQuality" "LocationBasedNetworkHealth"
-    "LocationBasedPowerManagement" "LocationBasedChannelAllocation" "LocationBasedSessionManagement"
-    "LocationBasedIoTConnection" "LocationBasedIoTBandwidth" "LocationBasedIoTStatus"
-    "LocationBasedIoTFault" "LocationBasedIoTSession" "LocationBasedIoTAuthentication"
-    "LocationBasedIoTRegistration" "LocationBasedIoTRevocation" "LocationBasedIoTResource"
-    "LocationBasedNetworkPerformance" "LocationBasedUserActivity" "AuthenticateUser" "AuthenticateIoT"
-    "ConnectUser" "ConnectIoT" "RegisterUser" "RegisterIoT" "RevokeUser" "RevokeIoT" "AssignRole"
-    "GrantAccess" "LogIdentityAudit" "AllocateIoTBandwidth" "UpdateAntennaLoad" "RequestResource"
-    "ShareSpectrum" "AssignGeneralPriority" "LogResourceAudit" "BalanceLoad" "AllocateDynamic"
-    "UpdateAntennaStatus" "UpdateIoTStatus" "LogNetworkPerformance" "LogUserActivity"
-    "DetectAntennaFault" "DetectIoTFault" "MonitorAntennaTraffic" "GenerateReport" "TrackLatency"
-    "MonitorEnergy" "PerformRoaming" "TrackSession" "TrackIoTSession" "DisconnectEntity"
-    "GenerateBill" "LogTransaction" "LogConnectionAudit" "EncryptData" "EncryptIoTData" "LogAccess"
-    "DetectIntrusion" "ManageKey" "SetPolicy" "CreateSecureChannel" "LogSecurityAudit"
-    "AuthenticateAntenna" "MonitorNetworkCongestion" "AllocateNetworkResource" "MonitorNetworkHealth"
-    "ManageNetworkPolicy" "LogNetworkAudit"
-)
-
-for contract in "${contracts[@]}"; do
-    channel=""
-    if [[ "LocationBasedAssignment LocationBasedAntennaConfig AssignRole GenerateReport" =~ $contract ]]; then
-        channel="GeneralOperationsChannel"
-    elif [[ "LocationBasedIoTConnection LocationBasedIoTBandwidth LocationBasedIoTStatus LocationBasedIoTFault LocationBasedIoTSession LocationBasedIoTAuthentication LocationBasedIoTRegistration LocationBasedIoTRevocation LocationBasedIoTResource AuthenticateIoT ConnectIoT RegisterIoT RevokeIoT AllocateIoTBandwidth UpdateIoTStatus DetectIoTFault TrackIoTSession EncryptIoTData" =~ $contract ]]; then
-        channel="IoTChannel"
-    elif [[ "AuthenticateUser RegisterUser RevokeUser EncryptData DetectIntrusion ManageKey AuthenticateAntenna CreateSecureChannel" =~ $contract ]]; then
-        channel="SecurityChannel"
-    elif [[ "LocationBasedFault LocationBasedUserActivity LogIdentityAudit LogResourceAudit LogConnectionAudit LogSecurityAudit LogTransaction LogAccess LogNetworkAudit" =~ $contract ]]; then
-        channel="AuditChannel"
-    elif [[ "GenerateBill" =~ $contract ]]; then
-        channel="BillingChannel"
-    elif [[ "LocationBasedBandwidth LocationBasedResourceAllocation RequestResource ShareSpectrum AllocateDynamic AllocateNetworkResource" =~ $contract ]]; then
-        channel="ResourceChannel"
-    elif [[ "LocationBasedQoS LocationBasedTraffic LocationBasedLatency LocationBasedEnergy LocationBasedSignalStrength LocationBasedCoverage LocationBasedNetworkHealth LocationBasedNetworkPerformance UpdateAntennaLoad BalanceLoad TrackLatency MonitorEnergy DetectAntennaFault MonitorAntennaTraffic MonitorNetworkCongestion MonitorNetworkHealth" =~ $contract ]]; then
-        channel="PerformanceChannel"
-    elif [[ "LocationBasedSessionManagement TrackSession TrackIoTSession" =~ $contract ]]; then
-        channel="SessionChannel"
-    elif [[ "LocationBasedConnection LocationBasedRoaming LocationBasedDynamicRouting LocationBasedChannelAllocation ConnectUser DisconnectEntity PerformRoaming" =~ $contract ]]; then
-        channel="ConnectivityChannel"
-    elif [[ "LocationBasedPriority AssignGeneralPriority GrantAccess SetPolicy ManageNetworkPolicy" =~ $contract ]]; then
-        channel="PolicyChannel"
+# توابع کمکی
+function checkPrereqs() {
+    if ! command -v docker &> /dev/null; then
+        echo "Docker is not installed. Please install Docker."
+        exit 1
     fi
+    if ! command -v docker-compose &> /dev/null; then
+        echo "Docker Compose is not installed. Please install Docker Compose."
+        exit 1
+    fi
+    if ! command -v peer &> /dev/null; then
+        echo "Hyperledger Fabric binaries are not installed. Please install Fabric 2.5."
+        exit 1
+    fi
+}
 
-    for org in {1..8}; do
-        docker exec peer0.org${org}.example.com peer chaincode install -n $contract -v 1.0 -p github.com/chaincode/$contract
-        docker exec peer0.org${org}.example.com peer chaincode instantiate -o orderer1.example.com:7050 --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $channel -n $contract -v 1.0 -c '{"Args":["init"]}' -P "AND('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member')"
+function generateConfigs() {
+    echo "Generating connection profiles, core YAMLs, and workload files..."
+    cd scripts
+    ./generateConnectionJson.sh
+    ./generateConnectionProfiles.sh
+    ./generateCoreyamls.sh
+    ./generateWorkloadFiles.sh
+    cd ..
+}
+
+function startNetwork() {
+    echo "Starting Fabric network..."
+    docker-compose -f config/docker-compose.yml up -d
+    sleep 10
+}
+
+function createChannels() {
+    echo "Creating channels..."
+    for CHANNEL in "${CHANNELS[@]}"; do
+        peer channel create -o orderer1.example.com:7050 -c ${CHANNEL} -f config/channel-artifacts/${CHANNEL,,}.tx --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
     done
-done
+}
 
-# تولید فایل‌های workload
-./generateWorkloadFiles.sh
+function joinChannels() {
+    echo "Joining channels..."
+    for ((i=1; i<=ORG_COUNT; i++)); do
+        ORG_NAME="Org${i}"
+        PEER_PORT=$((7051 + (i-1)*2000))
+        export CORE_PEER_LOCALMSPID="${ORG_NAME}MSP"
+        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt
+        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp
+        export CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}
+        for CHANNEL in "${CHANNELS[@]}"; do
+            peer channel join -b config/channel-artifacts/${CHANNEL}.block
+        done
+    done
+}
 
-# اجرای تست‌های Caliper
-cd caliper-workspace
-npx caliper launch manager --caliper-workspace . --caliper-networkconfig networks/networkConfig.yaml --caliper-benchconfig benchmarks/myAssetBenchmark.yaml
+function packageChaincodes() {
+    echo "Packaging chaincodes..."
+    cd scripts
+    for i in {1..10}; do
+        ./generateChaincodes_part${i}.sh
+    done
+    cd ..
+}
 
-# اجرای تست‌های Tape
-node ../generateTapeArgs.js
-tape --config ../tape-config.yaml
+function installChaincodes() {
+    echo "Installing chaincodes..."
+    for ((i=1; i<=ORG_COUNT; i++)); do
+        ORG_NAME="Org${i}"
+        PEER_PORT=$((7051 + (i-1)*2000))
+        export CORE_PEER_LOCALMSPID="${ORG_NAME}MSP"
+        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt
+        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp
+        export CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}
+        for contract in $(ls chaincode); do
+            peer chaincode package chaincode/$contract.pack -n $contract -v 1.0 -p chaincode/$contract
+            peer chaincode install chaincode/$contract.pack
+        done
+    done
+}
 
-# تنظیم Nginx برای HTTPS
-sudo cp nginx.conf /etc/nginx/sites-available/6gfabric.local
-sudo ln -s /etc/nginx/sites-available/6gfabric.local /etc/nginx/sites-enabled/
-sudo systemctl restart nginx
+function instantiateChaincodes() {
+    echo "Instantiating chaincodes..."
+    export CORE_PEER_LOCALMSPID="Org1MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+    for contract in $(ls chaincode); do
+        case $contract in
+            AssetManagement|UserManagement|IoTManagement|AntennaManagement|NetworkManagement|ResourceManagement|PerformanceManagement|SessionManagement|PolicyManagement|ManageNetwork|ManageAntenna|ManageIoTDevice|ManageUser)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C NetworkChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            LocationBased*)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C ResourceChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            Authenticate*|Register*|Revoke*|AssignRole)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C AuthChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            Connect*)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C ConnectivityChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            Monitor*|Log*)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C AuditChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            EncryptData|DecryptData|SecureCommunication|VerifyIdentity|SetPolicy|GetPolicy|UpdatePolicy)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C SecurityChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+            *)
+                peer chaincode instantiate -o orderer1.example.com:7050 -C DataChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+                ;;
+        esac
+        sleep 5
+    done
+}
 
-# تولید فایل زیپ
-cd ..
-zip -r 6g-fabric-network.zip chaincode caliper-workspace crypto-config *.tx *.block *.yaml *.sh *.js nginx.conf
-mv 6g-fabric-network.zip $HOME/
+# اجرای مراحل راه‌اندازی
+checkPrereqs
+generateConfigs
+startNetwork
+createChannels
+joinChannels
+packageChaincodes
+installChaincodes
+instantiateChaincodes
+
+echo "Network setup completed successfully!" > setup.sh.log
