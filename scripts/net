@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# مدیریت شبکه بلاک‌چین
+case "$1" in
+    start)
+        echo "Starting network..."
+        docker-compose -f config/docker-compose.yml up -d
+        echo "Network started. Check logs with: docker ps"
+        ;;
+    stop)
+        echo "Stopping network..."
+        docker-compose -f config/docker-compose.yml down
+        echo "Network stopped."
+        ;;
+    restart)
+        echo "Restarting network..."
+        docker-compose -f config/docker-compose.yml down
+        docker-compose -f config/docker-compose.yml up -d
+        echo "Network restarted."
+        ;;
+    logs)
+        echo "Fetching logs..."
+        docker-compose -f config/docker-compose.yml logs
+        ;;
+    *)
+        echo "Usage: ./net {start|stop|restart|logs}"
+        exit 1
+        ;;
+esac
