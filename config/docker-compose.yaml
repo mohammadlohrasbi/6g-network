@@ -1,609 +1,113 @@
 version: '2'
-services:
-  orderer1.example.com:
-    container_name: orderer1.example.com
-    image: hyperledger/fabric-orderer:2.5
-    environment:
-      - FABRIC_LOGGING_SPEC=ERROR
-      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_GENESISMETHOD=file
-      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/genesis.block
-      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
-      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
-      - ORDERER_GENERAL_TLS_ENABLED=true
-      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_MAXMESSAGECOUNT=10
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: orderer
-    volumes:
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp:/var/hyperledger/orderer/msp
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls:/var/hyperledger/orderer/tls
-      - ./genesis.block:/var/hyperledger/orderer/genesis.block
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 7050:7050
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  ca-org1.example.com:
-    container_name: ca-org1.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org1
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=7054
-    volumes:
-      - ./crypto-config/peerOrganizations/org1.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 7054:7054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org1:
-    container_name: couchdb-org1
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 5984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org1.example.com:
-    container_name: peer0.org1.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org1.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
-      - CORE_PEER_LOCALMSPID=Org1MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org1:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/var/hyperledger/tls
-      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 7051:7051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org1
-
-  ca-org2.example.com:
-    container_name: ca-org2.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org2
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=8054
-    volumes:
-      - ./crypto-config/peerOrganizations/org2.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 8054:8054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org2:
-    container_name: couchdb-org2
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 6984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org2.example.com:
-    container_name: peer0.org2.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org2.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:8051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8051
-      - CORE_PEER_LOCALMSPID=Org2MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org2:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/var/hyperledger/tls
-      - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 8051:8051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org2
-
-  ca-org3.example.com:
-    container_name: ca-org3.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org3
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=9054
-    volumes:
-      - ./crypto-config/peerOrganizations/org3.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 9054:9054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org3:
-    container_name: couchdb-org3
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 7984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org3.example.com:
-    container_name: peer0.org3.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org3.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:9051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9051
-      - CORE_PEER_LOCALMSPID=Org3MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org3:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/var/hyperledger/tls
-      - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 9051:9051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org3
-
-  ca-org4.example.com:
-    container_name: ca-org4.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org4
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org4.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=10054
-    volumes:
-      - ./crypto-config/peerOrganizations/org4.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 10054:10054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org4:
-    container_name: couchdb-org4
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 8984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org4.example.com:
-    container_name: peer0.org4.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org4.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:10051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10051
-      - CORE_PEER_LOCALMSPID=Org4MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org4:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/var/hyperledger/tls
-      - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 10051:10051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org4
-
-  ca-org5.example.com:
-    container_name: ca-org5.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org5
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org5.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=11054
-    volumes:
-      - ./crypto-config/peerOrganizations/org5.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 11054:11054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org5:
-    container_name: couchdb-org5
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 9984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org5.example.com:
-    container_name: peer0.org5.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org5.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:11051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:11051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:11052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11051
-      - CORE_PEER_LOCALMSPID=Org5MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org5:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/var/hyperledger/tls
-      - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 11051:11051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org5
-
-  ca-org6.example.com:
-    container_name: ca-org6.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org6
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org6.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=12054
-    volumes:
-      - ./crypto-config/peerOrganizations/org6.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 12054:12054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org6:
-    container_name: couchdb-org6
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 10984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org6.example.com:
-    container_name: peer0.org6.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org6.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:12051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:12051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:12052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12051
-      - CORE_PEER_LOCALMSPID=Org6MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org6:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/var/hyperledger/tls
-      - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 12051:12051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org6
-
-  ca-org7.example.com:
-    container_name: ca-org7.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org7
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org7.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=13054
-    volumes:
-      - ./crypto-config/peerOrganizations/org7.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 13054:13054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org7:
-    container_name: couchdb-org7
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 11984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org7.example.com:
-    container_name: peer0.org7.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org7.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:13051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:13051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:13052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13051
-      - CORE_PEER_LOCALMSPID=Org7MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org7:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/var/hyperledger/tls
-      - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 13051:13051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org7
-
-  ca-org8.example.com:
-    container_name: ca-org8.example.com
-    image: hyperledger/fabric-ca:1.5
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-org8
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org8.example.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
-      - FABRIC_CA_SERVER_PORT=14054
-    volumes:
-      - ./crypto-config/peerOrganizations/org8.example.com/ca:/etc/hyperledger/fabric-ca-server-config
-    ports:
-      - 14054:14054
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  couchdb-org8:
-    container_name: couchdb-org8
-    image: hyperledger/fabric-couchdb:0.4.20
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-      - COUCHDB_MAX_MEMORY=50m
-    ports:
-      - 12984:5984
-    mem_limit: 100m
-    networks:
-      - 6g-network
-
-  peer0.org8.example.com:
-    container_name: peer0.org8.example.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_PEER_ID=peer0.org8.example.com
-      - CORE_PEER_ADDRESS=165.232.71.90:14051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:14051
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:14052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14051
-      - CORE_PEER_LOCALMSPID=Org8MSP
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/tls/server.key
-      - CORE_PEER_TLS_ROOTCA_FILE=/var/hyperledger/tls/ca.crt
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network
-      - FABRIC_LOGGING_SPEC=ERROR
-      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org8:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES=3
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIESONSTARTUP=10
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT=35s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    volumes:
-      - /var/run:/host/var/run
-      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/var/hyperledger/msp
-      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/var/hyperledger/tls
-      - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
-    ports:
-      - 14051:14051
-    mem_limit: 100m
-    networks:
-      - 6g-network
-    depends_on:
-      - couchdb-org8
 
 networks:
   6g-network:
     driver: bridge
+
+services:
+  orderer1.example.com:
+    image: hyperledger/fabric-orderer:2.5
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt]
+    ports:
+      - "7050:7050"
+    volumes:
+      - ./crypto-config:/crypto-config
+    networks:
+      - 6g-network
+
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    PEER_PORT=$((7051 + (i-1)*2000))
+    CA_PORT=$((7054 + (i-1)*1000))
+    COUCHDB_PORT=$((5984 + (i-1)*1000))
+    echo "  ca.${ORG_NAME,,}.example.com:"
+    echo "    image: hyperledger/fabric-ca:1.5"
+    echo "    environment:"
+    echo "      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server"
+    echo "      - FABRIC_CA_SERVER_CA_NAME=ca-org${i}"
+    echo "      - FABRIC_CA_SERVER_TLS_ENABLED=true"
+    echo "      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.${ORG_NAME,,}.example.com-cert.pem"
+    echo "      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk"
+    echo "    ports:"
+    echo "      - \"${CA_PORT}:7054\""
+    echo "    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'"
+    echo "    volumes:"
+    echo "      - ./crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/ca:/etc/hyperledger/fabric-ca-server-config"
+    echo "    networks:"
+    echo "      - 6g-network"
+    echo ""
+    echo "  couchdb-org${i}:"
+    echo "    image: couchdb:latest"
+    echo "    ports:"
+    echo "      - \"${COUCHDB_PORT}:5984\""
+    echo "    environment:"
+    echo "      - COUCHDB_USER=admin"
+    echo "      - COUCHDB_PASSWORD=adminpw"
+    echo "    networks:"
+    echo "      - 6g-network"
+    echo ""
+    echo "  peer0.${ORG_NAME,,}.example.com:"
+    echo "    image: hyperledger/fabric-peer:2.5"
+    echo "    environment:"
+    echo "      - CORE_PEER_ID=peer0.${ORG_NAME,,}.example.com"
+    echo "      - CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
+    echo "      - CORE_PEER_LISTENADDRESS=0.0.0.0:${PEER_PORT}"
+    echo "      - CORE_PEER_LOCALMSPID=${ORG_NAME}MSP"
+    echo "      - CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp"
+    echo "      - CORE_PEER_TLS_ENABLED=true"
+    echo "      - CORE_PEER_TLS_CERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/server.crt"
+    echo "      - CORE_PEER_TLS_KEY_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/server.key"
+    echo "      - CORE_PEER_TLS_ROOTCA_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt"
+    echo "      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
+    echo "      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
+    echo "      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock"
+    echo "      - CORE_VM_DOCKER_HOSTCONFIG_MEMORY=4G"
+    echo "      - CORE_VM_DOCKER_HOSTCONFIG_CPUS=2"
+    echo "      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB"
+    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org${i}:${COUCHDB_PORT}"
+    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin"
+    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw"
+    echo "    ports:"
+    echo "      - \"${PEER_PORT}:7051\""
+    echo "    volumes:"
+    echo "      - ./crypto-config:/crypto-config"
+    echo "      - ./config/core/core-org${i}.yaml:/etc/hyperledger/fabric/core.yaml"
+    echo "      - /var/run/docker.sock:/host/var/run/docker.sock"
+    echo "    depends_on:"
+    echo "      - couchdb-org${i}"
+    echo "      - ca.${ORG_NAME,,}.example.com"
+    echo "    networks:"
+    echo "      - 6g-network"
+    echo ""
+done)
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./web/public:/6g-fabric-network/web/public
+    depends_on:
+      - webserver
+    networks:
+      - 6g-network
+
+  webserver:
+    image: node:14
+    working_dir: /app
+    command: bash -c "npm install express fabric-network js-yaml && node webserver.js"
+    volumes:
+      - ./web:/app
+      - ./config:/config
+    ports:
+      - "3000:3000"
+    networks:
+      - 6g-network
