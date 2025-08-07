@@ -1,230 +1,254 @@
 name: 6g-fabric-network
 version: 1.0.0
 client:
-  organization: Org1MSP
-  credentialStore:
-    path: ./wallet
+  organization: Org1
   connection:
     timeout:
       peer:
         endorser: '300'
+        eventHub: '300'
+        eventReg: '300'
       orderer: '300'
-caliper:
-  blockchain: fabric
-  sut:
-    fabric:
-      gateway:
-        enabled: true
-        discovery: true
-        asLocalhost: false
-      chaincodes:
-        - id: LocationBasedAssignment
-          channel: GeneralOperationsChannel
-        - id: AuthenticateUser
-          channel: SecurityChannel
-      channels:
-        - channelName: GeneralOperationsChannel
-          chaincodes:
-            - LocationBasedAssignment
-            - AssignRole
-            - GenerateReport
-        - channelName: IoTChannel
-          chaincodes:
-            - LocationBasedIoTConnection
-            - LocationBasedIoTBandwidth
-            - LocationBasedIoTStatus
-            - LocationBasedIoTFault
-            - LocationBasedIoTSession
-            - LocationBasedIoTAuthentication
-            - LocationBasedIoTRegistration
-            - LocationBasedIoTRevocation
-            - LocationBasedIoTResource
-            - AuthenticateIoT
-            - ConnectIoT
-            - RegisterIoT
-            - RevokeIoT
-            - AllocateIoTBandwidth
-            - UpdateIoTStatus
-            - DetectIoTFault
-            - TrackIoTSession
-            - EncryptIoTData
-        - channelName: SecurityChannel
-          chaincodes:
-            - AuthenticateUser
-            - RegisterUser
-            - RevokeUser
-            - EncryptData
-            - DetectIntrusion
-            - ManageKey
-            - AuthenticateAntenna
-            - CreateSecureChannel
-        - channelName: AuditChannel
-          chaincodes:
-            - LocationBasedFault
-            - LocationBasedUserActivity
-            - LogIdentityAudit
-            - LogResourceAudit
-            - LogConnectionAudit
-            - LogSecurityAudit
-            - LogTransaction
-            - LogAccess
-            - LogNetworkAudit
-        - channelName: BillingChannel
-          chaincodes:
-            - GenerateBill
-        - channelName: ResourceChannel
-          chaincodes:
-            - LocationBasedBandwidth
-            - LocationBasedResourceAllocation
-            - RequestResource
-            - ShareSpectrum
-            - AllocateDynamic
-            - AllocateNetworkResource
-        - channelName: PerformanceChannel
-          chaincodes:
-            - LocationBasedQoS
-            - LocationBasedTraffic
-            - LocationBasedLatency
-            - LocationBasedEnergy
-            - LocationBasedSignalStrength
-            - LocationBasedCoverage
-            - LocationBasedNetworkHealth
-            - LocationBasedNetworkPerformance
-            - UpdateAntennaLoad
-            - BalanceLoad
-            - TrackLatency
-            - MonitorEnergy
-            - DetectAntennaFault
-            - MonitorAntennaTraffic
-            - MonitorNetworkCongestion
-            - MonitorNetworkHealth
-        - channelName: SessionChannel
-          chaincodes:
-            - LocationBasedSessionManagement
-            - TrackSession
-            - TrackIoTSession
-        - channelName: ConnectivityChannel
-          chaincodes:
-            - LocationBasedConnection
-            - LocationBasedRoaming
-            - LocationBasedDynamicRouting
-            - LocationBasedChannelAllocation
-            - ConnectUser
-            - DisconnectEntity
-            - PerformRoaming
-        - channelName: PolicyChannel
-          chaincodes:
-            - LocationBasedPriority
-            - AssignGeneralPriority
-            - GrantAccess
-            - SetPolicy
-            - ManageNetworkPolicy
-networks:
-  fabric:
-    - name: 6g-fabric-network
-      type: fabric
-      version: 2.5
-      mutual-tls: true
-      organizations:
-        - mspid: Org1MSP
-          peers:
-            - url: grpcs://165.232.71.90:7051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org1.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:7054
-              caName: ca-org1
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
-        - mspid: Org2MSP
-          peers:
-            - url: grpcs://165.232.71.90:8051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org2.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:8054
-              caName: ca-org2
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org2.example.com/ca/ca.org2.example.com-cert.pem
-        - mspid: Org3MSP
-          peers:
-            - url: grpcs://165.232.71.90:9051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org3.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:9054
-              caName: ca-org3
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org3.example.com/ca/ca.org3.example.com-cert.pem
-        - mspid: Org4MSP
-          peers:
-            - url: grpcs://165.232.71.90:10051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org4.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:10054
-              caName: ca-org4
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org4.example.com/ca/ca.org4.example.com-cert.pem
-        - mspid: Org5MSP
-          peers:
-            - url: grpcs://165.232.71.90:11051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org5.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:11054
-              caName: ca-org5
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org5.example.com/ca/ca.org5.example.com-cert.pem
-        - mspid: Org6MSP
-          peers:
-            - url: grpcs://165.232.71.90:12051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org6.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:12054
-              caName: ca-org6
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org6.example.com/ca/ca.org6.example.com-cert.pem
-        - mspid: Org7MSP
-          peers:
-            - url: grpcs://165.232.71.90:13051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org7.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:13054
-              caName: ca-org7
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org7.example.com/ca/ca.org7.example.com-cert.pem
-        - mspid: Org8MSP
-          peers:
-            - url: grpcs://165.232.71.90:14051
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls/ca.crt
-              grpcOptions:
-                ssl-target-name-override: peer0.org8.example.com
-          certificateAuthorities:
-            - url: https://165.232.71.90:14054
-              caName: ca-org8
-              tlsCACerts:
-                path: crypto-config/peerOrganizations/org8.example.com/ca/ca.org8.example.com-cert.pem
+organizations:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    PEER_PORT=$((7051 + (i-1)*2000))
+    CA_PORT=$((7054 + (i-1)*1000))
+    echo "  ${ORG_NAME}:"
+    echo "    mspid: ${ORG_NAME}MSP"
+    echo "    peers:"
+    echo "      - peer0.${ORG_NAME,,}.example.com"
+    echo "    certificateAuthorities:"
+    echo "      - ca.${ORG_NAME,,}.example.com"
+done)
+peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    PEER_PORT=$((7051 + (i-1)*2000))
+    echo "  peer0.${ORG_NAME,,}.example.com:"
+    echo "    url: grpcs://localhost:${PEER_PORT}"
+    echo "    tlsCACerts:"
+    echo "      path: /crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt"
+    echo "    grpcOptions:"
+    echo "      ssl-target-name-override: peer0.${ORG_NAME,,}.example.com"
+done)
+certificateAuthorities:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    CA_PORT=$((7054 + (i-1)*1000))
+    echo "  ca.${ORG_NAME,,}.example.com:"
+    echo "    url: https://localhost:${CA_PORT}"
+    echo "    caName: ca-org${i}"
+    echo "    tlsCACerts:"
+    echo "      path: /crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/ca/ca.${ORG_NAME,,}.example.com-cert.pem"
+    echo "    httpOptions:"
+    echo "      verify: false"
+done)
 orderers:
-  - url: grpcs://165.232.71.90:7050
+  orderer1.example.com:
+    url: grpcs://localhost:7050
     tlsCACerts:
-      path: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
+      path: /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
     grpcOptions:
       ssl-target-name-override: orderer1.example.com
+channels:
+  NetworkChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  ResourceChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  PerformanceChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  IoTChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  AuthChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  ConnectivityChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  SessionChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  PolicyChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  AuditChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  SecurityChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  DataChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  AnalyticsChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  MonitoringChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  ManagementChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  OptimizationChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  FaultChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  TrafficChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  AccessChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  ComplianceChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
+  IntegrationChannel:
+    peers:
+$(for ((i=1; i<=3; i++)); do
+    ORG_NAME="Org${i}"
+    echo "      peer0.${ORG_NAME,,}.example.com:"
+    echo "        endorsingPeer: true"
+    echo "        chaincodeQuery: true"
+    echo "        ledgerQuery: true"
+    echo "        eventSource: true"
+done)
