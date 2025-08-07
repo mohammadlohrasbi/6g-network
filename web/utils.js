@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-async function connectToNetwork() {
+async function connectToNetwork(orgNumber = 1) {
     const walletPath = path.join(process.cwd(), 'wallet');
     const wallet = await Wallets.createFileSystemWallet(walletPath);
 
@@ -13,16 +13,16 @@ async function connectToNetwork() {
     const gateway = new Gateway();
     await gateway.connect(networkConfig, {
         wallet,
-        identity: 'Admin@org1.example.com',
+        identity: `Admin@org${orgNumber}.example.com`,
         discovery: { enabled: true, asLocalhost: true }
     });
 
     return gateway;
 }
 
-async function invokeContract(channelName, contractName, functionName, ...args) {
+async function invokeContract(channelName, contractName, functionName, orgNumber = 1, ...args) {
     try {
-        const gateway = await connectToNetwork();
+        const gateway = await connectToNetwork(orgNumber);
         const network = await gateway.getNetwork(channelName);
         const contract = network.getContract(contractName);
 
@@ -31,14 +31,14 @@ async function invokeContract(channelName, contractName, functionName, ...args) 
 
         return result.toString();
     } catch (error) {
-        console.error(`Failed to invoke ${functionName}: ${error}`);
+        console.error(`Failed to invoke ${functionName} for Org${orgNumber}: ${error}`);
         throw error;
     }
 }
 
-async function queryContract(channelName, contractName, functionName, ...args) {
+async function queryContract(channelName, contractName, functionName, orgNumber = 1, ...args) {
     try {
-        const gateway = await connectToNetwork();
+        const gateway = await connectToNetwork(orgNumber);
         const network = await gateway.getNetwork(channelName);
         const contract = network.getContract(contractName);
 
@@ -47,7 +47,7 @@ async function queryContract(channelName, contractName, functionName, ...args) {
 
         return JSON.parse(result.toString());
     } catch (error) {
-        console.error(`Failed to query ${functionName}: ${error}`);
+        console.error(`Failed to query ${functionName} for Org${orgNumber}: ${error}`);
         throw error;
     }
 }
