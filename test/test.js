@@ -5,7 +5,7 @@ const path = require('path');
 async function runTests() {
     const workload = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'workloads/workload.json'), 'utf8'));
     const { numUsers, numTx, targetTPS, contracts } = workload;
-    const orgCount = parseInt(process.env.ORG_COUNT || '3');
+    const orgCount = parseInt(process.env.ORG_COUNT || '8');
 
     console.log(`Starting scalability test: ${numUsers} users/IoT, ${numTx} transactions, target TPS=${targetTPS}, ${orgCount} organizations`);
 
