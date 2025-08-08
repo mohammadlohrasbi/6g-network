@@ -20,6 +20,7 @@ services:
       - "7050:7050"
     volumes:
       - ./crypto-config:/crypto-config
+      - ./config/core/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml
     networks:
       - 6g-network
 
