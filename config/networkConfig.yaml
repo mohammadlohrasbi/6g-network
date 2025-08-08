@@ -10,10 +10,8 @@ client:
         eventReg: '300'
       orderer: '300'
 organizations:
-$(for ((i=1; i<=3; i++)); do
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
-    PEER_PORT=$((7051 + (i-1)*2000))
-    CA_PORT=$((7054 + (i-1)*1000))
     echo "  ${ORG_NAME}:"
     echo "    mspid: ${ORG_NAME}MSP"
     echo "    peers:"
@@ -22,7 +20,7 @@ $(for ((i=1; i<=3; i++)); do
     echo "      - ca.${ORG_NAME,,}.example.com"
 done)
 peers:
-$(for ((i=1; i<=3; i++)); do
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
     PEER_PORT=$((7051 + (i-1)*2000))
     echo "  peer0.${ORG_NAME,,}.example.com:"
@@ -33,7 +31,7 @@ $(for ((i=1; i<=3; i++)); do
     echo "      ssl-target-name-override: peer0.${ORG_NAME,,}.example.com"
 done)
 certificateAuthorities:
-$(for ((i=1; i<=3; i++)); do
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
     CA_PORT=$((7054 + (i-1)*1000))
     echo "  ca.${ORG_NAME,,}.example.com:"
@@ -52,9 +50,10 @@ orderers:
     grpcOptions:
       ssl-target-name-override: orderer1.example.com
 channels:
-  NetworkChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
+$(for CHANNEL in NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel; do
+    echo "  ${CHANNEL}:"
+    echo "    peers:"
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
     echo "      peer0.${ORG_NAME,,}.example.com:"
     echo "        endorsingPeer: true"
@@ -62,193 +61,4 @@ $(for ((i=1; i<=3; i++)); do
     echo "        ledgerQuery: true"
     echo "        eventSource: true"
 done)
-  ResourceChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  PerformanceChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  IoTChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  AuthChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  ConnectivityChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  SessionChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  PolicyChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  AuditChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  SecurityChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  DataChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  AnalyticsChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  MonitoringChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  ManagementChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  OptimizationChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  FaultChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  TrafficChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  AccessChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  ComplianceChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
-done)
-  IntegrationChannel:
-    peers:
-$(for ((i=1; i<=3; i++)); do
-    ORG_NAME="Org${i}"
-    echo "      peer0.${ORG_NAME,,}.example.com:"
-    echo "        endorsingPeer: true"
-    echo "        chaincodeQuery: true"
-    echo "        ledgerQuery: true"
-    echo "        eventSource: true"
 done)
