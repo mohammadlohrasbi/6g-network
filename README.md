@@ -1,6 +1,6 @@
 # 6G Fabric Network
 
-The **6G Fabric Network** is a scalable, decentralized blockchain network built on **Hyperledger Fabric** for managing and optimizing 6G networks. It includes **85 smart contracts** organized into 10 functional groups, supports **20 channels** for contract isolation, and is designed to scale across **an arbitrary number of organizations** (default: 8 organizations). The project leverages **location-based coordinates (x, y)** for managing users and IoT devices, integrates with **CouchDB** for state storage, and provides **graphical visualization** using **D3.js**. It ensures **security** with TLS and smart contracts for authentication and encryption, and supports **scalability** with TPS=50, txNumber=1000, and users/iot=50. The web interface allows dynamic configuration of the number of organizations.
+The **6G Fabric Network** is a scalable, decentralized blockchain network built on **Hyperledger Fabric** for managing and optimizing 6G networks. It includes **85 smart contracts** organized into 10 functional groups, supports **20 channels** for contract isolation, and is designed to scale across **an arbitrary number of organizations** (default: 8 organizations). The project leverages **location-based coordinates (x, y)** for managing users and IoT devices, integrates with **CouchDB** for state storage, and provides **graphical visualization** using **D3.js**. It ensures **security** with TLS and smart contracts for authentication and encryption, and supports **scalability** with TPS=50, txNumber=1000, and users/iot=50. The web interface allows dynamic configuration of the number of organizations and test parameters (contracts, channels, TPS, transactions, users).
 
 ## Project Objectives
 - **Location-Based Management**: Utilize (x, y) coordinates in a square grid for managing users and IoT devices.
@@ -10,7 +10,7 @@ The **6G Fabric Network** is a scalable, decentralized blockchain network built 
 - **Scalability**: Support TPS=50, txNumber=1000, and 50 users/IoT devices.
 - **State Storage**: Use CouchDB for advanced querying of contract states.
 - **Multi-Organization Support**: Scale to an arbitrary number of organizations (default: 8).
-- **Dynamic Configuration**: Allow changing the number of organizations via the web interface.
+- **Dynamic Test Configuration**: Configure test parameters (number of contracts, channels, TPS, transactions, users) via the web interface.
 
 ## Prerequisites
 - **Hyperledger Fabric**: Version 2.5
@@ -57,19 +57,19 @@ The **6G Fabric Network** is a scalable, decentralized blockchain network built 
   - `generateConnectionJson.sh`: Generate connection JSON files for organizations.
   - `generateConnectionProfiles.sh`: Generate connection profiles for organizations.
   - `generateCoreyamls.sh`: Generate `core.yaml` files for peers.
-  - `generateWorkloadFiles.sh`: Generate workload files for scalability tests.
+  - `generateWorkloadFiles.sh`: Generate initial workload files for scalability tests.
   - `net`: Manage the network (start/stop/restart/logs).
 - **docs/**:
   - `contract_descriptions_part[1-10].md`: Detailed documentation for the 85 smart contracts.
 - **web/**:
   - `utils.js`: Helper functions for interacting with contracts.
-  - `webserver.js`: Node.js server for API and data visualization.
+  - `webserver.js`: Node.js server for API, data visualization, and test configuration.
   - `fabric-sdk.js`: Fabric SDK integration for blockchain interaction.
-  - `index.html`: Web interface with D3.js visualization and organization count configuration.
+  - `index.html`: Web interface with D3.js visualization and test configuration.
   - `nginx.conf`: Nginx configuration for static files and proxying.
 - **test/**:
-  - `test.js`: Scalability test script.
-  - `workloads/workload.json`: Workload configuration for tests.
+  - `test.js`: Scalability test script for dynamic test parameters.
+  - `workloads/workload.json`: Workload configuration generated dynamically via the web interface.
 - **config/**:
   - `docker-compose.yml`: Network configuration with CouchDB, peers, orderers, and Nginx.
   - `configtx.yaml`: Channel configuration for all 20 channels.
@@ -176,12 +176,17 @@ sudo ln -s /etc/nginx/sites-available/6g-fabric-network /etc/nginx/sites-enabled
 sudo systemctl restart nginx
 ```
 
-### 8. Run Scalability Tests
-```bash
-cd test
-npm install fabric-network js-yaml
-node test.js
-```
+### 8. Run Scalability Tests via Web Interface
+1. Open `http://localhost` in a browser.
+2. Configure test parameters:
+   - **Number of Organizations**: Set the desired number of organizations (default: 8).
+   - **Number of Contracts**: Choose up to 85 contracts.
+   - **Number of Channels**: Choose up to 20 channels.
+   - **Target TPS**: Set the target transactions per second (default: 50).
+   - **Number of Transactions**: Set the total number of transactions (default: 1000).
+   - **Number of Users/IoT**: Set the number of users or IoT devices (default: 50).
+3. Click "Run Scalability Test" to execute the test.
+4. Check the console output or logs for test results.
 
 ## Key Configurations
 - **CouchDB**:
@@ -209,6 +214,11 @@ node test.js
   ```bash
   config/core/orderer.yaml
   ```
+- **Workload Configuration**:
+  ```bash
+  test/workloads/workload.json
+  ```
+  Generated dynamically via the web interface.
 
 ## Troubleshooting
 - **Docker Issues**:
@@ -243,23 +253,16 @@ node test.js
 To add a new smart contract:
 1. Update `scripts/generateChaincodes_part*.sh`.
 2. Add documentation to `docs/contract_descriptions_part*.md`.
-3. Modify `scripts/setup.sh` and `test/workloads/workload.json`.
+3. Modify `webserver.js` to include the new contract in the `/contracts` endpoint.
 4. Test the contract:
    ```bash
    peer chaincode invoke -C IoTChannel -n NewContract -c '{"function":"Init","Args":[]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
    ```
 
-To change the number of organizations:
-1. Update `ORG_COUNT` in the environment or via the web interface (`http://localhost`).
-2. Run:
-   ```bash
-   export ORG_COUNT=<new_count>
-   cd scripts
-   ./generateConnectionJson.sh
-   ./generateConnectionProfiles.sh
-   ./generateCoreyamls.sh
-   ./setup.sh
-   ```
+To change test parameters:
+1. Open `http://localhost` in a browser.
+2. Set the desired test parameters (orgCount, contractCount, channelCount, tps, txNumber, users).
+3. Click "Run Scalability Test" to generate `workload.json` and execute tests.
 
 ## Notes
 - **Certificates**: Ensure `crypto-config/` contains TLS and MSP certificates.
