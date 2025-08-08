@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# تعداد سازمان‌ها (قابل تنظیم)
-ORG_COUNT=${ORG_COUNT:-3}
+# تعداد سازمان‌ها (پیش‌فرض 8، قابل تنظیم)
+ORG_COUNT=${ORG_COUNT:-8}
 
 # تولید core.yaml برای هر سازمان
 mkdir -p config/core
