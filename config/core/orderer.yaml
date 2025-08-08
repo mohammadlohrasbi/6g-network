@@ -1,0 +1,22 @@
+General:
+  ListenAddress: 0.0.0.0
+  ListenPort: 7050
+  LocalMSPDir: /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp
+  LocalMSPID: OrdererMSP
+  TLS:
+    Enabled: true
+    PrivateKey: /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
+    Certificate: /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+    RootCAs:
+      - /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
+    ClientAuthRequired: false
+Cluster:
+  SendBufferSize: 10
+FileLedger:
+  Location: /var/hyperledger/production/orderer
+Operations:
+  ListenAddress: 127.0.0.1:8443
+  TLS:
+    Enabled: false
+Metrics:
+  Provider: prometheus
