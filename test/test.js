@@ -7,7 +7,7 @@ async function runTests() {
     const { numUsers, numTx, targetTPS, contracts } = workload;
     const orgCount = parseInt(process.env.ORG_COUNT || '8');
 
-    console.log(`Starting scalability test: ${numUsers} users/IoT, ${numTx} transactions, target TPS=${targetTPS}, ${orgCount} organizations`);
+    console.log(`Starting scalability test: ${numUsers} users/IoT, ${numTx} transactions, target TPS=${targetTPS}, ${orgCount} organizations, ${contracts.length} contracts`);
 
     const startTime = Date.now();
     const promises = [];
@@ -47,9 +47,18 @@ async function runTests() {
     console.log(`Test completed in ${duration} seconds`);
     console.log(`Achieved TPS: ${actualTPS.toFixed(2)}`);
 
-    // Query sample data from Org1
-    const result = await queryContract('IoTChannel', 'LocationBasedIoTBandwidth', 'QueryAllAssets', 1);
-    console.log('Sample query result from Org1:', result.slice(0, 5));
+    // Query sample data from Org1 for a few contracts
+    const sampleContracts = ['LocationBasedIoTBandwidth', 'AssetManagement', 'AuthenticateUser'];
+    for (const contract of sampleContracts) {
+        const channelMap = {
+            'AssetManagement': 'NetworkChannel',
+            'AuthenticateUser': 'AuthChannel',
+            'LocationBasedIoTBandwidth': 'IoTChannel'
+        };
+        const channel = channelMap[contract] || 'DataChannel';
+        const result = await queryContract(channel, contract, 'QueryAllAssets', 1);
+        console.log(`Sample query result for ${contract} from Org1:`, result.slice(0, 5));
+    }
 }
 
 runTests().catch(console.error);
