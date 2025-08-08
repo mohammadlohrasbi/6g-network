@@ -23,7 +23,7 @@ services:
     networks:
       - 6g-network
 
-$(for ((i=1; i<=3; i++)); do
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
     PEER_PORT=$((7051 + (i-1)*2000))
     CA_PORT=$((7054 + (i-1)*1000))
