@@ -47,17 +47,12 @@ async function runTests() {
     console.log(`Test completed in ${duration} seconds`);
     console.log(`Achieved TPS: ${actualTPS.toFixed(2)}`);
 
-    // Query sample data from Org1 for a few contracts
-    const sampleContracts = ['LocationBasedIoTBandwidth', 'AssetManagement', 'AuthenticateUser'];
+    // Query sample data for a few contracts
+    const sampleContracts = contracts.slice(0, Math.min(3, contracts.length));
     for (const contract of sampleContracts) {
-        const channelMap = {
-            'AssetManagement': 'NetworkChannel',
-            'AuthenticateUser': 'AuthChannel',
-            'LocationBasedIoTBandwidth': 'IoTChannel'
-        };
-        const channel = channelMap[contract] || 'DataChannel';
-        const result = await queryContract(channel, contract, 'QueryAllAssets', 1);
-        console.log(`Sample query result for ${contract} from Org1:`, result.slice(0, 5));
+        const { channel, contract: contractName } = contract;
+        const result = await queryContract(channel, contractName, 'QueryAllAssets', 1);
+        console.log(`Sample query result for ${contractName} from Org1:`, result.slice(0, 5));
     }
 }
 
