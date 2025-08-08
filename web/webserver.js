@@ -1,5 +1,10 @@
 const express = require('express');
 const { invokeContract, queryContract } = require('./utils.js');
+const fs = require('fs');
+const path = require('path');
+const yaml = require('js-yaml');
+const { execSync } = require('child_process');
+
 const app = express();
 
 app.use(express.static('public'));
@@ -49,6 +54,25 @@ app.get('/contracts', (req, res) => {
         'LogUserAudit', 'LogPolicyChange', 'LogAccessAudit', 'LogPerformanceAudit', 'LogComplianceAudit'
     ];
     res.json({ contracts });
+});
+
+app.post('/set-org-count', (req, res) => {
+    const { orgCount } = req.body;
+    if (!orgCount || isNaN(orgCount) || orgCount < 1) {
+        return res.status(400).json({ status: 'error', error: 'Invalid orgCount' });
+    }
+    try {
+        // به‌روزرسانی ORG_COUNT و تولید مجدد فایل‌های پیکربندی
+        execSync(`export ORG_COUNT=${orgCount} && cd scripts && ./generateConnectionJson.sh && ./generateConnectionProfiles.sh && ./generateCoreyamls.sh && ./setup.sh`, { stdio: 'inherit' });
+        res.json({ status: 'success', message: `Network reconfigured for ${orgCount} organizations` });
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
+app.get('/org-count', (req, res) => {
+    const orgCount = process.env.ORG_COUNT || '8';
+    res.json({ orgCount: parseInt(orgCount) });
 });
 
 app.listen(3000, () => {
