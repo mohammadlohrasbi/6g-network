@@ -1,5 +1,5 @@
 PeerOrgs:
-$(for ((i=1; i<=3; i++)); do
+$(for ((i=1; i<=8; i++)); do
     ORG_NAME="Org${i}"
     echo "  - Name: ${ORG_NAME}"
     echo "    Domain: ${ORG_NAME,,}.example.com"
