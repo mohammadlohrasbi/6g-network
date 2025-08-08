@@ -7,17 +7,17 @@
         svg { border: 1px solid #ccc; }
         .node { stroke: #000; stroke-width: 1.5px; }
         .link { stroke: #999; stroke-opacity: 0.6; }
-        select, button { margin: 10px; }
+        select, button, input { margin: 10px; }
     </style>
 </head>
 <body>
     <h1>6G Fabric Network Visualization</h1>
+    <label for="orgCount">Number of Organizations:</label>
+    <input type="number" id="orgCount" min="1" value="8">
+    <button onclick="setOrgCount()">Set Organization Count</button>
+    <br>
     <select id="contractSelect"></select>
-    <select id="orgSelect">
-        <option value="1">Org1</option>
-        <option value="2">Org2</option>
-        <option value="3">Org3</option>
-    </select>
+    <select id="orgSelect"></select>
     <button onclick="fetchAndDraw()">Load Data</button>
     <svg width="800" height="600"></svg>
     <script>
@@ -25,12 +25,42 @@
             const response = await fetch('/contracts');
             const { contracts } = await response.json();
             const select = document.getElementById('contractSelect');
+            select.innerHTML = '';
             contracts.forEach(contract => {
                 const option = document.createElement('option');
                 option.value = contract;
                 option.text = contract;
                 select.appendChild(option);
             });
+        }
+
+        async function populateOrgSelect() {
+            const response = await fetch('/org-count');
+            const { orgCount } = await response.json();
+            const select = document.getElementById('orgSelect');
+            select.innerHTML = '';
+            for (let i = 1; i <= orgCount; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = `Org${i}`;
+                select.appendChild(option);
+            }
+        }
+
+        async function setOrgCount() {
+            const orgCount = document.getElementById('orgCount').value;
+            const response = await fetch('/set-org-count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orgCount })
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                alert(result.message);
+                await populateOrgSelect();
+            } else {
+                alert('Error: ' + result.error);
+            }
         }
 
         async function fetchNetworkData() {
@@ -109,7 +139,7 @@
         }
 
         populateContracts();
-        fetchAndDraw();
+        populateOrgSelect();
     </script>
 </body>
 </html>
