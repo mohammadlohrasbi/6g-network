@@ -1,6 +1,6 @@
 # 6G Fabric Network
 
-The **6G Fabric Network** is a scalable, decentralized blockchain network built on **Hyperledger Fabric** for managing and optimizing 6G networks. It includes **85 smart contracts** organized into 10 functional groups, supports **20 channels** for contract isolation, and is designed to scale across **an arbitrary number of organizations**. The project leverages **location-based coordinates (x, y)** for managing users and IoT devices, integrates with **CouchDB** for state storage, and provides **graphical visualization** using **D3.js**. It ensures **security** with TLS and smart contracts for authentication and encryption, and supports **scalability** with TPS=50, txNumber=1000, and users/iot=50.
+The **6G Fabric Network** is a scalable, decentralized blockchain network built on **Hyperledger Fabric** for managing and optimizing 6G networks. It includes **85 smart contracts** organized into 10 functional groups, supports **20 channels** for contract isolation, and is designed to scale across **an arbitrary number of organizations** (default: 8 organizations). The project leverages **location-based coordinates (x, y)** for managing users and IoT devices, integrates with **CouchDB** for state storage, and provides **graphical visualization** using **D3.js**. It ensures **security** with TLS and smart contracts for authentication and encryption, and supports **scalability** with TPS=50, txNumber=1000, and users/iot=50. The web interface allows dynamic configuration of the number of organizations.
 
 ## Project Objectives
 - **Location-Based Management**: Utilize (x, y) coordinates in a square grid for managing users and IoT devices.
@@ -9,7 +9,8 @@ The **6G Fabric Network** is a scalable, decentralized blockchain network built 
 - **Graphical Visualization**: Display network data (e.g., device and antenna positions) using D3.js.
 - **Scalability**: Support TPS=50, txNumber=1000, and 50 users/IoT devices.
 - **State Storage**: Use CouchDB for advanced querying of contract states.
-- **Multi-Organization Support**: Scale to an arbitrary number of organizations for a fully decentralized network.
+- **Multi-Organization Support**: Scale to an arbitrary number of organizations (default: 8).
+- **Dynamic Configuration**: Allow changing the number of organizations via the web interface.
 
 ## Prerequisites
 - **Hyperledger Fabric**: Version 2.5
@@ -64,7 +65,7 @@ The **6G Fabric Network** is a scalable, decentralized blockchain network built 
   - `utils.js`: Helper functions for interacting with contracts.
   - `webserver.js`: Node.js server for API and data visualization.
   - `fabric-sdk.js`: Fabric SDK integration for blockchain interaction.
-  - `index.html`: Web interface with D3.js visualization.
+  - `index.html`: Web interface with D3.js visualization and organization count configuration.
   - `nginx.conf`: Nginx configuration for static files and proxying.
 - **test/**:
   - `test.js`: Scalability test script.
@@ -74,9 +75,10 @@ The **6G Fabric Network** is a scalable, decentralized blockchain network built 
   - `configtx.yaml`: Channel configuration for all 20 channels.
   - `cryptogen.yaml`: TLS and MSP certificate generation.
   - `networkConfig.yaml`: Network configuration for Fabric SDK.
-  - `core/core-org*.yaml`: Peer configurations for each organization.
-  - `profiles/org*-profile.yaml`: Connection profiles for each organization.
-  - `connection-org*.json`: Connection JSON files for each organization.
+  - `core/core-org[1-8].yaml`: Peer configurations for each organization.
+  - `core/orderer.yaml`: Orderer configuration.
+  - `profiles/org[1-8]-profile.yaml`: Connection profiles for each organization.
+  - `connection-org[1-8].json`: Connection JSON files for each organization.
   - `channel-artifacts/*.tx`: Channel configuration files for 20 channels.
 - **crypto-config/**: TLS and MSP certificates for all organizations.
 - **wallet/**: Wallet for Fabric SDK identities.
@@ -120,7 +122,7 @@ Copy the following files to their respective directories:
 - `docs/`: `contract_descriptions_part[1-10].md`
 - `web/`: `utils.js`, `webserver.js`, `fabric-sdk.js`, `index.html`, `nginx.conf`
 - `test/`: `test.js`, `workloads/workload.json`
-- `config/`: `docker-compose.yml`, `configtx.yaml`, `cryptogen.yaml`, `networkConfig.yaml`, `core/core-org*.yaml`, `profiles/org*-profile.yaml`, `connection-org*.json`, `channel-artifacts/*.tx`
+- `config/`: `docker-compose.yml`, `configtx.yaml`, `cryptogen.yaml`, `networkConfig.yaml`, `core/core-org[1-8].yaml`, `core/orderer.yaml`, `profiles/org[1-8]-profile.yaml`, `connection-org[1-8].json`, `channel-artifacts/*.tx`
 
 ### 3. Install Prerequisites
 ```bash
@@ -146,7 +148,7 @@ cd ..
 ### 5. Register Identities in Wallet
 ```bash
 export FABRIC_CA_CLIENT_HOME=${PWD}/wallet
-for i in {1..3}; do
+for i in {1..8}; do
     fabric-ca-client enroll -u https://admin:adminpw@localhost:$((7054 + (i-1)*1000)) --caname ca-org${i} --tls.certfiles crypto-config/peerOrganizations/org${i}.example.com/ca/ca.org${i}.example.com-cert.pem
 done
 ```
@@ -203,6 +205,10 @@ node test.js
   /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
   ```
 - **Channels**: 20 channels for contract isolation.
+- **Orderer Configuration**:
+  ```bash
+  config/core/orderer.yaml
+  ```
 
 ## Troubleshooting
 - **Docker Issues**:
@@ -243,11 +249,17 @@ To add a new smart contract:
    peer chaincode invoke -C IoTChannel -n NewContract -c '{"function":"Init","Args":[]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
    ```
 
-To add a new organization:
-1. Update `ORG_COUNT` in environment variables.
-2. Run `scripts/generateConnectionJson.sh`, `scripts/generateConnectionProfiles.sh`, `scripts/generateCoreyamls.sh`.
-3. Update `configtx.yaml` and `cryptogen.yaml`.
-4. Re-run `setup.sh`.
+To change the number of organizations:
+1. Update `ORG_COUNT` in the environment or via the web interface (`http://localhost`).
+2. Run:
+   ```bash
+   export ORG_COUNT=<new_count>
+   cd scripts
+   ./generateConnectionJson.sh
+   ./generateConnectionProfiles.sh
+   ./generateCoreyamls.sh
+   ./setup.sh
+   ```
 
 ## Notes
 - **Certificates**: Ensure `crypto-config/` contains TLS and MSP certificates.
