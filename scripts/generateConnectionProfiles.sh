@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# تعداد سازمان‌ها (قابل تنظیم)
-ORG_COUNT=${ORG_COUNT:-3}
+# تعداد سازمان‌ها (پیش‌فرض 8، قابل تنظیم)
+ORG_COUNT=${ORG_COUNT:-8}
 
 # لیست 20 کانال
 CHANNELS=("NetworkChannel" "ResourceChannel" "PerformanceChannel" "IoTChannel" "AuthChannel" "ConnectivityChannel" "SessionChannel" "PolicyChannel" "AuditChannel" "SecurityChannel" "DataChannel" "AnalyticsChannel" "MonitoringChannel" "ManagementChannel" "OptimizationChannel" "FaultChannel" "TrafficChannel" "AccessChannel" "ComplianceChannel" "IntegrationChannel")
