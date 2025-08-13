@@ -280,4 +280,3 @@ Profiles:
           Rule: "MAJORITY Endorsement"
       Capabilities:
         <<: *ApplicationCapabilities
-   mv configtx.yaml configtx.yaml.bak
