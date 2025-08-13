@@ -234,7 +234,20 @@ Profiles:
     Capabilities:
       <<: *ChannelCapabilities
     Orderer:
-      <<: *Orderer
+      OrdererType: etcdraft
+      Addresses:
+        - orderer1.example.com:7050
+      BatchTimeout: 2s
+      BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      EtcdRaft:
+        Consenters:
+          - Host: orderer1.example.com
+            Port: 7050
+            ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+            ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
       Organizations:
         - *OrdererOrg
       Capabilities:
