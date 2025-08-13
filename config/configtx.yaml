@@ -1,19 +1,155 @@
 ---
 Organizations:
   - &OrdererOrg
-      Name: OrdererOrg
-      ID: OrdererMSP
-      MSPDir: crypto-config/ordererOrganizations/example.com/msp
-$(for ((i=1; i<=8; i++)); do
-    ORG_NAME="Org${i}"
-    echo "  - &${ORG_NAME}"
-    echo "      Name: ${ORG_NAME}MSP"
-    echo "      ID: ${ORG_NAME}MSP"
-    echo "      MSPDir: crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/msp"
-    echo "      AnchorPeers:"
-    echo "        - Host: peer0.${ORG_NAME,,}.example.com"
-    echo "          Port: $((7051 + (i-1)*2000))"
-done)
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+  - &Org1
+    Name: Org1MSP
+    ID: Org1MSP
+    MSPDir: crypto-config/peerOrganizations/org1.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org1MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org1MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org1MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org1.example.com
+        Port: 7051
+  - &Org2
+    Name: Org2MSP
+    ID: Org2MSP
+    MSPDir: crypto-config/peerOrganizations/org2.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org2MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org2MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org2MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org2.example.com
+        Port: 9051
+  - &Org3
+    Name: Org3MSP
+    ID: Org3MSP
+    MSPDir: crypto-config/peerOrganizations/org3.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org3MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org3MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org3MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org3.example.com
+        Port: 11051
+  - &Org4
+    Name: Org4MSP
+    ID: Org4MSP
+    MSPDir: crypto-config/peerOrganizations/org4.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org4MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org4MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org4MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org4.example.com
+        Port: 13051
+  - &Org5
+    Name: Org5MSP
+    ID: Org5MSP
+    MSPDir: crypto-config/peerOrganizations/org5.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org5MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org5MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org5MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org5.example.com
+        Port: 15051
+  - &Org6
+    Name: Org6MSP
+    ID: Org6MSP
+    MSPDir: crypto-config/peerOrganizations/org6.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org6MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org6MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org6MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org6.example.com
+        Port: 17051
+  - &Org7
+    Name: Org7MSP
+    ID: Org7MSP
+    MSPDir: crypto-config/peerOrganizations/org7.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org7MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org7MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org7MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org7.example.com
+        Port: 19051
+  - &Org8
+    Name: Org8MSP
+    ID: Org8MSP
+    MSPDir: crypto-config/peerOrganizations/org8.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('Org8MSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('Org8MSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('Org8MSP.admin')"
+    AnchorPeers:
+      - Host: peer0.org8.example.com
+        Port: 21051
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -25,10 +161,30 @@ Capabilities:
 
 Application:
   Organizations:
-$(for ((i=1; i<=8; i++)); do
-    ORG_NAME="Org${i}"
-    echo "    - *${ORG_NAME}"
-done)
+    - *Org1
+    - *Org2
+    - *Org3
+    - *Org4
+    - *Org5
+    - *Org6
+    - *Org7
+    - *Org8
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
 
 Orderer:
   OrdererType: etcdraft
@@ -39,32 +195,60 @@ Orderer:
     MaxMessageCount: 10
     AbsoluteMaxBytes: 99 MB
     PreferredMaxBytes: 512 KB
+  EtcdRaft:
+    Consenters:
+      - Host: orderer1.example.com
+        Port: 7050
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
   Organizations:
     - *OrdererOrg
-  Capabilities:
-    *OrdererCapabilities
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
 
 Channel:
-  Capabilities:
-    *ChannelCapabilities
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
 
 Profiles:
   ApplicationGenesis:
     Capabilities:
-      *ChannelCapabilities
+      <<: *ChannelCapabilities
     Orderer:
-      OrdererType: etcdraft
-      Addresses:
-        - orderer1.example.com:7050
+      <<: *Orderer
       Organizations:
         - *OrdererOrg
       Capabilities:
-        *OrdererCapabilities
+        <<: *OrdererCapabilities
     Application:
+      <<: *Application
       Organizations:
-$(for ((i=1; i<=8; i++)); do
-    ORG_NAME="Org${i}"
-    echo "        - *${ORG_NAME}"
-done)
+        - *Org1
+        - *Org2
+        - *Org3
+        - *Org4
+        - *Org5
+        - *Org6
+        - *Org7
+        - *Org8
       Capabilities:
-        *ApplicationCapabilities
+        <<: *ApplicationCapabilities
