@@ -253,7 +253,6 @@ Profiles:
       Capabilities:
         <<: *OrdererCapabilities
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -263,5 +262,21 @@ Profiles:
         - *Org6
         - *Org7
         - *Org8
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
+        LifecycleEndorsement:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Endorsement"
+        Endorsement:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Endorsement"
       Capabilities:
         <<: *ApplicationCapabilities
