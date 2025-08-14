@@ -1,16 +1,111 @@
-PeerOrgs:
-$(for ((i=1; i<=8; i++)); do
-    ORG_NAME="Org${i}"
-    echo "  - Name: ${ORG_NAME}"
-    echo "    Domain: ${ORG_NAME,,}.example.com"
-    echo "    EnableNodeOUs: true"
-    echo "    Template:"
-    echo "      Count: 1"
-    echo "    Users:"
-    echo "      Count: 1"
-done)
+# تعریف سازمان‌های مرتب‌کننده
 OrdererOrgs:
   - Name: Orderer
     Domain: example.com
     Specs:
       - Hostname: orderer1
+        SANS:
+          - localhost
+          - 127.0.0.1
+          - orderer1.example.com
+    Users:
+      Count: 1
+
+# تعریف سازمان‌های همتا
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org1.example.com
+        - peer1.org1.example.com
+    Users:
+      Count: 2
+  - Name: Org2
+    Domain: org2.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org2.example.com
+        - peer1.org2.example.com
+    Users:
+      Count: 2
+  - Name: Org3
+    Domain: org3.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org3.example.com
+        - peer1.org3.example.com
+    Users:
+      Count: 2
+  - Name: Org4
+    Domain: org4.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org4.example.com
+        - peer1.org4.example.com
+    Users:
+      Count: 2
+  - Name: Org5
+    Domain: org5.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org5.example.com
+        - peer1.org5.example.com
+    Users:
+      Count: 2
+  - Name: Org6
+    Domain: org6.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org6.example.com
+        - peer1.org6.example.com
+    Users:
+      Count: 2
+  - Name: Org7
+    Domain: org7.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org7.example.com
+        - peer1.org7.example.com
+    Users:
+      Count: 2
+  - Name: Org8
+    Domain: org8.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - peer0.org8.example.com
+        - peer1.org8.example.com
+    Users:
+      Count: 2
