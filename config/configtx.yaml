@@ -160,16 +160,7 @@ Capabilities:
   Application: &ApplicationCapabilities
     V2_0: true
 
-Application:
-  Organizations:
-    - *Org1
-    - *Org2
-    - *Org3
-    - *Org4
-    - *Org5
-    - *Org6
-    - *Org7
-    - *Org8
+Application: &ApplicationDefaults
   Policies:
     Readers:
       Type: ImplicitMeta
@@ -187,7 +178,7 @@ Application:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
 
-Orderer:
+Orderer: &OrdererDefaults
   OrdererType: etcdraft
   Addresses:
     - orderer1.example.com:7050
@@ -218,7 +209,7 @@ Orderer:
       Type: ImplicitMeta
       Rule: "ANY Writers"
 
-Channel:
+Channel: &ChannelDefaults
   Policies:
     Readers:
       Type: ImplicitMeta
@@ -244,29 +235,16 @@ Consortiums:
 
 Profiles:
   ApplicationGenesis:
+    <<: *ChannelDefaults
     Capabilities:
       <<: *ChannelCapabilities
     Orderer:
-      <<: *OrdererCapabilities
-      OrdererType: etcdraft
-      Addresses:
-        - orderer1.example.com:7050
-      BatchTimeout: 2s
-      BatchSize:
-        MaxMessageCount: 10
-        AbsoluteMaxBytes: 99 MB
-        PreferredMaxBytes: 512 KB
-      EtcdRaft:
-        Consenters:
-          - Host: orderer1.example.com
-            Port: 7050
-            ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
-            ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
-      Organizations:
-        - *OrdererOrg
+      <<: *OrdererDefaults
+      Capabilities:
+        <<: *OrdererCapabilities
     Consortium: SampleConsortium
     Application:
-      <<: *ApplicationCapabilities
+      <<: *ApplicationDefaults
       Organizations:
         - *Org1
         - *Org2
@@ -276,19 +254,5 @@ Profiles:
         - *Org6
         - *Org7
         - *Org8
-      Policies:
-        Readers:
-          Type: ImplicitMeta
-          Rule: "ANY Readers"
-        Writers:
-          Type: ImplicitMeta
-          Rule: "ANY Writers"
-        Admins:
-          Type: ImplicitMeta
-          Rule: "MAJORITY Admins"
-        LifecycleEndorsement:
-          Type: ImplicitMeta
-          Rule: "MAJORITY Endorsement"
-        Endorsement:
-          Type: ImplicitMeta
-          Rule: "MAJORITY Endorsement"
+      Capabilities:
+        <<: *ApplicationCapabilities
