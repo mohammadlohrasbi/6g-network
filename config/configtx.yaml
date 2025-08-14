@@ -1,4 +1,5 @@
 ---
+# تعریف سازمان‌ها
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
@@ -229,11 +230,24 @@ Channel:
       Type: ImplicitMeta
       Rule: "MAJORITY Admins"
 
+Consortiums:
+  SampleConsortium:
+    Organizations:
+      - *Org1
+      - *Org2
+      - *Org3
+      - *Org4
+      - *Org5
+      - *Org6
+      - *Org7
+      - *Org8
+
 Profiles:
   ApplicationGenesis:
     Capabilities:
       <<: *ChannelCapabilities
     Orderer:
+      <<: *OrdererCapabilities
       OrdererType: etcdraft
       Addresses:
         - orderer1.example.com:7050
@@ -250,9 +264,9 @@ Profiles:
             ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
       Organizations:
         - *OrdererOrg
-      Capabilities:
-        <<: *OrdererCapabilities
+    Consortium: SampleConsortium
     Application:
+      <<: *ApplicationCapabilities
       Organizations:
         - *Org1
         - *Org2
@@ -278,5 +292,3 @@ Profiles:
         Endorsement:
           Type: ImplicitMeta
           Rule: "MAJORITY Endorsement"
-      Capabilities:
-        <<: *ApplicationCapabilities
