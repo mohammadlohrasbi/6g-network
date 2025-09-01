@@ -31,7 +31,6 @@ pip install yamllint
 ```
 
 ## ساختار پروژه
-
 - `/root/6g-network/config`: شامل فایل‌های پیکربندی (`cryptogen.yaml`، `configtx.yaml`، `docker-compose-ca.yml`).
 - `/root/6g-network/wallet`: ذخیره هویت‌های ثبت‌شده.
 - `/root/6g-network/scripts`: اسکریپت‌های تولید قراردادهای هوشمند و فایل‌های پیکربندی.
@@ -39,8 +38,15 @@ pip install yamllint
 
 ## مراحل راه‌اندازی
 
-### ۱. تولید مواد رمزنگاری
+### ۱. اعتبارسنجی فایل‌های پیکربندی
+فایل‌های `cryptogen.yaml` و `configtx.yaml` را بررسی کنید:
+```bash
+cd /root/6g-network/config
+yamllint cryptogen.yaml
+yamllint configtx.yaml
+```
 
+### ۲. تولید مواد رمزنگاری
 فایل `cryptogen.yaml` مواد رمزنگاری را برای ۸ سازمان همتا (Org1 تا Org8) و یک سازمان مرتب‌کننده تولید می‌کند.
 
 ```bash
@@ -49,15 +55,12 @@ cryptogen generate --config=cryptogen.yaml
 ```
 
 **تأیید خروجی**:
-
 - بررسی کنید که پوشه `/root/6g-network/config/crypto-config` شامل زیرپوشه‌های `peerOrganizations` (برای Org1 تا Org8) و `ordererOrganizations` باشد:
-
   ```bash
   ls -R /root/6g-network/config/crypto-config
   ```
 
-### ۲. تولید آرتیفکت‌های کانال
-
+### ۳. تولید آرتیفکت‌های کانال
 فایل `configtx.yaml` برای تولید بلوک‌های جنسیس و فایل‌های تراکنش ایجاد کانال برای ۲۰ کانال استفاده می‌شود.
 
 ```bash
@@ -70,15 +73,12 @@ done
 ```
 
 **تأیید خروجی**:
-
 - بررسی کنید که ۴۰ فایل (۲۰ فایل `.block` و ۲۰ فایل `.tx`) در `/root/6g-network/config/channel-artifacts` تولید شده باشند:
-
   ```bash
   ls -l /root/6g-network/config/channel-artifacts
   ```
 
-### ۳. راه‌اندازی سرورهای Fabric CA
-
+### ۴. راه‌اندازی سرورهای Fabric CA
 فایل `docker-compose-ca.yml` سرورهای Fabric CA را برای ۸ سازمان راه‌اندازی می‌کند.
 
 ```bash
@@ -86,15 +86,17 @@ docker-compose -f docker-compose-ca.yml up -d
 ```
 
 **تأیید خروجی**:
-
 - بررسی کنید که ۸ کانتینر CA (ca-org1 تا ca-org8) روی پورت‌های 7054 تا 14054 اجرا می‌شوند:
-
   ```bash
   docker ps | grep fabric-ca
   ```
 
-### ۴. ثبت هویت‌های Admin
+**نکته**: اگر خطای YAML در `docker-compose-ca.yml` رخ داد، فایل را با ویرایشگر متنی (مانند `nano`) بررسی کنید تا کاراکترهای غیرمجاز (مانند `` ` ``) حذف شوند:
+```bash
+nano docker-compose-ca.yml
+```
 
+### ۵. ثبت هویت‌های Admin
 هویت‌های admin برای هر سازمان در کیف‌پول ثبت می‌شوند.
 
 ```bash
@@ -106,15 +108,12 @@ done
 ```
 
 **تأیید خروجی**:
-
 - بررسی کنید که هویت‌ها در `/root/6g-network/wallet` ذخیره شده‌اند:
-
   ```bash
   ls -l /root/6g-network/wallet
   ```
 
-### ۵. تولید و استقرار قراردادهای هوشمند
-
+### ۶. تولید و استقرار قراردادهای هوشمند
 اسکریپت‌های موجود در پوشه `scripts` قراردادهای هوشمند و فایل‌های پیکربندی را تولید می‌کنند.
 
 ```bash
@@ -129,8 +128,7 @@ for i in {1..10}; do ./generateChaincodes_part${i}.sh; done
 cd ..
 ```
 
-### ۶. راه‌اندازی سرور وب و Nginx
-
+### ۷. راه‌اندازی سرور وب و Nginx
 سرور وب برای رابط کاربری و Nginx برای پراکسی راه‌اندازی می‌شود.
 
 ```bash
@@ -143,62 +141,54 @@ sudo systemctl restart nginx
 ```
 
 **تأیید خروجی**:
-
 - بررسی کنید که سرور وب در حال اجرا است:
-
   ```bash
   ps aux | grep node
   ```
 - بررسی کنید که Nginx فعال است:
-
   ```bash
   sudo systemctl status nginx
   ```
 
-### ۷. اجرای تست‌های مقیاس‌پذیری
-
+### ۸. اجرای تست‌های مقیاس‌پذیری
 1. به رابط کاربری در `http://localhost` بروید.
 2. پارامترهای تست (تعداد قراردادها، کانال‌ها، TPS، تعداد تراکنش‌ها، کاربران) را تنظیم کنید.
 3. روی دکمه "Run Scalability Test" کلیک کنید.
 
 ## عیب‌یابی
-
 - **بررسی لاگ‌های CA**:
-
   ```bash
   docker logs ca-org1
   # و غیره برای ca-org2 تا ca-org8
   ```
 - **بررسی فایل‌های تولیدشده**:
-
   ```bash
   ls -R /root/6g-network/config/crypto-config
   ls -l /root/6g-network/config/channel-artifacts
   ls -l /root/6g-network/wallet
   ```
 - **لاگ دیباگ برای configtxgen**:
-
   ```bash
   FABRIC_LOGGING_SPEC=DEBUG configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/NetworkChannel.block -channelID NetworkChannel
   ```
+- **رفع خطای YAML در docker-compose**:
+  - فایل را با ویرایشگر متنی باز کنید و کاراکترهای غیرمجاز (مانند `` ` `` یا BOM) را حذف کنید:
+    ```bash
+    nano /root/6g-network/config/docker-compose-ca.yml
+    ```
 
 ## نکات
-
 - **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را در اسکریپت کاهش دهید (مثلاً به `NetworkChannel` و `ResourceChannel`).
 - **نسخه Fabric**: از Hyperledger Fabric 2.5.0 استفاده شده است. برای اطمینان:
-
   ```bash
   configtxgen --version
   ```
+- **ذخیره فایل‌ها**: اطمینان حاصل کنید که فایل‌های YAML با فرمت UTF-8 و بدون BOM ذخیره شوند. از ویرایشگرهای متنی مانند `nano` یا `vim` استفاده کنید.
 
 ## پشتیبانی
-
 برای سؤالات یا مشکلات، جزئیات زیر را ارائه دهید:
-
 - خروجی کامل خطا
 - خروجی `ls -R /root/6g-network/config/crypto-config`
 - خروجی `docker ps | grep fabric-ca`
+- خروجی `ls -l /root/6g-network/wallet`
 - تنظیمات رابط کاربری (در صورت وجود)
-
-```
-```
