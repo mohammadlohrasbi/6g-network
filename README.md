@@ -1,4 +1,3 @@
-```markdown
 # پروژه شبکه 6G با Hyperledger Fabric
 
 این پروژه یک شبکه Hyperledger Fabric با ۸ سازمان همتا (Org1 تا Org8)، یک سازمان مرتب‌کننده، و ۲۰ کانال (NetworkChannel، ResourceChannel، و غیره) پیاده‌سازی می‌کند. این سند مراحل راه‌اندازی و اجرای پروژه را شرح می‌دهد.
