@@ -46,7 +46,7 @@ yamllint cryptogen.yaml
 yamllint configtx.yaml
 yamllint docker-compose-ca.yml
 ```
-**نکته**: اگر خطای YAML (مانند کاراکتر غیرمجاز) رخ داد، فایل را با ویرایشگر متنی باز کنید:
+**نکته**: اگر خطای YAML رخ داد، فایل را بررسی کنید:
 ```bash
 cat -v /root/6g-network/config/docker-compose-ca.yml
 nano /root/6g-network/config/docker-compose-ca.yml
@@ -68,7 +68,7 @@ cryptogen generate --config=cryptogen.yaml
   ```
 - تأیید کنید که فایل‌های TLS مرتب‌کننده تولید شده‌اند:
   ```bash
-  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
+  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
   ```
 
 ### ۳. تولید آرتیفکت‌های کانال
@@ -182,14 +182,14 @@ sudo systemctl restart nginx
   FABRIC_LOGGING_SPEC=DEBUG configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/NetworkChannel.block -channelID NetworkChannel
   ```
 - **رفع خطای YAML**:
-  - اگر خطای کاراکتر غیرمجاز (مانند `` ` ``) رخ داد، فایل را بررسی کنید:
+  - اگر خطای کاراکتر غیرمجاز رخ داد:
     ```bash
     cat -v /root/6g-network/config/docker-compose-ca.yml
     nano /root/6g-network/config/docker-compose-ca.yml
     ```
 
 ## نکات
-- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را کاهش دهید:
+- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست را کاهش دهید:
   ```bash
   for CHANNEL in NetworkChannel ResourceChannel; do
       configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/${CHANNEL}.block -channelID ${CHANNEL}
