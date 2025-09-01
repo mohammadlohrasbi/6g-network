@@ -46,8 +46,9 @@ yamllint cryptogen.yaml
 yamllint configtx.yaml
 yamllint docker-compose-ca.yml
 ```
-**نکته**: اگر خطای YAML (مانند کاراکتر غیرمجاز) رخ داد، فایل را با ویرایشگر متنی (مانند `nano`) باز کنید و کاراکترهای اضافی را حذف کنید:
+**نکته**: اگر خطای YAML (مانند کاراکتر غیرمجاز) رخ داد، فایل را با ویرایشگر متنی باز کنید:
 ```bash
+cat -v /root/6g-network/config/docker-compose-ca.yml
 nano /root/6g-network/config/docker-compose-ca.yml
 ```
 
@@ -56,6 +57,7 @@ nano /root/6g-network/config/docker-compose-ca.yml
 
 ```bash
 cd /root/6g-network/config
+rm -rf crypto-config  # حذف پوشه قدیمی (در صورت وجود)
 cryptogen generate --config=cryptogen.yaml
 ```
 
@@ -63,6 +65,10 @@ cryptogen generate --config=cryptogen.yaml
 - بررسی کنید که پوشه `/root/6g-network/config/crypto-config` شامل زیرپوشه‌های `peerOrganizations` (برای Org1 تا Org8) و `ordererOrganizations` باشد:
   ```bash
   ls -R /root/6g-network/config/crypto-config
+  ```
+- تأیید کنید که فایل‌های TLS مرتب‌کننده تولید شده‌اند:
+  ```bash
+  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
   ```
 
 ### ۳. تولید آرتیفکت‌های کانال
@@ -95,12 +101,6 @@ docker-compose -f docker-compose-ca.yml up -d
   ```bash
   docker ps | grep fabric-ca
   ```
-
-**نکته**: اگر خطای YAML رخ داد، فایل را بررسی کنید:
-```bash
-cat -v /root/6g-network/config/docker-compose-ca.yml
-nano /root/6g-network/config/docker-compose-ca.yml
-```
 
 ### ۵. ثبت هویت‌های Admin
 هویت‌های admin برای هر سازمان در کیف‌پول ثبت می‌شوند.
@@ -162,6 +162,10 @@ sudo systemctl restart nginx
 3. روی دکمه "Run Scalability Test" کلیک کنید.
 
 ## عیب‌یابی
+- **بررسی فایل‌های TLS**:
+  ```bash
+  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
+  ```
 - **بررسی لاگ‌های CA**:
   ```bash
   docker logs ca-org1
@@ -183,10 +187,9 @@ sudo systemctl restart nginx
     cat -v /root/6g-network/config/docker-compose-ca.yml
     nano /root/6g-network/config/docker-compose-ca.yml
     ```
-  - اطمینان حاصل کنید که فایل‌ها با فرمت UTF-8 و بدون BOM ذخیره شوند.
 
 ## نکات
-- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را کاهش دهید (مثلاً به `NetworkChannel` و `ResourceChannel`):
+- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را کاهش دهید:
   ```bash
   for CHANNEL in NetworkChannel ResourceChannel; do
       configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/${CHANNEL}.block -channelID ${CHANNEL}
