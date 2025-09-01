@@ -68,7 +68,7 @@ cryptogen generate --config=cryptogen.yaml
   ```
 - تأیید کنید که فایل‌های TLS مرتب‌کننده تولید شده‌اند:
   ```bash
-  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+  ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
   ```
 
 ### ۳. تولید آرتیفکت‌های کانال
@@ -89,7 +89,18 @@ done
   ls -l /root/6g-network/config/channel-artifacts
   ```
 
-### ۴. راه‌اندازی سرورهای Fabric CA
+### ۴. بررسی پورت‌ها
+اطمینان حاصل کنید که پورت‌های مورد نیاز (7054 تا 14054 و 17054 تا 24054) آزاد هستند:
+```bash
+netstat -tuln | grep -E '7054|8054|9054|10054|11054|12054|13054|14054|17054|18054|19054|20054|21054|22054|23054|24054'
+```
+**نکته**: اگر پورت‌ها اشغال هستند، فرآیندهای مرتبط را متوقف کنید:
+```bash
+sudo kill $(sudo lsof -t -i:7054)
+# و غیره برای پورت‌های دیگر
+```
+
+### ۵. راه‌اندازی سرورهای Fabric CA
 فایل `docker-compose-ca.yml` سرورهای Fabric CA را برای ۸ سازمان راه‌اندازی می‌کند.
 
 ```bash
@@ -102,7 +113,7 @@ docker-compose -f docker-compose-ca.yml up -d
   docker ps | grep fabric-ca
   ```
 
-### ۵. ثبت هویت‌های Admin
+### ۶. ثبت هویت‌های Admin
 هویت‌های admin برای هر سازمان در کیف‌پول ثبت می‌شوند.
 
 ```bash
@@ -119,7 +130,7 @@ done
   ls -l /root/6g-network/wallet
   ```
 
-### ۶. تولید و استقرار قراردادهای هوشمند
+### ۷. تولید و استقرار قراردادهای هوشمند
 اسکریپت‌های موجود در پوشه `scripts` قراردادهای هوشمند و فایل‌های پیکربندی را تولید می‌کنند.
 
 ```bash
@@ -134,7 +145,7 @@ for i in {1..10}; do ./generateChaincodes_part${i}.sh; done
 cd ..
 ```
 
-### ۷. راه‌اندازی سرور وب و Nginx
+### ۸. راه‌اندازی سرور وب و Nginx
 سرور وب برای رابط کاربری و Nginx برای پراکسی راه‌اندازی می‌شود.
 
 ```bash
@@ -156,7 +167,7 @@ sudo systemctl restart nginx
   sudo systemctl status nginx
   ```
 
-### ۸. اجرای تست‌های مقیاس‌پذیری
+### ۹. اجرای تست‌های مقیاس‌پذیری
 1. به رابط کاربری در `http://localhost` بروید.
 2. پارامترهای تست (تعداد قراردادها، کانال‌ها، TPS، تعداد تراکنش‌ها، کاربران) را تنظیم کنید.
 3. روی دکمه "Run Scalability Test" کلیک کنید.
@@ -165,6 +176,7 @@ sudo systemctl restart nginx
 - **بررسی فایل‌های TLS**:
   ```bash
   ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
+  ls -l /root/6g-network/config/crypto-config/peerOrganizations/*/ca/
   ```
 - **بررسی لاگ‌های CA**:
   ```bash
@@ -181,6 +193,19 @@ sudo systemctl restart nginx
   ```bash
   FABRIC_LOGGING_SPEC=DEBUG configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/NetworkChannel.block -channelID NetworkChannel
   ```
+- **رفع خطای `connection reset by peer`**:
+  - بررسی کنید که سرورهای CA اجرا می‌شوند:
+    ```bash
+    docker ps | grep fabric-ca
+    ```
+  - لاگ‌های CA را بررسی کنید:
+    ```bash
+    docker logs ca-org1
+    ```
+  - اطمینان حاصل کنید که پورت‌ها آزاد هستند:
+    ```bash
+    netstat -tuln | grep -E '7054|8054|9054|10054|11054|12054|13054|14054'
+    ```
 - **رفع خطای YAML**:
   - اگر خطای کاراکتر غیرمجاز رخ داد:
     ```bash
