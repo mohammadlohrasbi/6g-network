@@ -221,18 +221,6 @@ Channel: &ChannelDefaults
       Type: ImplicitMeta
       Rule: "MAJORITY Admins"
 
-Consortiums:
-  SampleConsortium:
-    Organizations:
-      - *Org1
-      - *Org2
-      - *Org3
-      - *Org4
-      - *Org5
-      - *Org6
-      - *Org7
-      - *Org8
-
 Profiles:
   ApplicationGenesis:
     <<: *ChannelDefaults
