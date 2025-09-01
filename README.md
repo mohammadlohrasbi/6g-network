@@ -7,7 +7,7 @@
 - **Hyperledger Fabric 2.5.0**: ابزارهای `cryptogen`، `configtxgen`، و `fabric-ca-client`.
 - **Node.js و npm**: برای سرور وب.
 - **Nginx**: برای پراکسی وب.
-- **yamllint**: برای اعتبارسنجی فایل‌های YAML (اختیاری).
+- **yamllint**: برای اعتبارسنجی فایل‌های YAML (توصیه می‌شود).
 - **سیستم‌عامل**: Ubuntu/Debian توصیه می‌شود.
 
 ### نصب پیش‌نیازها
@@ -25,7 +25,7 @@ sudo apt-get install -y nodejs npm
 # نصب Nginx
 sudo apt-get install -y nginx
 
-# نصب yamllint (اختیاری)
+# نصب yamllint
 sudo apt-get install -y yamllint
 pip install yamllint
 ```
@@ -39,11 +39,16 @@ pip install yamllint
 ## مراحل راه‌اندازی
 
 ### ۱. اعتبارسنجی فایل‌های پیکربندی
-فایل‌های `cryptogen.yaml` و `configtx.yaml` را بررسی کنید:
+فایل‌های `cryptogen.yaml`، `configtx.yaml`، و `docker-compose-ca.yml` را بررسی کنید تا از نبود کاراکترهای غیرمجاز (مانند `` ` `` یا BOM) اطمینان حاصل شود:
 ```bash
 cd /root/6g-network/config
 yamllint cryptogen.yaml
 yamllint configtx.yaml
+yamllint docker-compose-ca.yml
+```
+**نکته**: اگر خطای YAML (مانند کاراکتر غیرمجاز) رخ داد، فایل را با ویرایشگر متنی (مانند `nano`) باز کنید و کاراکترهای اضافی را حذف کنید:
+```bash
+nano /root/6g-network/config/docker-compose-ca.yml
 ```
 
 ### ۲. تولید مواد رمزنگاری
@@ -91,9 +96,10 @@ docker-compose -f docker-compose-ca.yml up -d
   docker ps | grep fabric-ca
   ```
 
-**نکته**: اگر خطای YAML در `docker-compose-ca.yml` رخ داد، فایل را با ویرایشگر متنی (مانند `nano`) بررسی کنید تا کاراکترهای غیرمجاز (مانند `` ` ``) حذف شوند:
+**نکته**: اگر خطای YAML رخ داد، فایل را بررسی کنید:
 ```bash
-nano docker-compose-ca.yml
+cat -v /root/6g-network/config/docker-compose-ca.yml
+nano /root/6g-network/config/docker-compose-ca.yml
 ```
 
 ### ۵. ثبت هویت‌های Admin
@@ -171,19 +177,26 @@ sudo systemctl restart nginx
   ```bash
   FABRIC_LOGGING_SPEC=DEBUG configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/NetworkChannel.block -channelID NetworkChannel
   ```
-- **رفع خطای YAML در docker-compose**:
-  - فایل را با ویرایشگر متنی باز کنید و کاراکترهای غیرمجاز (مانند `` ` `` یا BOM) را حذف کنید:
+- **رفع خطای YAML**:
+  - اگر خطای کاراکتر غیرمجاز (مانند `` ` ``) رخ داد، فایل را بررسی کنید:
     ```bash
+    cat -v /root/6g-network/config/docker-compose-ca.yml
     nano /root/6g-network/config/docker-compose-ca.yml
     ```
+  - اطمینان حاصل کنید که فایل‌ها با فرمت UTF-8 و بدون BOM ذخیره شوند.
 
 ## نکات
-- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را در اسکریپت کاهش دهید (مثلاً به `NetworkChannel` و `ResourceChannel`).
+- **تعداد کانال‌ها**: ۲۰ کانال ممکن است بار زیادی به شبکه تحمیل کند. در صورت نیاز، لیست کانال‌ها را کاهش دهید (مثلاً به `NetworkChannel` و `ResourceChannel`):
+  ```bash
+  for CHANNEL in NetworkChannel ResourceChannel; do
+      configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/${CHANNEL}.block -channelID ${CHANNEL}
+      configtxgen -profile ApplicationGenesis -outputCreateChannelTx channel-artifacts/${CHANNEL,,}.tx -channelID ${CHANNEL}
+  done
+  ```
 - **نسخه Fabric**: از Hyperledger Fabric 2.5.0 استفاده شده است. برای اطمینان:
   ```bash
   configtxgen --version
   ```
-- **ذخیره فایل‌ها**: اطمینان حاصل کنید که فایل‌های YAML با فرمت UTF-8 و بدون BOM ذخیره شوند. از ویرایشگرهای متنی مانند `nano` یا `vim` استفاده کنید.
 
 ## پشتیبانی
 برای سؤالات یا مشکلات، جزئیات زیر را ارائه دهید:
@@ -191,4 +204,5 @@ sudo systemctl restart nginx
 - خروجی `ls -R /root/6g-network/config/crypto-config`
 - خروجی `docker ps | grep fabric-ca`
 - خروجی `ls -l /root/6g-network/wallet`
+- خروجی `cat -v /root/6g-network/config/docker-compose-ca.yml`
 - تنظیمات رابط کاربری (در صورت وجود)
