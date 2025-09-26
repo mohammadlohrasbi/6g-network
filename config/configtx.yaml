@@ -165,8 +165,8 @@
          Type: ImplicitMeta
          Rule: "ANY Readers"
        Writers:
-         Type: ImplicitMeta
-         Rule: "ANY Writers"
+         Type: Signature
+         Rule: "OR('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member')"
        Admins:
          Type: ImplicitMeta
          Rule: "MAJORITY Admins"
