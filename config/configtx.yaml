@@ -189,6 +189,24 @@ Organizations:
       - Host: peer0.org8.example.com
         Port: 14051
 
+Application: &ApplicationDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+
 Orderer: &OrdererDefaults
   OrdererType: etcdraft
   Addresses:
@@ -220,33 +238,6 @@ Orderer: &OrdererDefaults
       Type: ImplicitMeta
       Rule: "ANY Writers"
 
-Application:
-  Policies:
-    LifecycleEndorsement:
-      Type: Signature
-      Rule: "OR('Org1MSP.peer', 'Org2MSP.peer', 'Org3MSP.peer', 'Org4MSP.peer', 'Org5MSP.peer', 'Org6MSP.peer', 'Org7MSP.peer', 'Org8MSP.peer')"
-    Endorsement:
-      Type: Signature
-      Rule: "OR('Org1MSP.peer', 'Org2MSP.peer', 'Org3MSP.peer', 'Org4MSP.peer', 'Org5MSP.peer', 'Org6MSP.peer', 'Org7MSP.peer', 'Org8MSP.peer')"
-    Readers:
-      Type: Signature
-      Rule: "OR('Org1MSP.member', 'Org2MSP.member', 'Org3MSP.member', 'Org4MSP.member', 'Org5MSP.member', 'Org6MSP.member', 'Org7MSP.member', 'Org8MSP.member')"
-    Writers:
-      Type: Signature
-      Rule: "OR('Org1MSP.member', 'Org2MSP.member', 'Org3MSP.member', 'Org4MSP.member', 'Org5MSP.member', 'Org6MSP.member', 'Org7MSP.member', 'Org8MSP.member')"
-    Admins:
-      Type: Signature
-      Rule: "MAJORITY Admins"
-  Organizations:
-    - *Org1
-    - *Org2
-    - *Org3
-    - *Org4
-    - *Org5
-    - *Org6
-    - *Org7
-    - *Org8
-
 Capabilities:
   Channel:
     V2_5: true
@@ -265,6 +256,7 @@ Profiles:
       Capabilities:
         V2_5: true
     Application:
+      <<: *ApplicationDefaults
       Organizations:
         - *Org1
         - *Org2
