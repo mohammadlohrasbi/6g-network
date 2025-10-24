@@ -13,7 +13,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org1.example.com
+          - ca-org1.org1.example.com
     Template:
       Count: 1
     Users:
@@ -26,7 +26,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org2.example.com
+          - ca-org2.org2.example.com
     Template:
       Count: 1
     Users:
@@ -39,7 +39,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org3.example.com
+          - ca-org3.org3.example.com
     Template:
       Count: 1
     Users:
@@ -52,7 +52,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org4.example.com
+          - ca-org4.org4.example.com
     Template:
       Count: 1
     Users:
@@ -65,7 +65,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org5.example.com
+          - ca-org5.org5.example.com
     Template:
       Count: 1
     Users:
@@ -78,7 +78,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org6.example.com
+          - ca-org6.org6.example.com
     Template:
       Count: 1
     Users:
@@ -91,7 +91,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org7.example.com
+          - ca-org7.org7.example.com
     Template:
       Count: 1
     Users:
@@ -104,7 +104,7 @@ PeerOrgs:
       CSR:
         Hosts:
           - localhost
-          - ca.org8.example.com
+          - ca-org8.org8.example.com
     Template:
       Count: 1
     Users:
