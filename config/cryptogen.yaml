@@ -1,121 +1,111 @@
----
 OrdererOrgs:
-  - Name: OrdererOrg
+  - Name: Orderer
     Domain: example.com
     Specs:
-      - Hostname: orderer1
-        SANS:
-          - localhost
-          - orderer1.example.com
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.orderer.example.com
+      - Hostname: orderer
 
 PeerOrgs:
   - Name: Org1
     Domain: org1.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org1
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org1.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org1.example.com
   - Name: Org2
     Domain: org2.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org2
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org2.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org2.example.com
   - Name: Org3
     Domain: org3.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org3
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org3.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org3.example.com
   - Name: Org4
     Domain: org4.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org4
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org4.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org4.example.com
   - Name: Org5
     Domain: org5.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org5
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org5.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org5.example.com
   - Name: Org6
     Domain: org6.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org6
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org6.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org6.example.com
   - Name: Org7
     Domain: org7.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org7
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org7.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org7.example.com
   - Name: Org8
     Domain: org8.example.com
     EnableNodeOUs: true
+    CA:
+      Hostname: ca-org8
+      CSR:
+        Hosts:
+          - localhost
+          - ca.org8.example.com
     Template:
       Count: 1
     Users:
       Count: 1
-    CA:
-      Country: US
-      State: California
-      Locality: San Francisco
-      OrganizationalUnit: Hyperledger Fabric
-      CommonName: ca.org8.example.com
