@@ -1,3 +1,4 @@
+---
 OrdererOrgs:
   - Name: Orderer
     Domain: example.com
