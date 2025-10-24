@@ -1,4 +1,18 @@
 ---
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    V2_5: true
+
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
@@ -243,9 +257,8 @@ Profiles:
       Organizations:
         - *OrdererOrg
       Capabilities:
-        <<: *OrdererCapabilities
+        V2_5: true
     Application:
-      <<: *ApplicationDefaults
       Organizations:
         - *Org1
         - *Org2
@@ -256,4 +269,4 @@ Profiles:
         - *Org7
         - *Org8
       Capabilities:
-        <<: *ApplicationCapabilities
+        V2_5: true
