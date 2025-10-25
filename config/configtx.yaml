@@ -246,21 +246,8 @@ Capabilities:
   Application:
     V2_5: true
 
-Consortiums:
-  SampleConsortium:
-    Organizations:
-      - *Org1
-      - *Org2
-      - *Org3
-      - *Org4
-      - *Org5
-      - *Org6
-      - *Org7
-      - *Org8
-
 Profiles:
   SystemChannel:
-    Consortium: SampleConsortium
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
