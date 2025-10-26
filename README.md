@@ -35,6 +35,7 @@ pip install yamllint
 
 # نصب openssl (معمولاً از پیش نصب است)
 sudo apt-get install -y openssl
+---
 ## ساختار پروژه
 
 - `/root/6g-network/config`: شامل فایل‌های پیکربندی (`cryptogen.yaml`، `configtx.yaml`، `docker-compose-ca.yml`).
