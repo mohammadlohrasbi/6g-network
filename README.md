@@ -1,4 +1,4 @@
-# پروژه شبکه 6G با Hyperledger Fabric
+## پروژه شبکه 6G با Hyperledger Fabric
 
 این پروژه یک شبکه Hyperledger Fabric با ۸ سازمان همتا (Org1 تا Org8)، یک سازمان مرتب‌کننده، و ۲۰ کانال (NetworkChannel، ResourceChannel، و غیره) پیاده‌سازی می‌کند. این سند مراحل راه‌اندازی و اجرای پروژه را شرح می‌دهد.
 
@@ -35,8 +35,6 @@ pip install yamllint
 
 # نصب openssl (معمولاً از پیش نصب است)
 sudo apt-get install -y openssl
-```
-
 ## ساختار پروژه
 
 - `/root/6g-network/config`: شامل فایل‌های پیکربندی (`cryptogen.yaml`، `configtx.yaml`، `docker-compose-ca.yml`).
@@ -60,7 +58,7 @@ yamllint docker-compose-ca.yml
 **نکته**: اگر خطای تورفتگی در `configtx.yaml` رخ داد، اطمینان حاصل کنید که کلیدهای سطح بالا (مانند `Organizations`) بدون تورفتگی باشند:
 
 ```bash
-nano /root/6g-network/config/configtx.yaml
+nnano /root/6g-network/config/configtx.yaml
 # اطمینان حاصل کنید که خط دوم به صورت زیر است:
 ---
 Organizations:
@@ -95,7 +93,7 @@ ls -R /root/6g-network/config/crypto-config
 
 ```bash
 ls -l /root/6g-network/config/crypto-config/peerOrganizations/*/ca/
-ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/
+ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/
 ```
 
 ### ۳. تولید آرتیفکت‌های کانال
@@ -105,9 +103,9 @@ ls -l /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ord
 ```bash
 export FABRIC_CFG_PATH=${PWD}
 mkdir -p channel-artifacts
+configtxgen -profile SystemChannel -outputBlock channel-artifacts/system-genesis.block -channelID system-channel
 for CHANNEL in NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel; do
-    configtxgen -profile ApplicationGenesis -outputBlock channel-artifacts/${CHANNEL}.block -channelID ${CHANNEL}
-    configtxgen -profile ApplicationGenesis -outputCreateChannelTx channel-artifacts/${CHANNEL,,}.tx -channelID ${CHANNEL}
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx channel-artifacts/${CHANNEL,,}.tx -channelID ${CHANNEL}
 done
 ```
 
@@ -233,7 +231,7 @@ cd /root/6g-network
 export FABRIC_CA_CLIENT_HOME=${PWD}/wallet
 for i in {1..8}; do
     echo "Enrolling admin for ca-org${i}"
-    fabric-ca-client enroll -u https://admin:adminpw@localhost:$((7054 + (i-1)*1000)) --caname ca-org${i} --tls.certfiles /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/ca.org${i}.example.com-cert.pem --mspdir org${i}/admin/msp || echo "Failed to enroll admin for ca-org${i}"
+    fabric-ca-client enroll -u https://admin:adminpw@localhost:$((7054 + (i-1)*1000)) --caname ca-org${i} --tls.certfiles /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/tls-cert.pem --mspdir org${i}/admin/msp || echo "Failed to enroll admin for ca-org${i}"
 done
 ```
 
