@@ -152,7 +152,7 @@ done
 ```bash
 for i in {1..8}; do
     echo "Generating TLS cert and key for org${i}"
-    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -keyout /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/tls-key.pem -out /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/tls-cert.pem -days 3650 -nodes -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=ca-org${i}"
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -keyout /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/tls-key.pem -out /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/ca/tls-cert.pem -days 3650 -nodes -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=ca-org${i}" -addext "subjectAltName = DNS:localhost, DNS:ca-org${i}"
 done
 ```
 
