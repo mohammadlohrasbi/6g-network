@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Fixed and Complete generateChaincodes_part8.sh
+# This script generates full Go chaincode for 8 contracts in part 8.
+# Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
+# Added complete case for all contracts with customized structs and functions.
+# The Go code is complete with Init, Encrypt/Decrypt/Set/Update/Log functions, Query, and other relevant methods.
+
 contracts=(
     "EncryptData" "DecryptData" "SecureCommunication" "VerifyIdentity" "SetPolicy" "GetPolicy" "UpdatePolicy" "LogPolicyAudit"
 )
@@ -8,13 +14,14 @@ for contract in "${contracts[@]}"; do
     mkdir -p chaincode/$contract
     case $contract in
         EncryptData)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -48,7 +55,7 @@ func (s *EncryptData) Encrypt(ctx contractapi.TransactionContextInterface, entit
 func (s *EncryptData) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*EncryptedData, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("encrypted data %s does not exist", entityID)
@@ -67,7 +74,6 @@ func (s *EncryptData) QueryAllAssets(ctx contractapi.TransactionContextInterface
         return nil, err
     }
     defer resultsIterator.Close()
-
     var encryptedData []*EncryptedData
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -96,13 +102,14 @@ func main() {
 EOF
             ;;
         DecryptData)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -136,7 +143,7 @@ func (s *DecryptData) Decrypt(ctx contractapi.TransactionContextInterface, entit
 func (s *DecryptData) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*DecryptedData, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("decrypted data %s does not exist", entityID)
@@ -155,7 +162,6 @@ func (s *DecryptData) QueryAllAssets(ctx contractapi.TransactionContextInterface
         return nil, err
     }
     defer resultsIterator.Close()
-
     var decryptedData []*DecryptedData
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -184,13 +190,14 @@ func main() {
 EOF
             ;;
         SecureCommunication)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -198,7 +205,7 @@ type SecureCommunication struct {
     contractapi.Contract
 }
 
-type CommunicationRecord struct {
+type Communication struct {
     EntityID  string `json:"entityID"`
     ChannelID string `json:"channelID"`
     Status    string `json:"status"`
@@ -210,56 +217,55 @@ func (s *SecureCommunication) Init(ctx contractapi.TransactionContextInterface) 
 }
 
 func (s *SecureCommunication) Establish(ctx contractapi.TransactionContextInterface, entityID, channelID string) error {
-    record := CommunicationRecord{
+    communication := Communication{
         EntityID:  entityID,
         ChannelID: channelID,
         Status:    "Established",
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    communicationJSON, err := json.Marshal(communication)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(entityID, recordJSON)
+    return ctx.GetStub().PutState(entityID, communicationJSON)
 }
 
-func (s *SecureCommunication) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*CommunicationRecord, error) {
+func (s *SecureCommunication) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*Communication, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("communication record %s does not exist", entityID)
+        return nil, fmt.Errorf("secure communication %s does not exist", entityID)
     }
-    var record CommunicationRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var communication Communication
+    err = json.Unmarshal(assetJSON, &communication)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &communication, nil
 }
 
-func (s *SecureCommunication) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*CommunicationRecord, error) {
+func (s *SecureCommunication) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Communication, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*CommunicationRecord
+    var communications []*Communication
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record CommunicationRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var communication Communication
+        err = json.Unmarshal(queryResponse.Value, &communication)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        communications = append(communications, &communication)
     }
-    return records, nil
+    return communications, nil
 }
 
 func main() {
@@ -274,13 +280,14 @@ func main() {
 EOF
             ;;
         VerifyIdentity)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -288,7 +295,7 @@ type VerifyIdentity struct {
     contractapi.Contract
 }
 
-type IdentityRecord struct {
+type Identity struct {
     EntityID  string `json:"entityID"`
     Verified  bool   `json:"verified"`
     Timestamp string `json:"timestamp"`
@@ -299,55 +306,54 @@ func (s *VerifyIdentity) Init(ctx contractapi.TransactionContextInterface) error
 }
 
 func (s *VerifyIdentity) Verify(ctx contractapi.TransactionContextInterface, entityID string, verified bool) error {
-    record := IdentityRecord{
+    identity := Identity{
         EntityID:  entityID,
         Verified:  verified,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    identityJSON, err := json.Marshal(identity)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(entityID, recordJSON)
+    return ctx.GetStub().PutState(entityID, identityJSON)
 }
 
-func (s *VerifyIdentity) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*IdentityRecord, error) {
+func (s *VerifyIdentity) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*Identity, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("identity record %s does not exist", entityID)
+        return nil, fmt.Errorf("identity %s does not exist", entityID)
     }
-    var record IdentityRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var identity Identity
+    err = json.Unmarshal(assetJSON, &identity)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &identity, nil
 }
 
-func (s *VerifyIdentity) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*IdentityRecord, error) {
+func (s *VerifyIdentity) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Identity, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*IdentityRecord
+    var identities []*Identity
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record IdentityRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var identity Identity
+        err = json.Unmarshal(queryResponse.Value, &identity)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        identities = append(identities, &identity)
     }
-    return records, nil
+    return identities, nil
 }
 
 func main() {
@@ -362,13 +368,14 @@ func main() {
 EOF
             ;;
         SetPolicy)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -376,7 +383,7 @@ type SetPolicy struct {
     contractapi.Contract
 }
 
-type PolicyRecord struct {
+type Policy struct {
     PolicyID  string `json:"policyID"`
     Policy    string `json:"policy"`
     Timestamp string `json:"timestamp"`
@@ -387,55 +394,54 @@ func (s *SetPolicy) Init(ctx contractapi.TransactionContextInterface) error {
 }
 
 func (s *SetPolicy) Set(ctx contractapi.TransactionContextInterface, policyID, policy string) error {
-    record := PolicyRecord{
+    policyRecord := Policy{
         PolicyID:  policyID,
         Policy:    policy,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    policyJSON, err := json.Marshal(policyRecord)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(policyID, recordJSON)
+    return ctx.GetStub().PutState(policyID, policyJSON)
 }
 
-func (s *SetPolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyRecord, error) {
+func (s *SetPolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*Policy, error) {
     assetJSON, err := ctx.GetStub().GetState(policyID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("policy record %s does not exist", policyID)
+        return nil, fmt.Errorf("policy %s does not exist", policyID)
     }
-    var record PolicyRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var policyRecord Policy
+    err = json.Unmarshal(assetJSON, &policyRecord)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &policyRecord, nil
 }
 
-func (s *SetPolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*PolicyRecord, error) {
+func (s *SetPolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Policy, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*PolicyRecord
+    var policies []*Policy
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record PolicyRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var policyRecord Policy
+        err = json.Unmarshal(queryResponse.Value, &policyRecord)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        policies = append(policies, &policyRecord)
     }
-    return records, nil
+    return policies, nil
 }
 
 func main() {
@@ -450,12 +456,13 @@ func main() {
 EOF
             ;;
         GetPolicy)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -463,7 +470,7 @@ type GetPolicy struct {
     contractapi.Contract
 }
 
-type PolicyRecord struct {
+type Policy struct {
     PolicyID  string `json:"policyID"`
     Policy    string `json:"policy"`
     Timestamp string `json:"timestamp"`
@@ -473,43 +480,42 @@ func (s *GetPolicy) Init(ctx contractapi.TransactionContextInterface) error {
     return nil
 }
 
-func (s *GetPolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyRecord, error) {
+func (s *GetPolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*Policy, error) {
     assetJSON, err := ctx.GetStub().GetState(policyID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("policy record %s does not exist", policyID)
+        return nil, fmt.Errorf("policy %s does not exist", policyID)
     }
-    var record PolicyRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var policyRecord Policy
+    err = json.Unmarshal(assetJSON, &policyRecord)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &policyRecord, nil
 }
 
-func (s *GetPolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*PolicyRecord, error) {
+func (s *GetPolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Policy, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*PolicyRecord
+    var policies []*Policy
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record PolicyRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var policyRecord Policy
+        err = json.Unmarshal(queryResponse.Value, &policyRecord)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        policies = append(policies, &policyRecord)
     }
-    return records, nil
+    return policies, nil
 }
 
 func main() {
@@ -524,13 +530,14 @@ func main() {
 EOF
             ;;
         UpdatePolicy)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -538,7 +545,7 @@ type UpdatePolicy struct {
     contractapi.Contract
 }
 
-type PolicyRecord struct {
+type Policy struct {
     PolicyID  string `json:"policyID"`
     Policy    string `json:"policy"`
     Timestamp string `json:"timestamp"`
@@ -549,56 +556,55 @@ func (s *UpdatePolicy) Init(ctx contractapi.TransactionContextInterface) error {
 }
 
 func (s *UpdatePolicy) Update(ctx contractapi.TransactionContextInterface, policyID, policy string) error {
-    record, err := s.QueryAsset(ctx, policyID)
+    policyRecord, err := s.QueryAsset(ctx, policyID)
     if err != nil {
         return err
     }
-    record.Policy = policy
-    record.Timestamp = time.Now().String()
-    recordJSON, err := json.Marshal(record)
+    policyRecord.Policy = policy
+    policyRecord.Timestamp = time.Now().String()
+    policyJSON, err := json.Marshal(policyRecord)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(policyID, recordJSON)
+    return ctx.GetStub().PutState(policyID, policyJSON)
 }
 
-func (s *UpdatePolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyRecord, error) {
+func (s *UpdatePolicy) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*Policy, error) {
     assetJSON, err := ctx.GetStub().GetState(policyID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("policy record %s does not exist", policyID)
+        return nil, fmt.Errorf("policy %s does not exist", policyID)
     }
-    var record PolicyRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var policyRecord Policy
+    err = json.Unmarshal(assetJSON, &policyRecord)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &policyRecord, nil
 }
 
-func (s *UpdatePolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*PolicyRecord, error) {
+func (s *UpdatePolicy) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Policy, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*PolicyRecord
+    var policies []*Policy
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record PolicyRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var policyRecord Policy
+        err = json.Unmarshal(queryResponse.Value, &policyRecord)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        policies = append(policies, &policyRecord)
     }
-    return records, nil
+    return policies, nil
 }
 
 func main() {
@@ -613,13 +619,14 @@ func main() {
 EOF
             ;;
         LogPolicyAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -627,7 +634,7 @@ type LogPolicyAudit struct {
     contractapi.Contract
 }
 
-type PolicyAuditLog struct {
+type PolicyAudit struct {
     PolicyID  string `json:"policyID"`
     Action    string `json:"action"`
     Timestamp string `json:"timestamp"`
@@ -638,55 +645,54 @@ func (s *LogPolicyAudit) Init(ctx contractapi.TransactionContextInterface) error
 }
 
 func (s *LogPolicyAudit) Log(ctx contractapi.TransactionContextInterface, policyID, action string) error {
-    log := PolicyAuditLog{
+    policyAudit := PolicyAudit{
         PolicyID:  policyID,
         Action:    action,
         Timestamp: time.Now().String(),
     }
-    logJSON, err := json.Marshal(log)
+    policyAuditJSON, err := json.Marshal(policyAudit)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(policyID, logJSON)
+    return ctx.GetStub().PutState(policyID, policyAuditJSON)
 }
 
-func (s *LogPolicyAudit) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyAuditLog, error) {
+func (s *LogPolicyAudit) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyAudit, error) {
     assetJSON, err := ctx.GetStub().GetState(policyID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("policy audit log %s does not exist", policyID)
     }
-    var log PolicyAuditLog
-    err = json.Unmarshal(assetJSON, &log)
+    var policyAudit PolicyAudit
+    err = json.Unmarshal(assetJSON, &policyAudit)
     if err != nil {
         return nil, err
     }
-    return &log, nil
+    return &policyAudit, nil
 }
 
-func (s *LogPolicyAudit) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*PolicyAuditLog, error) {
+func (s *LogPolicyAudit) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*PolicyAudit, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var logs []*PolicyAuditLog
+    var policyAudits []*PolicyAudit
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var log PolicyAuditLog
-        err = json.Unmarshal(queryResponse.Value, &log)
+        var policyAudit PolicyAudit
+        err = json.Unmarshal(queryResponse.Value, &policyAudit)
         if err != nil {
             return nil, err
         }
-        logs = append(logs, &log)
+        policyAudits = append(policyAudits, &policyAudit)
     }
-    return logs, nil
+    return policyAudits, nil
 }
 
 func main() {
