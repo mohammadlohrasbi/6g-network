@@ -1,140 +1,219 @@
 #!/bin/bash
 
-# تعداد سازمان‌ها (پیش‌فرض 8، قابل تنظیم)
-ORG_COUNT=${ORG_COUNT:-8}
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
+# شامل: تولید crypto, channel, core.yaml, راه‌اندازی Docker, ایجاد کانال, نصب chaincode
 
-# لیست 20 کانال
-CHANNELS=("NetworkChannel" "ResourceChannel" "PerformanceChannel" "IoTChannel" "AuthChannel" "ConnectivityChannel" "SessionChannel" "PolicyChannel" "AuditChannel" "SecurityChannel" "DataChannel" "AnalyticsChannel" "MonitoringChannel" "ManagementChannel" "OptimizationChannel" "FaultChannel" "TrafficChannel" "AccessChannel" "ComplianceChannel" "IntegrationChannel")
+set -e  # توقف در اولین خطا
 
-# تنظیم متغیرهای محیطی برای Org1 (برای ایجاد کانال‌ها)
-export FABRIC_CFG_PATH=${PWD}/config
-export CORE_PEER_TLS_ENABLED=true
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+ROOT_DIR="/root/6g-network"
+CONFIG_DIR="$ROOT_DIR/config"
+CRYPTO_DIR="$CONFIG_DIR/crypto-config"
+CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
+CHAINCODE_DIR="$ROOT_DIR/chaincode"
+SCRIPTS_DIR="$ROOT_DIR/scripts"
 
-# توابع کمکی
-function checkPrereqs() {
-    if ! command -v docker &> /dev/null; then
-        echo "Docker is not installed. Please install Docker."
-        exit 1
-    fi
-    if ! command -v docker-compose &> /dev/null; then
-        echo "Docker Compose is not installed. Please install Docker Compose."
-        exit 1
-    fi
-    if ! command -v peer &> /dev/null; then
-        echo "Hyperledger Fabric binaries are not installed. Please install Fabric 2.5."
-        exit 1
-    fi
+# تنظیم مسیر FABRIC_CFG_PATH
+export FABRIC_CFG_PATH="$CONFIG_DIR"
+
+# تابع نمایش پیام
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
-function generateConfigs() {
-    echo "Generating connection profiles, core YAMLs, and workload files..."
-    cd scripts
-    ./generateConnectionJson.sh
-    ./generateConnectionProfiles.sh
-    ./generateCoreyamls.sh
-    ./generateWorkloadFiles.sh
-    cd ..
+# مرحله 1: تولید crypto-config
+generate_crypto() {
+  log "Generating crypto-config..."
+  cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
+  log "Crypto-config generated in $CRYPTO_DIR"
 }
 
-function startNetwork() {
-    echo "Starting Fabric network..."
-    docker-compose -f config/docker-compose.yml up -d
-    sleep 10
+# مرحله 2: تولید channel artifacts و genesis block
+generate_channel_artifacts() {
+  log "Generating channel artifacts and genesis block..."
+  configtxgen -profile EightOrgsGenesis -channelID system-channel -outputBlock "$CHANNEL_DIR/genesis.block"
+  
+  # ایجاد کانال‌های 19 تایی
+  channels=(
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel OptimizationChannel FaultChannel
+    TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+  )
+  
+  for channel in "${channels[@]}"; do
+    configtxgen -profile EightOrgsChannel -outputCreateChannelTx "$CHANNEL_DIR/${channel,,}.tx" -channelID "$channel"
+    log "  Created: $CHANNEL_DIR/${channel,,}.tx"
+  done
+  log "All channel artifacts generated in $CHANNEL_DIR"
 }
 
-function createChannels() {
-    echo "Creating channels..."
-    for CHANNEL in "${CHANNELS[@]}"; do
-        peer channel create -o orderer1.example.com:7050 -c ${CHANNEL} -f config/channel-artifacts/${CHANNEL,,}.tx --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+# مرحله 3: تولید core.yaml
+generate_coreyamls() {
+  log "Generating core.yaml files..."
+  "$SCRIPTS_DIR/generateCoreyamls.sh"
+}
+
+# مرحله 4: راه‌اندازی شبکه Docker
+start_network() {
+  log "Creating Docker network: 6g-network"
+  docker network create 6g-network || true
+
+  log "Starting CA servers..."
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d
+
+  log "Waiting 10 seconds for CAs to start..."
+  sleep 10
+
+  log "Starting Orderer and Peers..."
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d
+
+  log "Waiting 15 seconds for nodes to initialize..."
+  sleep 15
+}
+
+# مرحله 5: ایجاد و جوین کردن کانال‌ها
+create_and_join_channels() {
+  log "Creating and joining channels..."
+
+  channels=(
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel OptimizationChannel FaultChannel
+    TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+  )
+
+  for i in {1..8}; do
+    export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
+    export CORE_PEER_LOCALMSPID="Org${i}MSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
+
+    for channel in "${channels[@]}"; do
+      # ایجاد کانال (فقط یک بار)
+      if [ $i -eq 1 ]; then
+        peer channel create -o orderer.example.com:7050 \
+          -c "$channel" \
+          -f "$CHANNEL_DIR/${channel,,}.tx" \
+          --tls --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+          --outputBlock "$CHANNEL_DIR/${channel}.block"
+        log "  Created channel: $channel"
+      fi
+
+      # جوین به کانال
+      peer channel join -b "$CHANNEL_DIR/${channel}.block"
+      log "  Org${i} joined $channel"
     done
+  done
 }
 
-function joinChannels() {
-    echo "Joining channels..."
-    for ((i=1; i<=ORG_COUNT; i++)); do
-        ORG_NAME="Org${i}"
-        PEER_PORT=$((7051 + (i-1)*2000))
-        export CORE_PEER_LOCALMSPID="${ORG_NAME}MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt
-        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp
-        export CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}
-        for CHANNEL in "${CHANNELS[@]}"; do
-            peer channel join -b config/channel-artifacts/${CHANNEL}.block
+# مرحله 6: بسته‌بندی و نصب chaincode
+package_and_install_chaincode() {
+  log "Packaging and installing chaincodes..."
+
+  for part in {1..10}; do
+    PART_DIR="$CHAINCODE_DIR/part$part"
+    [ ! -d "$PART_DIR" ] && continue
+
+    for contract_dir in "$PART_DIR"/*/; do
+      contract=$(basename "$contract_dir")
+      tar_file="$PART_DIR/${contract}.tar.gz"
+
+      # بسته‌بندی
+      peer lifecycle chaincode package "$tar_file" \
+        --path "$contract_dir" \
+        --lang golang \
+        --label "${contract}_1.0"
+
+      # نصب روی همه Peerها
+      for i in {1..8}; do
+        export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+        export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
+        export CORE_PEER_LOCALMSPID="Org${i}MSP"
+        export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
+
+        peer lifecycle chaincode install "$tar_file" > /dev/null 2>&1
+      done
+      log "  Installed: $contract"
+    done
+  done
+}
+
+# مرحله 7: تأیید و commit chaincode
+approve_and_commit_chaincode() {
+  log "Approving and committing chaincodes..."
+
+  channels=(
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel OptimizationChannel FaultChannel
+    TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+  )
+
+  for channel in "${channels[@]}"; do
+    for part in {1..10}; do
+      PART_DIR="$CHAINCODE_DIR/part$part"
+      [ ! -d "$PART_DIR" ] && continue
+
+      for contract_dir in "$PART_DIR"/*/; do
+        contract=$(basename "$contract_dir")
+        package_id=$(peer lifecycle chaincode queryinstalled | grep "${contract}_1.0" | awk -F', ' '{print $2}' | cut -d' ' -f2)
+
+        if [ -z "$package_id" ]; then
+          log "  Skipping $contract (not installed)"
+          continue
+        fi
+
+        # تأیید برای همه سازمان‌ها
+        for i in {1..8}; do
+          export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+          export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
+          export CORE_PEER_LOCALMSPID="Org${i}MSP"
+          export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
+
+          peer lifecycle chaincode approveformyorg \
+            -o orderer.example.com:7050 \
+            --tls --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+            --channelID "$channel" \
+            --name "$contract" \
+            --version 1.0 \
+            --package-id "$package_id" \
+            --sequence 1 \
+            --init-required > /dev/null 2>&1
         done
+
+        # Commit (فقط یک بار)
+        if [ $i -eq 1 ]; then
+          peer lifecycle chaincode commit \
+            -o orderer.example.com:7050 \
+            --tls --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+            --channelID "$channel" \
+            --name "$contract" \
+            --version 1.0 \
+            --sequence 1 \
+            --init-required \
+            --peerAddresses peer0.org1.example.com:7151 \
+            --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" > /dev/null 2>&1
+          log "  Committed: $contract on $channel"
+        fi
+      done
     done
+  done
 }
 
-function packageChaincodes() {
-    echo "Packaging chaincodes..."
-    cd scripts
-    for i in {1..10}; do
-        ./generateChaincodes_part${i}.sh
-    done
-    cd ..
+# اجرای مراحل
+main() {
+  log "Starting 6G Network Setup..."
+
+  generate_crypto
+  generate_channel_artifacts
+  generate_coreyamls
+  start_network
+  create_and_join_channels
+  package_and_install_chaincode
+  approve_and_commit_chaincode
+
+  log "6G Network setup completed successfully!"
+  log "Use 'docker ps' to check running containers."
 }
 
-function installChaincodes() {
-    echo "Installing chaincodes..."
-    for ((i=1; i<=ORG_COUNT; i++)); do
-        ORG_NAME="Org${i}"
-        PEER_PORT=$((7051 + (i-1)*2000))
-        export CORE_PEER_LOCALMSPID="${ORG_NAME}MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt
-        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp
-        export CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}
-        for contract in $(ls chaincode); do
-            peer chaincode package chaincode/$contract.pack -n $contract -v 1.0 -p chaincode/$contract
-            peer chaincode install chaincode/$contract.pack
-        done
-    done
-}
-
-function instantiateChaincodes() {
-    echo "Instantiating chaincodes..."
-    export CORE_PEER_LOCALMSPID="Org1MSP"
-    export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-    export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-    export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
-    for contract in $(ls chaincode); do
-        case $contract in
-            AssetManagement|UserManagement|IoTManagement|AntennaManagement|NetworkManagement|ResourceManagement|PerformanceManagement|SessionManagement|PolicyManagement|ManageNetwork|ManageAntenna|ManageIoTDevice|ManageUser)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C NetworkChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            LocationBased*)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C ResourceChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            Authenticate*|Register*|Revoke*|AssignRole)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C AuthChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            Connect*)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C ConnectivityChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            Monitor*|Log*)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C AuditChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            EncryptData|DecryptData|SecureCommunication|VerifyIdentity|SetPolicy|GetPolicy|UpdatePolicy)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C SecurityChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-            *)
-                peer chaincode instantiate -o orderer1.example.com:7050 -C DataChannel -n $contract -v 1.0 -c '{"Args":["Init"]}' --tls --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-                ;;
-        esac
-        sleep 5
-    done
-}
-
-# اجرای مراحل راه‌اندازی
-checkPrereqs
-generateConfigs
-startNetwork
-createChannels
-joinChannels
-packageChaincodes
-installChaincodes
-instantiateChaincodes
-
-echo "Network setup completed successfully!" > setup.sh.log
+main
