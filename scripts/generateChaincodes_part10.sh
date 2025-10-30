@@ -1,4 +1,11 @@
+```bash
 #!/bin/bash
+
+# Fixed and Complete generateChaincodes_part10.sh
+# This script generates full Go chaincode for 9 contracts in part 10.
+# Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
+# Added complete case for all contracts with customized structs and functions.
+# The Go code is complete with Init, Log functions, Query, and main.
 
 contracts=(
     "LogNetworkAudit" "LogAntennaAudit" "LogIoTAudit" "LogUserAudit" "LogPolicyChange" "LogAccessAudit" "LogPerformanceAudit" "LogSecurityAudit" "LogComplianceAudit"
@@ -8,13 +15,14 @@ for contract in "${contracts[@]}"; do
     mkdir -p chaincode/$contract
     case $contract in
         LogNetworkAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -48,7 +56,7 @@ func (s *LogNetworkAudit) Log(ctx contractapi.TransactionContextInterface, netwo
 func (s *LogNetworkAudit) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*NetworkAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(networkID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("network audit log %s does not exist", networkID)
@@ -67,7 +75,6 @@ func (s *LogNetworkAudit) QueryAllAssets(ctx contractapi.TransactionContextInter
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*NetworkAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -96,13 +103,14 @@ func main() {
 EOF
             ;;
         LogAntennaAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -136,7 +144,7 @@ func (s *LogAntennaAudit) Log(ctx contractapi.TransactionContextInterface, anten
 func (s *LogAntennaAudit) QueryAsset(ctx contractapi.TransactionContextInterface, antennaID string) (*AntennaAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(antennaID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("antenna audit log %s does not exist", antennaID)
@@ -155,7 +163,6 @@ func (s *LogAntennaAudit) QueryAllAssets(ctx contractapi.TransactionContextInter
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*AntennaAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -184,13 +191,14 @@ func main() {
 EOF
             ;;
         LogIoTAudit)
-            cat > ho > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -199,8 +207,8 @@ type LogIoTAudit struct {
 }
 
 type IoTAuditLog struct {
-    DeviceID  string `json:"deviceID"`
-    Action    string `json:"action"`
+    DeviceID string `json:"deviceID"`
+    Action   string `json:"action"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -224,7 +232,7 @@ func (s *LogIoTAudit) Log(ctx contractapi.TransactionContextInterface, deviceID,
 func (s *LogIoTAudit) QueryAsset(ctx contractapi.TransactionContextInterface, deviceID string) (*IoTAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(deviceID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("IoT audit log %s does not exist", deviceID)
@@ -243,7 +251,6 @@ func (s *LogIoTAudit) QueryAllAssets(ctx contractapi.TransactionContextInterface
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*IoTAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -272,13 +279,14 @@ func main() {
 EOF
             ;;
         LogUserAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -287,8 +295,8 @@ type LogUserAudit struct {
 }
 
 type UserAuditLog struct {
-    UserID    string `json:"userID"`
-    Action    string `json:"action"`
+    UserID string `json:"userID"`
+    Action string `json:"action"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -312,7 +320,7 @@ func (s *LogUserAudit) Log(ctx contractapi.TransactionContextInterface, userID, 
 func (s *LogUserAudit) QueryAsset(ctx contractapi.TransactionContextInterface, userID string) (*UserAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(userID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("user audit log %s does not exist", userID)
@@ -331,7 +339,6 @@ func (s *LogUserAudit) QueryAllAssets(ctx contractapi.TransactionContextInterfac
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*UserAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -360,13 +367,14 @@ func main() {
 EOF
             ;;
         LogPolicyChange)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -375,8 +383,8 @@ type LogPolicyChange struct {
 }
 
 type PolicyChangeLog struct {
-    PolicyID  string `json:"policyID"`
-    Change    string `json:"change"`
+    PolicyID string `json:"policyID"`
+    Change   string `json:"change"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -400,7 +408,7 @@ func (s *LogPolicyChange) Log(ctx contractapi.TransactionContextInterface, polic
 func (s *LogPolicyChange) QueryAsset(ctx contractapi.TransactionContextInterface, policyID string) (*PolicyChangeLog, error) {
     assetJSON, err := ctx.GetStub().GetState(policyID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("policy change log %s does not exist", policyID)
@@ -419,7 +427,6 @@ func (s *LogPolicyChange) QueryAllAssets(ctx contractapi.TransactionContextInter
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*PolicyChangeLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -448,13 +455,14 @@ func main() {
 EOF
             ;;
         LogAccessAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -463,8 +471,8 @@ type LogAccessAudit struct {
 }
 
 type AccessAuditLog struct {
-    EntityID  string `json:"entityID"`
-    Action    string `json:"action"`
+    EntityID string `json:"entityID"`
+    Action   string `json:"action"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -488,7 +496,7 @@ func (s *LogAccessAudit) Log(ctx contractapi.TransactionContextInterface, entity
 func (s *LogAccessAudit) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*AccessAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("access audit log %s does not exist", entityID)
@@ -507,7 +515,6 @@ func (s *LogAccessAudit) QueryAllAssets(ctx contractapi.TransactionContextInterf
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*AccessAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -536,13 +543,14 @@ func main() {
 EOF
             ;;
         LogPerformanceAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -551,9 +559,9 @@ type LogPerformanceAudit struct {
 }
 
 type PerformanceAuditLog struct {
-    EntityID  string `json:"entityID"`
-    Metric    string `json:"metric"`
-    Value     string `json:"value"`
+    EntityID string `json:"entityID"`
+    Metric   string `json:"metric"`
+    Value    string `json:"value"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -578,7 +586,7 @@ func (s *LogPerformanceAudit) Log(ctx contractapi.TransactionContextInterface, e
 func (s *LogPerformanceAudit) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*PerformanceAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("performance audit log %s does not exist", entityID)
@@ -597,7 +605,6 @@ func (s *LogPerformanceAudit) QueryAllAssets(ctx contractapi.TransactionContextI
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*PerformanceAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -626,13 +633,14 @@ func main() {
 EOF
             ;;
         LogSecurityAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -641,8 +649,8 @@ type LogSecurityAudit struct {
 }
 
 type SecurityAuditLog struct {
-    EntityID  string `json:"entityID"`
-    Event     string `json:"event"`
+    EntityID string `json:"entityID"`
+    Event    string `json:"event"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -666,7 +674,7 @@ func (s *LogSecurityAudit) Log(ctx contractapi.TransactionContextInterface, enti
 func (s *LogSecurityAudit) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*SecurityAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("security audit log %s does not exist", entityID)
@@ -685,7 +693,6 @@ func (s *LogSecurityAudit) QueryAllAssets(ctx contractapi.TransactionContextInte
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*SecurityAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -714,13 +721,14 @@ func main() {
 EOF
             ;;
         LogComplianceAudit)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -729,7 +737,7 @@ type LogComplianceAudit struct {
 }
 
 type ComplianceAuditLog struct {
-    EntityID  string `json:"entityID"`
+    EntityID string `json:"entityID"`
     ComplianceStatus string `json:"complianceStatus"`
     Timestamp string `json:"timestamp"`
 }
@@ -740,7 +748,7 @@ func (s *LogComplianceAudit) Init(ctx contractapi.TransactionContextInterface) e
 
 func (s *LogComplianceAudit) Log(ctx contractapi.TransactionContextInterface, entityID, complianceStatus string) error {
     log := ComplianceAuditLog{
-        EntityID:  entityID,
+        EntityID: entityID,
         ComplianceStatus: complianceStatus,
         Timestamp: time.Now().String(),
     }
@@ -754,7 +762,7 @@ func (s *LogComplianceAudit) Log(ctx contractapi.TransactionContextInterface, en
 func (s *LogComplianceAudit) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*ComplianceAuditLog, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
         return nil, fmt.Errorf("compliance audit log %s does not exist", entityID)
@@ -773,7 +781,6 @@ func (s *LogComplianceAudit) QueryAllAssets(ctx contractapi.TransactionContextIn
         return nil, err
     }
     defer resultsIterator.Close()
-
     var logs []*ComplianceAuditLog
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
@@ -812,3 +819,4 @@ for contract in "${contracts[@]}"; do
         echo " - $contract: Failed"
     fi
 done
+```
