@@ -1,20 +1,29 @@
+```bash
 #!/bin/bash
 
+# Fixed and Complete generateChaincodes_part9.sh
+# This script generates full Go chaincode for 9 contracts in part 9.
+# Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
+# Added complete case for all contracts with customized structs and functions.
+# The Go code is complete with Init, Update/Record/Log functions, Query, and other relevant methods.
+
 contracts=(
-    "ManageNetwork" "ManageAntenna" "ManageIoTDevice" "ManageUser" "MonitorTraffic" "MonitorInterference" "MonitorResourceUsage" "LogSecurityEvent" "LogAccessControl"
+    "ManageNetwork" "ManageAntenna" "ManageIoTDevice" "ManageUser" "MonitorTraffic" 
+    "MonitorInterference" "MonitorResourceUsage" "LogSecurityEvent" "LogAccessControl"
 )
 
 for contract in "${contracts[@]}"; do
     mkdir -p chaincode/$contract
     case $contract in
         ManageNetwork)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -22,7 +31,7 @@ type ManageNetwork struct {
     contractapi.Contract
 }
 
-type NetworkRecord struct {
+type Network struct {
     NetworkID string `json:"networkID"`
     Status    string `json:"status"`
     Timestamp string `json:"timestamp"`
@@ -33,55 +42,54 @@ func (s *ManageNetwork) Init(ctx contractapi.TransactionContextInterface) error 
 }
 
 func (s *ManageNetwork) UpdateNetworkStatus(ctx contractapi.TransactionContextInterface, networkID, status string) error {
-    record := NetworkRecord{
+    network := Network{
         NetworkID: networkID,
         Status:    status,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    networkJSON, err := json.Marshal(network)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(networkID, recordJSON)
+    return ctx.GetStub().PutState(networkID, networkJSON)
 }
 
-func (s *ManageNetwork) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*NetworkRecord, error) {
+func (s *ManageNetwork) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*Network, error) {
     assetJSON, err := ctx.GetStub().GetState(networkID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("network record %s does not exist", networkID)
+        return nil, fmt.Errorf("network %s does not exist", networkID)
     }
-    var record NetworkRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var network Network
+    err = json.Unmarshal(assetJSON, &network)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &network, nil
 }
 
-func (s *ManageNetwork) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*NetworkRecord, error) {
+func (s *ManageNetwork) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Network, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*NetworkRecord
+    var networks []*Network
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record NetworkRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var network Network
+        err = json.Unmarshal(queryResponse.Value, &network)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        networks = append(networks, &network)
     }
-    return records, nil
+    return networks, nil
 }
 
 func main() {
@@ -96,13 +104,14 @@ func main() {
 EOF
             ;;
         ManageAntenna)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -110,7 +119,7 @@ type ManageAntenna struct {
     contractapi.Contract
 }
 
-type AntennaRecord struct {
+type Antenna struct {
     AntennaID string `json:"antennaID"`
     Status    string `json:"status"`
     Timestamp string `json:"timestamp"`
@@ -121,55 +130,54 @@ func (s *ManageAntenna) Init(ctx contractapi.TransactionContextInterface) error 
 }
 
 func (s *ManageAntenna) UpdateAntennaStatus(ctx contractapi.TransactionContextInterface, antennaID, status string) error {
-    record := AntennaRecord{
+    antenna := Antenna{
         AntennaID: antennaID,
         Status:    status,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    antennaJSON, err := json.Marshal(antenna)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(antennaID, recordJSON)
+    return ctx.GetStub().PutState(antennaID, antennaJSON)
 }
 
-func (s *ManageAntenna) QueryAsset(ctx contractapi.TransactionContextInterface, antennaID string) (*AntennaRecord, error) {
+func (s *ManageAntenna) QueryAsset(ctx contractapi.TransactionContextInterface, antennaID string) (*Antenna, error) {
     assetJSON, err := ctx.GetStub().GetState(antennaID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("antenna record %s does not exist", antennaID)
+        return nil, fmt.Errorf("antenna %s does not exist", antennaID)
     }
-    var record AntennaRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var antenna Antenna
+    err = json.Unmarshal(assetJSON, &antenna)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &antenna, nil
 }
 
-func (s *ManageAntenna) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*AntennaRecord, error) {
+func (s *ManageAntenna) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Antenna, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*AntennaRecord
+    var antennas []*Antenna
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record AntennaRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var antenna Antenna
+        err = json.Unmarshal(queryResponse.Value, &antenna)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        antennas = append(antennas, &antenna)
     }
-    return records, nil
+    return antennas, nil
 }
 
 func main() {
@@ -184,13 +192,14 @@ func main() {
 EOF
             ;;
         ManageIoTDevice)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -198,7 +207,7 @@ type ManageIoTDevice struct {
     contractapi.Contract
 }
 
-type IoTDeviceRecord struct {
+type IoTDevice struct {
     DeviceID  string `json:"deviceID"`
     Status    string `json:"status"`
     Timestamp string `json:"timestamp"`
@@ -209,55 +218,54 @@ func (s *ManageIoTDevice) Init(ctx contractapi.TransactionContextInterface) erro
 }
 
 func (s *ManageIoTDevice) UpdateDeviceStatus(ctx contractapi.TransactionContextInterface, deviceID, status string) error {
-    record := IoTDeviceRecord{
+    iotDevice := IoTDevice{
         DeviceID:  deviceID,
         Status:    status,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    iotDeviceJSON, err := json.Marshal(iotDevice)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(deviceID, recordJSON)
+    return ctx.GetStub().PutState(deviceID, iotDeviceJSON)
 }
 
-func (s *ManageIoTDevice) QueryAsset(ctx contractapi.TransactionContextInterface, deviceID string) (*IoTDeviceRecord, error) {
+func (s *ManageIoTDevice) QueryAsset(ctx contractapi.TransactionContextInterface, deviceID string) (*IoTDevice, error) {
     assetJSON, err := ctx.GetStub().GetState(deviceID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("IoT device record %s does not exist", deviceID)
+        return nil, fmt.Errorf("IoT device %s does not exist", deviceID)
     }
-    var record IoTDeviceRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var iotDevice IoTDevice
+    err = json.Unmarshal(assetJSON, &iotDevice)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &iotDevice, nil
 }
 
-func (s *ManageIoTDevice) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*IoTDeviceRecord, error) {
+func (s *ManageIoTDevice) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*IoTDevice, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*IoTDeviceRecord
+    var iotDevices []*IoTDevice
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record IoTDeviceRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var iotDevice IoTDevice
+        err = json.Unmarshal(queryResponse.Value, &iotDevice)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        iotDevices = append(iotDevices, &iotDevice)
     }
-    return records, nil
+    return iotDevices, nil
 }
 
 func main() {
@@ -272,13 +280,14 @@ func main() {
 EOF
             ;;
         ManageUser)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -286,7 +295,7 @@ type ManageUser struct {
     contractapi.Contract
 }
 
-type UserRecord struct {
+type User struct {
     UserID    string `json:"userID"`
     Status    string `json:"status"`
     Timestamp string `json:"timestamp"`
@@ -297,55 +306,54 @@ func (s *ManageUser) Init(ctx contractapi.TransactionContextInterface) error {
 }
 
 func (s *ManageUser) UpdateUserStatus(ctx contractapi.TransactionContextInterface, userID, status string) error {
-    record := UserRecord{
+    user := User{
         UserID:    userID,
         Status:    status,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    userJSON, err := json.Marshal(user)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(userID, recordJSON)
+    return ctx.GetStub().PutState(userID, userJSON)
 }
 
-func (s *ManageUser) QueryAsset(ctx contractapi.TransactionContextInterface, userID string) (*UserRecord, error) {
+func (s *ManageUser) QueryAsset(ctx contractapi.TransactionContextInterface, userID string) (*User, error) {
     assetJSON, err := ctx.GetStub().GetState(userID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("user record %s does not exist", userID)
+        return nil, fmt.Errorf("user %s does not exist", userID)
     }
-    var record UserRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var user User
+    err = json.Unmarshal(assetJSON, &user)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &user, nil
 }
 
-func (s *ManageUser) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*UserRecord, error) {
+func (s *ManageUser) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*User, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*UserRecord
+    var users []*User
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record UserRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var user User
+        err = json.Unmarshal(queryResponse.Value, &user)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        users = append(users, &user)
     }
-    return records, nil
+    return users, nil
 }
 
 func main() {
@@ -360,13 +368,14 @@ func main() {
 EOF
             ;;
         MonitorTraffic)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -374,7 +383,7 @@ type MonitorTraffic struct {
     contractapi.Contract
 }
 
-type TrafficRecord struct {
+type Traffic struct {
     NetworkID string `json:"networkID"`
     Traffic   string `json:"traffic"`
     Timestamp string `json:"timestamp"`
@@ -385,55 +394,54 @@ func (s *MonitorTraffic) Init(ctx contractapi.TransactionContextInterface) error
 }
 
 func (s *MonitorTraffic) RecordTraffic(ctx contractapi.TransactionContextInterface, networkID, traffic string) error {
-    record := TrafficRecord{
+    trafficRecord := Traffic{
         NetworkID: networkID,
         Traffic:   traffic,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    trafficJSON, err := json.Marshal(trafficRecord)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(networkID, recordJSON)
+    return ctx.GetStub().PutState(networkID, trafficJSON)
 }
 
-func (s *MonitorTraffic) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*TrafficRecord, error) {
+func (s *MonitorTraffic) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*Traffic, error) {
     assetJSON, err := ctx.GetStub().GetState(networkID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("traffic record %s does not exist", networkID)
+        return nil, fmt.Errorf("traffic %s does not exist", networkID)
     }
-    var record TrafficRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var trafficRecord Traffic
+    err = json.Unmarshal(assetJSON, &trafficRecord)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &trafficRecord, nil
 }
 
-func (s *MonitorTraffic) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*TrafficRecord, error) {
+func (s *MonitorTraffic) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Traffic, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*TrafficRecord
+    var traffics []*Traffic
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record TrafficRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var trafficRecord Traffic
+        err = json.Unmarshal(queryResponse.Value, &trafficRecord)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        traffics = append(traffics, &trafficRecord)
     }
-    return records, nil
+    return traffics, nil
 }
 
 func main() {
@@ -448,13 +456,14 @@ func main() {
 EOF
             ;;
         MonitorInterference)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -462,10 +471,10 @@ type MonitorInterference struct {
     contractapi.Contract
 }
 
-type InterferenceRecord struct {
-    NetworkID string `json:"networkID"`
+type Interference struct {
+    NetworkID        string `json:"networkID"`
     InterferenceLevel string `json:"interferenceLevel"`
-    Timestamp string `json:"timestamp"`
+    Timestamp        string `json:"timestamp"`
 }
 
 func (s *MonitorInterference) Init(ctx contractapi.TransactionContextInterface) error {
@@ -473,55 +482,54 @@ func (s *MonitorInterference) Init(ctx contractapi.TransactionContextInterface) 
 }
 
 func (s *MonitorInterference) RecordInterference(ctx contractapi.TransactionContextInterface, networkID, interferenceLevel string) error {
-    record := InterferenceRecord{
-        NetworkID: networkID,
+    interference := Interference{
+        NetworkID:        networkID,
         InterferenceLevel: interferenceLevel,
-        Timestamp: time.Now().String(),
+        Timestamp:        time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    interferenceJSON, err := json.Marshal(interference)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(networkID, recordJSON)
+    return ctx.GetStub().PutState(networkID, interferenceJSON)
 }
 
-func (s *MonitorInterference) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*InterferenceRecord, error) {
+func (s *MonitorInterference) QueryAsset(ctx contractapi.TransactionContextInterface, networkID string) (*Interference, error) {
     assetJSON, err := ctx.GetStub().GetState(networkID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("interference record %s does not exist", networkID)
+        return nil, fmt.Errorf("interference %s does not exist", networkID)
     }
-    var record InterferenceRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var interference Interference
+    err = json.Unmarshal(assetJSON, &interference)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &interference, nil
 }
 
-func (s *MonitorInterference) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*InterferenceRecord, error) {
+func (s *MonitorInterference) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Interference, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*InterferenceRecord
+    var interferences []*Interference
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record InterferenceRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var interference Interference
+        err = json.Unmarshal(queryResponse.Value, &interference)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        interferences = append(interferences, &interference)
     }
-    return records, nil
+    return interferences, nil
 }
 
 func main() {
@@ -536,13 +544,14 @@ func main() {
 EOF
             ;;
         MonitorResourceUsage)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -550,7 +559,7 @@ type MonitorResourceUsage struct {
     contractapi.Contract
 }
 
-type ResourceUsageRecord struct {
+type ResourceUsage struct {
     EntityID  string `json:"entityID"`
     Resource  string `json:"resource"`
     Amount    string `json:"amount"`
@@ -562,56 +571,55 @@ func (s *MonitorResourceUsage) Init(ctx contractapi.TransactionContextInterface)
 }
 
 func (s *MonitorResourceUsage) RecordUsage(ctx contractapi.TransactionContextInterface, entityID, resource, amount string) error {
-    record := ResourceUsageRecord{
+    resourceUsage := ResourceUsage{
         EntityID:  entityID,
         Resource:  resource,
         Amount:    amount,
         Timestamp: time.Now().String(),
     }
-    recordJSON, err := json.Marshal(record)
+    resourceUsageJSON, err := json.Marshal(resourceUsage)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(entityID, recordJSON)
+    return ctx.GetStub().PutState(entityID, resourceUsageJSON)
 }
 
-func (s *MonitorResourceUsage) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*ResourceUsageRecord, error) {
+func (s *MonitorResourceUsage) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*ResourceUsage, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("resource usage record %s does not exist", entityID)
+        return nil, fmt.Errorf("resource usage %s does not exist", entityID)
     }
-    var record ResourceUsageRecord
-    err = json.Unmarshal(assetJSON, &record)
+    var resourceUsage ResourceUsage
+    err = json.Unmarshal(assetJSON, &resourceUsage)
     if err != nil {
         return nil, err
     }
-    return &record, nil
+    return &resourceUsage, nil
 }
 
-func (s *MonitorResourceUsage) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*ResourceUsageRecord, error) {
+func (s *MonitorResourceUsage) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*ResourceUsage, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var records []*ResourceUsageRecord
+    var resourceUsages []*ResourceUsage
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var record ResourceUsageRecord
-        err = json.Unmarshal(queryResponse.Value, &record)
+        var resourceUsage ResourceUsage
+        err = json.Unmarshal(queryResponse.Value, &resourceUsage)
         if err != nil {
             return nil, err
         }
-        records = append(records, &record)
+        resourceUsages = append(resourceUsages, &resourceUsage)
     }
-    return records, nil
+    return resourceUsages, nil
 }
 
 func main() {
@@ -626,13 +634,14 @@ func main() {
 EOF
             ;;
         LogSecurityEvent)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -640,7 +649,7 @@ type LogSecurityEvent struct {
     contractapi.Contract
 }
 
-type SecurityEventLog struct {
+type SecurityEvent struct {
     EntityID  string `json:"entityID"`
     Event     string `json:"event"`
     Timestamp string `json:"timestamp"`
@@ -651,55 +660,54 @@ func (s *LogSecurityEvent) Init(ctx contractapi.TransactionContextInterface) err
 }
 
 func (s *LogSecurityEvent) Log(ctx contractapi.TransactionContextInterface, entityID, event string) error {
-    log := SecurityEventLog{
+    securityEvent := SecurityEvent{
         EntityID:  entityID,
         Event:     event,
         Timestamp: time.Now().String(),
     }
-    logJSON, err := json.Marshal(log)
+    securityEventJSON, err := json.Marshal(securityEvent)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(entityID, logJSON)
+    return ctx.GetStub().PutState(entityID, securityEventJSON)
 }
 
-func (s *LogSecurityEvent) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*SecurityEventLog, error) {
+func (s *LogSecurityEvent) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*SecurityEvent, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("security event log %s does not exist", entityID)
+        return nil, fmt.Errorf("security event %s does not exist", entityID)
     }
-    var log SecurityEventLog
-    err = json.Unmarshal(assetJSON, &log)
+    var securityEvent SecurityEvent
+    err = json.Unmarshal(assetJSON, &securityEvent)
     if err != nil {
         return nil, err
     }
-    return &log, nil
+    return &securityEvent, nil
 }
 
-func (s *LogSecurityEvent) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*SecurityEventLog, error) {
+func (s *LogSecurityEvent) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*SecurityEvent, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var logs []*SecurityEventLog
+    var securityEvents []*SecurityEvent
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var log SecurityEventLog
-        err = json.Unmarshal(queryResponse.Value, &log)
+        var securityEvent SecurityEvent
+        err = json.Unmarshal(queryResponse.Value, &securityEvent)
         if err != nil {
             return nil, err
         }
-        logs = append(logs, &log)
+        securityEvents = append(securityEvents, &securityEvent)
     }
-    return logs, nil
+    return securityEvents, nil
 }
 
 func main() {
@@ -714,13 +722,14 @@ func main() {
 EOF
             ;;
         LogAccessControl)
-            cat > chaincode/$contract/chaincode.go <<EOF
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
     "encoding/json"
     "fmt"
     "time"
+
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -728,7 +737,7 @@ type LogAccessControl struct {
     contractapi.Contract
 }
 
-type AccessControlLog struct {
+type AccessControl struct {
     EntityID  string `json:"entityID"`
     Action    string `json:"action"`
     Timestamp string `json:"timestamp"`
@@ -739,55 +748,54 @@ func (s *LogAccessControl) Init(ctx contractapi.TransactionContextInterface) err
 }
 
 func (s *LogAccessControl) Log(ctx contractapi.TransactionContextInterface, entityID, action string) error {
-    log := AccessControlLog{
+    accessControl := AccessControl{
         EntityID:  entityID,
         Action:    action,
         Timestamp: time.Now().String(),
     }
-    logJSON, err := json.Marshal(log)
+    accessControlJSON, err := json.Marshal(accessControl)
     if err != nil {
         return err
     }
-    return ctx.GetStub().PutState(entityID, logJSON)
+    return ctx.GetStub().PutState(entityID, accessControlJSON)
 }
 
-func (s *LogAccessControl) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*AccessControlLog, error) {
+func (s *LogAccessControl) QueryAsset(ctx contractapi.TransactionContextInterface, entityID string) (*AccessControl, error) {
     assetJSON, err := ctx.GetStub().GetState(entityID)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to read from world state: %v", err)
     }
     if assetJSON == nil {
-        return nil, fmt.Errorf("access control log %s does not exist", entityID)
+        return nil, fmt.Errorf("access control %s does not exist", entityID)
     }
-    var log AccessControlLog
-    err = json.Unmarshal(assetJSON, &log)
+    var accessControl AccessControl
+    err = json.Unmarshal(assetJSON, &accessControl)
     if err != nil {
         return nil, err
     }
-    return &log, nil
+    return &accessControl, nil
 }
 
-func (s *LogAccessControl) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*AccessControlLog, error) {
+func (s *LogAccessControl) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*AccessControl, error) {
     resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
     if err != nil {
         return nil, err
     }
     defer resultsIterator.Close()
-
-    var logs []*AccessControlLog
+    var accessControls []*AccessControl
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var log AccessControlLog
-        err = json.Unmarshal(queryResponse.Value, &log)
+        var accessControl AccessControl
+        err = json.Unmarshal(queryResponse.Value, &accessControl)
         if err != nil {
             return nil, err
         }
-        logs = append(logs, &log)
+        accessControls = append(accessControls, &accessControl)
     }
-    return logs, nil
+    return accessControls, nil
 }
 
 func main() {
@@ -812,3 +820,4 @@ for contract in "${contracts[@]}"; do
         echo " - $contract: Failed"
     fi
 done
+```
