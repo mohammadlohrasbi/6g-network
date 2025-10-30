@@ -1,114 +1,325 @@
-version: '2'
-
-networks:
-  6g-network:
-    driver: bridge
+version: '3.8'
 
 services:
-  orderer1.example.com:
+  # ========================================
+  # Orderer (Solo mode)
+  # ========================================
+  orderer.example.com:
+    container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
-      - ORDERER_GENERAL_LOCALMSPDIR=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
-      - ORDERER_GENERAL_TLS_PRIVATEKEY=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
-      - ORDERER_GENERAL_TLS_CERTIFICATE=/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=[/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt]
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_FILELEDGER_LOCATION=/var/hyperledger/production/orderer
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      - /root/6g-network/config/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - orderer-data:/var/hyperledger/production/orderer
     ports:
       - "7050:7050"
-    volumes:
-      - ./crypto-config:/crypto-config
-      - ./config/core/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml
     networks:
       - 6g-network
 
-$(for ((i=1; i<=8; i++)); do
-    ORG_NAME="Org${i}"
-    PEER_PORT=$((7051 + (i-1)*2000))
-    CA_PORT=$((7054 + (i-1)*1000))
-    COUCHDB_PORT=$((5984 + (i-1)*1000))
-    echo "  ca.${ORG_NAME,,}.example.com:"
-    echo "    image: hyperledger/fabric-ca:1.5"
-    echo "    environment:"
-    echo "      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server"
-    echo "      - FABRIC_CA_SERVER_CA_NAME=ca-org${i}"
-    echo "      - FABRIC_CA_SERVER_TLS_ENABLED=true"
-    echo "      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.${ORG_NAME,,}.example.com-cert.pem"
-    echo "      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk"
-    echo "    ports:"
-    echo "      - \"${CA_PORT}:7054\""
-    echo "    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'"
-    echo "    volumes:"
-    echo "      - ./crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/ca:/etc/hyperledger/fabric-ca-server-config"
-    echo "    networks:"
-    echo "      - 6g-network"
-    echo ""
-    echo "  couchdb-org${i}:"
-    echo "    image: couchdb:latest"
-    echo "    ports:"
-    echo "      - \"${COUCHDB_PORT}:5984\""
-    echo "    environment:"
-    echo "      - COUCHDB_USER=admin"
-    echo "      - COUCHDB_PASSWORD=adminpw"
-    echo "    networks:"
-    echo "      - 6g-network"
-    echo ""
-    echo "  peer0.${ORG_NAME,,}.example.com:"
-    echo "    image: hyperledger/fabric-peer:2.5"
-    echo "    environment:"
-    echo "      - CORE_PEER_ID=peer0.${ORG_NAME,,}.example.com"
-    echo "      - CORE_PEER_ADDRESS=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
-    echo "      - CORE_PEER_LISTENADDRESS=0.0.0.0:${PEER_PORT}"
-    echo "      - CORE_PEER_LOCALMSPID=${ORG_NAME}MSP"
-    echo "      - CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/users/Admin@${ORG_NAME,,}.example.com/msp"
-    echo "      - CORE_PEER_TLS_ENABLED=true"
-    echo "      - CORE_PEER_TLS_CERT_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/server.crt"
-    echo "      - CORE_PEER_TLS_KEY_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/server.key"
-    echo "      - CORE_PEER_TLS_ROOTCA_FILE=/crypto-config/peerOrganizations/${ORG_NAME,,}.example.com/peers/peer0.${ORG_NAME,,}.example.com/tls/ca.crt"
-    echo "      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
-    echo "      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.${ORG_NAME,,}.example.com:${PEER_PORT}"
-    echo "      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock"
-    echo "      - CORE_VM_DOCKER_HOSTCONFIG_MEMORY=4G"
-    echo "      - CORE_VM_DOCKER_HOSTCONFIG_CPUS=2"
-    echo "      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB"
-    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-org${i}:${COUCHDB_PORT}"
-    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin"
-    echo "      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw"
-    echo "    ports:"
-    echo "      - \"${PEER_PORT}:7051\""
-    echo "    volumes:"
-    echo "      - ./crypto-config:/crypto-config"
-    echo "      - ./config/core/core-org${i}.yaml:/etc/hyperledger/fabric/core.yaml"
-    echo "      - /var/run/docker.sock:/host/var/run/docker.sock"
-    echo "    depends_on:"
-    echo "      - couchdb-org${i}"
-    echo "      - ca.${ORG_NAME,,}.example.com"
-    echo "    networks:"
-    echo "      - 6g-network"
-    echo ""
-done)
-  nginx:
-    image: nginx:latest
-    ports:
-      - "80:80"
+  # ========================================
+  # Peer0 for Org1
+  # ========================================
+  peer0.org1.example.com:
+    container_name: peer0.org1.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7151
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
-      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./web/public:/6g-fabric-network/web/public
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org1.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - "7151:7151"
     depends_on:
-      - webserver
+      - orderer.example.com
     networks:
       - 6g-network
 
-  webserver:
-    image: node:14
-    working_dir: /app
-    command: bash -c "npm install express fabric-network js-yaml && node webserver.js"
+  # ========================================
+  # Peer0 for Org2
+  # ========================================
+  peer0.org2.example.com:
+    container_name: peer0.org2.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org2.example.com
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:8151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:8152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:8151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8151
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
-      - ./web:/app
-      - ./config:/config
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org2.example.com:/var/hyperledger/production
+    command: peer node start
     ports:
-      - "3000:3000"
+      - "8151:8151"
+    depends_on:
+      - orderer.example.com
     networks:
       - 6g-network
+
+  # ========================================
+  # Peer0 for Org3
+  # ========================================
+  peer0.org3.example.com:
+    container_name: peer0.org3.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org3.example.com
+      - CORE_PEER_ADDRESS=peer0.org3.example.com:9151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org3.example.com:9152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org3.example.com:9151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9151
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org3.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "9151:9151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+  # ========================================
+  # Peer0 for Org4
+  # ========================================
+  peer0.org4.example.com:
+    container_name: peer0.org4.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org4.example.com
+      - CORE_PEER_ADDRESS=peer0.org4.example.com:10151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:10151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org4.example.com:10152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org4.example.com:10151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10151
+      - CORE_PEER_LOCALMSPID=Org4MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org4.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "10151:10151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+  # ========================================
+  # Peer0 for Org5
+  # ========================================
+  peer0.org5.example.com:
+    container_name: peer0.org5.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org5.example.com
+      - CORE_PEER_ADDRESS=peer0.org5.example.com:11151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:11151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org5.example.com:11152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org5.example.com:11151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11151
+      - CORE_PEER_LOCALMSPID=Org5MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org5.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "11151:11151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+  # ========================================
+  # Peer0 for Org6
+  # ========================================
+  peer0.org6.example.com:
+    container_name: peer0.org6.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org6.example.com
+      - CORE_PEER_ADDRESS=peer0.org6.example.com:12151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:12151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org6.example.com:12152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org6.example.com:12151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12151
+      - CORE_PEER_LOCALMSPID=Org6MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org6.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "12151:12151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+  # ========================================
+  # Peer0 for Org7
+  # ========================================
+  peer0.org7.example.com:
+    container_name: peer0.org7.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org7.example.com
+      - CORE_PEER_ADDRESS=peer0.org7.example.com:13151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:13151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org7.example.com:13152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org7.example.com:13151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13151
+      - CORE_PEER_LOCALMSPID=Org7MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org7.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "13151:13151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+  # ========================================
+  # Peer0 for Org8
+  # ========================================
+  peer0.org8.example.com:
+    container_name: peer0.org8.example.com
+    image: hyperledger/fabric-peer:2.5
+    environment:
+      - CORE_PEER_ID=peer0.org8.example.com
+      - CORE_PEER_ADDRESS=peer0.org8.example.com:14151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:14151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org8.example.com:14152
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org8.example.com:14151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14151
+      - CORE_PEER_LOCALMSPID=Org8MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    volumes:
+      - /var/run/:/host/var/run/
+      - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
+      - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org8.example.com:/var/hyperledger/production
+    command: peer node start
+    ports:
+      - "14151:14151"
+    depends_on:
+      - orderer.example.com
+    networks:
+      - 6g-network
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  orderer-data:
+  peer0.org1.example.com:
+  peer0.org2.example.com:
+  peer0.org3.example.com:
+  peer0.org4.example.com:
+  peer0.org5.example.com:
+  peer0.org6.example.com:
+  peer0.org7.example.com:
+  peer0.org8.example.com:
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  6g-network:
+    external: true
