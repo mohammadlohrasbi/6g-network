@@ -8,7 +8,6 @@
 
 set -e  # Stop on first error
 
-
 contracts=(
     "LocationBasedEnergy" "LocationBasedRoaming" "LocationBasedSignalStrength" "LocationBasedCoverage"
     "LocationBasedInterference" "LocationBasedResourceAllocation" "LocationBasedNetworkLoad"
