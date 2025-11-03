@@ -14,7 +14,7 @@ contracts=(
 )
 
 for contract in "${contracts[@]}"; do
-    mkdir -p "$CHAINCODE_DIR/$contract"
+    mkdir -p chaincode/$contract
     case $contract in
         LocationBasedAssignment)
             cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
