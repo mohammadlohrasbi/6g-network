@@ -17,7 +17,7 @@ for contract in "${contracts[@]}"; do
     mkdir -p chaincode/$contract
     case $contract in
         LocationBasedEnergy)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
