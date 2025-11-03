@@ -2,9 +2,13 @@
 
 # Fixed and Complete generateChaincodes_part1.sh
 # This script generates full Go chaincode for 9 contracts in part 1.
-# Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
-# Added complete case for all contracts with customized structs and functions based on fields from errors.
-# The Go code is complete with Init, Assign/Query functions, and distance calculation where applicable.
+# No dependency on external JSON files - hardcoded contracts and Go code.
+# The Go code is complete with Init, Assign/Update/Record functions, Query, ValidateDistance, calculateDistance.
+
+set -e  # Stop on first error
+
+CHAINCODE_DIR="/root/6g-network/chaincode/part1"
+mkdir -p "$CHAINCODE_DIR"
 
 contracts=(
     "LocationBasedAssignment" "LocationBasedConnection" "LocationBasedBandwidth" "LocationBasedQoS"
@@ -13,10 +17,10 @@ contracts=(
 )
 
 for contract in "${contracts[@]}"; do
-    mkdir -p chaincode/$contract
+    mkdir -p "$CHAINCODE_DIR/$contract"
     case $contract in
         LocationBasedAssignment)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -34,11 +38,11 @@ type LocationBasedAssignment struct {
 }
 
 type Assignment struct {
-    EntityID string `json:"entityID"`
+    EntityID  string `json:"entityID"`
     AntennaID string `json:"antennaID"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -92,20 +96,20 @@ func (s *LocationBasedAssignment) QueryAllAssets(ctx contractapi.TransactionCont
         return nil, err
     }
     defer resultsIterator.Close()
-    var assets []*Assignment
+    var assignments []*Assignment
     for resultsIterator.HasNext() {
         queryResponse, err := resultsIterator.Next()
         if err != nil {
             return nil, err
         }
-        var asset Assignment
-        err = json.Unmarshal(queryResponse.Value, &asset)
+        var assignment Assignment
+        err = json.Unmarshal(queryResponse.Value, &assignment)
         if err != nil {
             return nil, err
         }
-        assets = append(assets, &asset)
+        assignments = append(assignments, &assignment)
     }
-    return assets, nil
+    return assignments, nil
 }
 
 func (s *LocationBasedAssignment) ValidateAssignmentDistance(ctx contractapi.TransactionContextInterface, entityID, maxDistance string) (bool, error) {
@@ -141,7 +145,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -157,7 +161,7 @@ func main() {
 EOF
             ;;
         LocationBasedConnection)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -175,12 +179,12 @@ type LocationBasedConnection struct {
 }
 
 type Connection struct {
-    EntityID string `json:"entityID"`
+    EntityID  string `json:"entityID"`
     AntennaID string `json:"antennaID"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
-    Status string `json:"status"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
+    Status    string `json:"status"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -298,7 +302,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -314,7 +318,7 @@ func main() {
 EOF
             ;;
         LocationBasedBandwidth)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -332,12 +336,12 @@ type LocationBasedBandwidth struct {
 }
 
 type Bandwidth struct {
-    EntityID string `json:"entityID"`
+    EntityID  string `json:"entityID"`
     AntennaID string `json:"antennaID"`
     Bandwidth string `json:"bandwidth"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -354,7 +358,7 @@ func (s *LocationBasedBandwidth) AssignBandwidth(ctx contractapi.TransactionCont
     if err != nil {
         return err
     }
-    bandwidthAlloc := Bandwidth{
+    bandwidthRecord := Bandwidth{
         EntityID: entityID,
         AntennaID: antennaID,
         Bandwidth: bandwidth,
@@ -363,7 +367,21 @@ func (s *LocationBasedBandwidth) AssignBandwidth(ctx contractapi.TransactionCont
         Distance: distance,
         Timestamp: time.Now().String(),
     }
-    bandwidthJSON, err := json.Marshal(bandwidthAlloc)
+    bandwidthJSON, err := json.Marshal(bandwidthRecord)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(entityID, bandwidthJSON)
+}
+
+func (s *LocationBasedBandwidth) UpdateBandwidth(ctx contractapi.TransactionContextInterface, entityID, newBandwidth string) error {
+    bandwidth, err := s.QueryAsset(ctx, entityID)
+    if err != nil {
+        return err
+    }
+    bandwidth.Bandwidth = newBandwidth
+    bandwidth.Timestamp = time.Now().String()
+    bandwidthJSON, err := json.Marshal(bandwidth)
     if err != nil {
         return err
     }
@@ -441,7 +459,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -457,7 +475,7 @@ func main() {
 EOF
             ;;
         LocationBasedQoS)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -475,12 +493,12 @@ type LocationBasedQoS struct {
 }
 
 type QoS struct {
-    EntityID string `json:"entityID"`
+    EntityID  string `json:"entityID"`
     AntennaID string `json:"antennaID"`
-    QoSLevel string `json:"qosLevel"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    QoSLevel  string `json:"qosLevel"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -506,6 +524,20 @@ func (s *LocationBasedQoS) AssignQoS(ctx contractapi.TransactionContextInterface
         Distance: distance,
         Timestamp: time.Now().String(),
     }
+    qosJSON, err := json.Marshal(qos)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(entityID, qosJSON)
+}
+
+func (s *LocationBasedQoS) UpdateQoS(ctx contractapi.TransactionContextInterface, entityID, newQoSLevel string) error {
+    qos, err := s.QueryAsset(ctx, entityID)
+    if err != nil {
+        return err
+    }
+    qos.QoSLevel = newQoSLevel
+    qos.Timestamp = time.Now().String()
     qosJSON, err := json.Marshal(qos)
     if err != nil {
         return err
@@ -584,7 +616,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -600,7 +632,7 @@ func main() {
 EOF
             ;;
         LocationBasedPriority)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -618,11 +650,11 @@ type LocationBasedPriority struct {
 }
 
 type Priority struct {
-    EntityID string `json:"entityID"`
-    Priority string `json:"priority"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    EntityID  string `json:"entityID"`
+    Priority  string `json:"priority"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -635,7 +667,7 @@ func (s *LocationBasedPriority) AssignPriority(ctx contractapi.TransactionContex
     if err != nil {
         return err
     }
-    priorityAlloc := Priority{
+    priorityRecord := Priority{
         EntityID: entityID,
         Priority: priority,
         X: x,
@@ -643,7 +675,21 @@ func (s *LocationBasedPriority) AssignPriority(ctx contractapi.TransactionContex
         Distance: distance,
         Timestamp: time.Now().String(),
     }
-    priorityJSON, err := json.Marshal(priorityAlloc)
+    priorityJSON, err := json.Marshal(priorityRecord)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(entityID, priorityJSON)
+}
+
+func (s *LocationBasedPriority) UpdatePriority(ctx contractapi.TransactionContextInterface, entityID, newPriority string) error {
+    priority, err := s.QueryAsset(ctx, entityID)
+    if err != nil {
+        return err
+    }
+    priority.Priority = newPriority
+    priority.Timestamp = time.Now().String()
+    priorityJSON, err := json.Marshal(priority)
     if err != nil {
         return err
     }
@@ -721,7 +767,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -737,7 +783,7 @@ func main() {
 EOF
             ;;
         LocationBasedStatus)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -755,11 +801,11 @@ type LocationBasedStatus struct {
 }
 
 type Status struct {
-    EntityID string `json:"entityID"`
-    Status string `json:"status"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    EntityID  string `json:"entityID"`
+    Status    string `json:"status"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -795,12 +841,12 @@ func (s *LocationBasedStatus) QueryAsset(ctx contractapi.TransactionContextInter
     if assetJSON == nil {
         return nil, fmt.Errorf("status %s does not exist", entityID)
     }
-    var status Status
-    err = json.Unmarshal(assetJSON, &status)
+    var statusRecord Status
+    err = json.Unmarshal(assetJSON, &statusRecord)
     if err != nil {
         return nil, err
     }
-    return &status, nil
+    return &statusRecord, nil
 }
 
 func (s *LocationBasedStatus) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Status, error) {
@@ -815,22 +861,22 @@ func (s *LocationBasedStatus) QueryAllAssets(ctx contractapi.TransactionContextI
         if err != nil {
             return nil, err
         }
-        var status Status
-        err = json.Unmarshal(queryResponse.Value, &status)
+        var statusRecord Status
+        err = json.Unmarshal(queryResponse.Value, &statusRecord)
         if err != nil {
             return nil, err
         }
-        statuses = append(statuses, &status)
+        statuses = append(statuses, &statusRecord)
     }
     return statuses, nil
 }
 
 func (s *LocationBasedStatus) ValidateStatusDistance(ctx contractapi.TransactionContextInterface, entityID, maxDistance string) (bool, error) {
-    status, err := s.QueryAsset(ctx, entityID)
+    statusRecord, err := s.QueryAsset(ctx, entityID)
     if err != nil {
         return false, err
     }
-    distance, err := strconv.ParseFloat(status.Distance, 64)
+    distance, err := strconv.ParseFloat(statusRecord.Distance, 64)
     if err != nil {
         return false, err
     }
@@ -858,7 +904,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -874,7 +920,7 @@ func main() {
 EOF
             ;;
         LocationBasedFault)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -892,11 +938,11 @@ type LocationBasedFault struct {
 }
 
 type Fault struct {
-    EntityID string `json:"entityID"`
+    EntityID  string `json:"entityID"`
     FaultType string `json:"faultType"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -995,7 +1041,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -1011,7 +1057,7 @@ func main() {
 EOF
             ;;
         LocationBasedTraffic)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -1029,11 +1075,11 @@ type LocationBasedTraffic struct {
 }
 
 type Traffic struct {
-    EntityID string `json:"entityID"`
-    Traffic string `json:"traffic"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    EntityID  string `json:"entityID"`
+    Traffic   string `json:"traffic"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -1069,12 +1115,12 @@ func (s *LocationBasedTraffic) QueryAsset(ctx contractapi.TransactionContextInte
     if assetJSON == nil {
         return nil, fmt.Errorf("traffic %s does not exist", entityID)
     }
-    var traffic Traffic
-    err = json.Unmarshal(assetJSON, &traffic)
+    var trafficRecord Traffic
+    err = json.Unmarshal(assetJSON, &trafficRecord)
     if err != nil {
         return nil, err
     }
-    return &traffic, nil
+    return &trafficRecord, nil
 }
 
 func (s *LocationBasedTraffic) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Traffic, error) {
@@ -1089,22 +1135,22 @@ func (s *LocationBasedTraffic) QueryAllAssets(ctx contractapi.TransactionContext
         if err != nil {
             return nil, err
         }
-        var traffic Traffic
-        err = json.Unmarshal(queryResponse.Value, &traffic)
+        var trafficRecord Traffic
+        err = json.Unmarshal(queryResponse.Value, &trafficRecord)
         if err != nil {
             return nil, err
         }
-        traffics = append(traffics, &traffic)
+        traffics = append(traffics, &trafficRecord)
     }
     return traffics, nil
 }
 
 func (s *LocationBasedTraffic) ValidateTrafficDistance(ctx contractapi.TransactionContextInterface, entityID, maxDistance string) (bool, error) {
-    traffic, err := s.QueryAsset(ctx, entityID)
+    trafficRecord, err := s.QueryAsset(ctx, entityID)
     if err != nil {
         return false, err
     }
-    distance, err := strconv.ParseFloat(traffic.Distance, 64)
+    distance, err := strconv.ParseFloat(trafficRecord.Distance, 64)
     if err != nil {
         return false, err
     }
@@ -1132,7 +1178,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -1148,7 +1194,7 @@ func main() {
 EOF
             ;;
         LocationBasedLatency)
-            cat > chaincode/$contract/chaincode.go <<'EOF'
+            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
 package main
 
 import (
@@ -1166,11 +1212,11 @@ type LocationBasedLatency struct {
 }
 
 type Latency struct {
-    EntityID string `json:"entityID"`
-    Latency string `json:"latency"`
-    X string `json:"x"`
-    Y string `json:"y"`
-    Distance string `json:"distance"`
+    EntityID  string `json:"entityID"`
+    Latency   string `json:"latency"`
+    X         string `json:"x"`
+    Y         string `json:"y"`
+    Distance  string `json:"distance"`
     Timestamp string `json:"timestamp"`
 }
 
@@ -1206,12 +1252,12 @@ func (s *LocationBasedLatency) QueryAsset(ctx contractapi.TransactionContextInte
     if assetJSON == nil {
         return nil, fmt.Errorf("latency %s does not exist", entityID)
     }
-    var latency Latency
-    err = json.Unmarshal(assetJSON, &latency)
+    var latencyRecord Latency
+    err = json.Unmarshal(assetJSON, &latencyRecord)
     if err != nil {
         return nil, err
     }
-    return &latency, nil
+    return &latencyRecord, nil
 }
 
 func (s *LocationBasedLatency) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]*Latency, error) {
@@ -1226,22 +1272,22 @@ func (s *LocationBasedLatency) QueryAllAssets(ctx contractapi.TransactionContext
         if err != nil {
             return nil, err
         }
-        var latency Latency
-        err = json.Unmarshal(queryResponse.Value, &latency)
+        var latencyRecord Latency
+        err = json.Unmarshal(queryResponse.Value, &latencyRecord)
         if err != nil {
             return nil, err
         }
-        latencies = append(latencies, &latency)
+        latencies = append(latencies, &latencyRecord)
     }
     return latencies, nil
 }
 
 func (s *LocationBasedLatency) ValidateLatencyDistance(ctx contractapi.TransactionContextInterface, entityID, maxDistance string) (bool, error) {
-    latency, err := s.QueryAsset(ctx, entityID)
+    latencyRecord, err := s.QueryAsset(ctx, entityID)
     if err != nil {
         return false, err
     }
-    distance, err := strconv.ParseFloat(latency.Distance, 64)
+    distance, err := strconv.ParseFloat(latencyRecord.Distance, 64)
     if err != nil {
         return false, err
     }
@@ -1269,7 +1315,7 @@ func calculateDistance(x1, y1, x2, y2 string) (string, error) {
     if err != nil {
         return "", err
     }
-    distance := math.Sqrt(math.Pow(x2Float-x1Float, 2) + math.Pow(y2Float-y1Float, 2))
+    distance := math.Sqrt(math.Pow(x2Float - x1Float, 2) + math.Pow(y2Float - y1Float, 2))
     return fmt.Sprintf("%.4f", distance), nil
 }
 
@@ -1289,9 +1335,10 @@ done
 
 echo "Generated chaincode for ${#contracts[@]} contracts in part 1:"
 for contract in "${contracts[@]}"; do
-    if [ -f "chaincode/$contract/chaincode.go" ]; then
+    if [ -f "$CHAINCODE_DIR/$contract/chaincode.go" ]; then
         echo " - $contract: OK"
     else
         echo " - $contract: Failed"
     fi
 done
+```
