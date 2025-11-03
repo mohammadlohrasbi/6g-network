@@ -19,6 +19,7 @@ for contract in "${contracts[@]}"; do
         LocationBasedEnergy)
             cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
+package main
 
 import (
     "encoding/json"
