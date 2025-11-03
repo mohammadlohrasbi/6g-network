@@ -6,6 +6,9 @@
 # Added complete case for all contracts with customized structs and functions based on fields from errors.
 # The Go code is complete with Init, Record/Set functions, Query, Validate, and distance calculation.
 
+set -e  # Stop on first error
+
+
 contracts=(
     "LocationBasedCongestion" "LocationBasedDynamicRouting" "LocationBasedAntennaConfig" "LocationBasedSignalQuality"
     "LocationBasedNetworkHealth" "LocationBasedPowerManagement" "LocationBasedChannelAllocation" "LocationBasedSessionManagement"
