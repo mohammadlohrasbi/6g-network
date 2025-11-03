@@ -1341,4 +1341,3 @@ for contract in "${contracts[@]}"; do
         echo " - $contract: Failed"
     fi
 done
-```
