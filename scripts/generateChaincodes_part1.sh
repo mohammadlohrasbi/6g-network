@@ -7,9 +7,6 @@
 
 set -e  # Stop on first error
 
-CHAINCODE_DIR="/root/6g-network/chaincode/part1"
-mkdir -p "$CHAINCODE_DIR"
-
 contracts=(
     "LocationBasedAssignment" "LocationBasedConnection" "LocationBasedBandwidth" "LocationBasedQoS"
     "LocationBasedPriority" "LocationBasedStatus" "LocationBasedFault" "LocationBasedTraffic"
