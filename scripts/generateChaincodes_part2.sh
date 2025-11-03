@@ -8,8 +8,6 @@
 
 set -e  # Stop on first error
 
-CHAINCODE_DIR="/root/6g-network/chaincode/part2"
-mkdir -p "$CHAINCODE_DIR"
 
 contracts=(
     "LocationBasedEnergy" "LocationBasedRoaming" "LocationBasedSignalStrength" "LocationBasedCoverage"
@@ -17,7 +15,7 @@ contracts=(
 )
 
 for contract in "${contracts[@]}"; do
-    mkdir -p "$CHAINCODE_DIR/$contract"
+    mkdir -p chaincode/$contract
     case $contract in
         LocationBasedEnergy)
             cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
