@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 # Fixed and Complete generateChaincodes_part3.sh
@@ -1282,4 +1281,3 @@ for contract in "${contracts[@]}"; do
         echo " - $contract: Failed"
     fi
 done
-```
