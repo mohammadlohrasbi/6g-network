@@ -155,7 +155,7 @@ func main() {
 EOF
             ;;
         LocationBasedRoaming)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -296,7 +296,7 @@ func main() {
 EOF
             ;;
         LocationBasedSignalStrength)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -433,7 +433,7 @@ func main() {
 EOF
             ;;
         LocationBasedCoverage)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -570,7 +570,7 @@ func main() {
 EOF
             ;;
         LocationBasedInterference)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -707,7 +707,7 @@ func main() {
 EOF
             ;;
         LocationBasedResourceAllocation)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -846,7 +846,7 @@ func main() {
 EOF
             ;;
         LocationBasedNetworkLoad)
-            cat > "$CHAINCODE_DIR/$contract/chaincode.go" <<'EOF'
+            cat > chaincode/$contract/chaincode.go <<'EOF'
 package main
 
 import (
@@ -987,7 +987,7 @@ done
 
 echo "Generated chaincode for ${#contracts[@]} contracts in part 2:"
 for contract in "${contracts[@]}"; do
-    if [ -f "$CHAINCODE_DIR/$contract/chaincode.go" ]; then
+    if [ -f "chaincode/$contract/chaincode.go" ]; then
         echo " - $contract: OK"
     else
         echo " - $contract: Failed"
