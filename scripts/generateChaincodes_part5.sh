@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 # Fixed and Complete generateChaincodes_part5.sh
@@ -6,6 +5,9 @@
 # Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
 # Added complete case for all contracts with customized structs and functions based on fields from errors.
 # The Go code is complete with Init, Authenticate/Register/Revoke/Assign functions, Query, and other relevant methods.
+
+set -e  # Stop on first error
+
 
 contracts=(
     "AuthenticateUser" "AuthenticateIoT" "ConnectUser" "ConnectIoT" "RegisterUser" "RegisterIoT" "RevokeUser" "RevokeIoT" "AssignRole"
@@ -865,4 +867,3 @@ for contract in "${contracts[@]}"; do
         echo " - $contract: Failed"
     fi
 done
-```
