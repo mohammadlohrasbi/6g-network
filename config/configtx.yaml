@@ -265,7 +265,7 @@ Channel: &ChannelDefaults
     <<: *ChannelCapabilities
 
 Profiles:
-  EightOrgsGenesis:
+  SystemChannel:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
@@ -283,7 +283,7 @@ Profiles:
           - *Org7
           - *Org8
 
-  EightOrgsChannel:
+  ApplicationChannel:
     Consortium: SampleConsortium
     <<: *ChannelDefaults
     Application:
