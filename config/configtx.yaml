@@ -1,17 +1,5 @@
----
-Channel: &ChannelDefaults
-  Policies:
-    Readers:
-      Type: ImplicitMeta
-      Rule: "ANY Readers"
-    Writers:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"
-    Admins:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
-  Capabilities:
-    V2_5: true
+# configtx.yaml - Complete configuration for Hyperledger Fabric with 8 organizations
+# Save this in /root/6g-network/config/configtx.yaml
 
 Organizations:
   - &OrdererOrg
@@ -28,6 +16,7 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('OrdererMSP.admin')"
+
   - &Org1
     Name: Org1MSP
     ID: Org1MSP
@@ -47,7 +36,8 @@ Organizations:
         Rule: "OR('Org1MSP.peer')"
     AnchorPeers:
       - Host: peer0.org1.example.com
-        Port: 7051
+        Port: 7151
+
   - &Org2
     Name: Org2MSP
     ID: Org2MSP
@@ -67,7 +57,8 @@ Organizations:
         Rule: "OR('Org2MSP.peer')"
     AnchorPeers:
       - Host: peer0.org2.example.com
-        Port: 8051
+        Port: 8151
+
   - &Org3
     Name: Org3MSP
     ID: Org3MSP
@@ -87,7 +78,8 @@ Organizations:
         Rule: "OR('Org3MSP.peer')"
     AnchorPeers:
       - Host: peer0.org3.example.com
-        Port: 9051
+        Port: 9151
+
   - &Org4
     Name: Org4MSP
     ID: Org4MSP
@@ -107,7 +99,8 @@ Organizations:
         Rule: "OR('Org4MSP.peer')"
     AnchorPeers:
       - Host: peer0.org4.example.com
-        Port: 10051
+        Port: 10151
+
   - &Org5
     Name: Org5MSP
     ID: Org5MSP
@@ -127,7 +120,8 @@ Organizations:
         Rule: "OR('Org5MSP.peer')"
     AnchorPeers:
       - Host: peer0.org5.example.com
-        Port: 11051
+        Port: 11151
+
   - &Org6
     Name: Org6MSP
     ID: Org6MSP
@@ -147,7 +141,8 @@ Organizations:
         Rule: "OR('Org6MSP.peer')"
     AnchorPeers:
       - Host: peer0.org6.example.com
-        Port: 12051
+        Port: 12151
+
   - &Org7
     Name: Org7MSP
     ID: Org7MSP
@@ -167,7 +162,8 @@ Organizations:
         Rule: "OR('Org7MSP.peer')"
     AnchorPeers:
       - Host: peer0.org7.example.com
-        Port: 13051
+        Port: 13151
+
   - &Org8
     Name: Org8MSP
     ID: Org8MSP
@@ -187,40 +183,18 @@ Organizations:
         Rule: "OR('Org8MSP.peer')"
     AnchorPeers:
       - Host: peer0.org8.example.com
-        Port: 14051
+        Port: 14151
 
-Orderer: &OrdererDefaults
-  OrdererType: etcdraft
-  Addresses:
-    - orderer.example.com:7050
-  BatchTimeout: 2s
-  BatchSize:
-    MaxMessageCount: 10
-    AbsoluteMaxBytes: 99 MB
-    PreferredMaxBytes: 512 KB
-  EtcdRaft:
-    Consenters:
-      - Host: orderer.example.com
-        Port: 7050
-        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-  Organizations:
-    - *OrdererOrg
-  Policies:
-    Readers:
-      Type: ImplicitMeta
-      Rule: "ANY Readers"
-    Writers:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"
-    Admins:
-      Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
-    BlockValidation:
-      Type: ImplicitMeta
-      Rule: "ANY Writers"
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
 
 Application: &ApplicationDefaults
+  Organizations:
   Policies:
     Readers:
       Type: ImplicitMeta
@@ -238,23 +212,65 @@ Application: &ApplicationDefaults
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
 
-Capabilities:
-  Channel:
-    V2_5: true
-  Orderer:
-    V2_5: true
-  Application:
-    V2_5: true
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.example.com
+        Port: 7050
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+  Addresses:
+    - orderer.example.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+  Capabilities:
+    <<: *OrdererCapabilities
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+
+  Capabilities:
+    <<: *ChannelCapabilities
 
 Profiles:
-  SystemChannel:
+  EightOrgsGenesis:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
       Organizations:
         - *OrdererOrg
-      Capabilities:
-        V2_5: true
     Consortiums:
       SampleConsortium:
         Organizations:
@@ -266,7 +282,8 @@ Profiles:
           - *Org6
           - *Org7
           - *Org8
-  ApplicationChannel:
+
+  EightOrgsChannel:
     Consortium: SampleConsortium
     <<: *ChannelDefaults
     Application:
@@ -281,4 +298,4 @@ Profiles:
         - *Org7
         - *Org8
       Capabilities:
-        V2_5: true
+        <<: *ApplicationCapabilities
