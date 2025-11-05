@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # ========================================
-  # Orderer (Solo mode)
+  # Orderer
   # ========================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -21,17 +21,17 @@ services:
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
     volumes:
-      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - /root/6g-network/config/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - orderer-data:/var/hyperledger/production/orderer
     ports:
-      - "7050:7050"
+      - 7050:7050
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org1
+  # Peer0 Org1
   # ========================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -41,7 +41,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org1.example.com:7151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7151
       - CORE_PEER_LOCALMSPID=Org1MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -53,20 +52,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org1.example.com:/var/hyperledger/production
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
     ports:
-      - "7151:7151"
-    depends_on:
-      - orderer.example.com
+      - 7151:7151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org2
+  # Peer0 Org2
   # ========================================
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
@@ -76,7 +73,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org2.example.com:8151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:8151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:8152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:8151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8151
       - CORE_PEER_LOCALMSPID=Org2MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -88,19 +84,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org2.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "8151:8151"
-    depends_on:
-      - orderer.example.com
+      - 8151:8151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org3
+  # Peer0 Org3
   # ========================================
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
@@ -110,7 +105,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org3.example.com:9151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:9151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org3.example.com:9152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org3.example.com:9151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9151
       - CORE_PEER_LOCALMSPID=Org3MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -122,19 +116,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org3.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "9151:9151"
-    depends_on:
-      - orderer.example.com
+      - 9151:9151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org4
+  # Peer0 Org4
   # ========================================
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
@@ -144,7 +137,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org4.example.com:10151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:10151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org4.example.com:10152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org4.example.com:10151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10151
       - CORE_PEER_LOCALMSPID=Org4MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -156,19 +148,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org4.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "10151:10151"
-    depends_on:
-      - orderer.example.com
+      - 10151:10151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org5
+  # Peer0 Org5
   # ========================================
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
@@ -178,7 +169,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org5.example.com:11151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:11151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org5.example.com:11152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org5.example.com:11151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11151
       - CORE_PEER_LOCALMSPID=Org5MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -190,19 +180,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org5.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "11151:11151"
-    depends_on:
-      - orderer.example.com
+      - 11151:11151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org6
+  # Peer0 Org6
   # ========================================
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
@@ -212,7 +201,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org6.example.com:12151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:12151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org6.example.com:12152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org6.example.com:12151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12151
       - CORE_PEER_LOCALMSPID=Org6MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -224,19 +212,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org6.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "12151:12151"
-    depends_on:
-      - orderer.example.com
+      - 12151:12151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org7
+  # Peer0 Org7
   # ========================================
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
@@ -246,7 +233,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org7.example.com:13151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:13151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org7.example.com:13152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org7.example.com:13151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13151
       - CORE_PEER_LOCALMSPID=Org7MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -258,19 +244,18 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org7.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "13151:13151"
-    depends_on:
-      - orderer.example.com
+      - 13151:13151
     networks:
       - 6g-network
 
   # ========================================
-  # Peer0 for Org8
+  # Peer0 Org8
   # ========================================
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
@@ -280,7 +265,6 @@ services:
       - CORE_PEER_ADDRESS=peer0.org8.example.com:14151
       - CORE_PEER_LISTENADDRESS=0.0.0.0:14151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org8.example.com:14152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org8.example.com:14151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14151
       - CORE_PEER_LOCALMSPID=Org8MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -292,20 +276,16 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
-      - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org8.example.com:/var/hyperledger/production
     command: peer node start
     ports:
-      - "14151:14151"
-    depends_on:
-      - orderer.example.com
+      - 14151:14151
     networks:
       - 6g-network
 
-# ========================================
-# Volumes
-# ========================================
 volumes:
   orderer-data:
   peer0.org1.example.com:
@@ -317,9 +297,6 @@ volumes:
   peer0.org7.example.com:
   peer0.org8.example.com:
 
-# ========================================
-# Networks
-# ========================================
 networks:
   6g-network:
     external: true
