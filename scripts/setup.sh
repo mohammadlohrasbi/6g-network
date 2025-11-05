@@ -1,27 +1,17 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
 CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
-CHAINCODE_DIR="$ROOT_DIR/chaincode"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 
 export FABRIC_CFG_PATH="$CONFIG_DIR"
 
 log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
-}
-
-# اضافه کردن hosts
-add_hosts() {
-  log "Adding host entries..."
-  grep -q "orderer.example.com" /etc/hosts || echo "127.0.0.1 orderer.example.com" >> /etc/hosts
-  for i in {1..8}; do
-    grep -q "peer0.org$$ {i}.example.com" /etc/hosts || echo "127.0.0.1 peer0.org $${i}.example.com" >> /etc/hosts
-  done
 }
 
 generate_crypto() {
@@ -44,7 +34,7 @@ generate_channel_artifacts() {
   )
 
   for ch in "${channels[@]}"; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$$ CHANNEL_DIR/ $${ch,,}.tx" -channelID "$ch"
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" -channelID "$ch"
     log "Created: ${ch,,}.tx"
   done
 }
@@ -52,8 +42,6 @@ generate_channel_artifacts() {
 generate_coreyamls() {
   log "Generating core.yaml files..."
   "$SCRIPTS_DIR/generateCoreyamls.sh"
-  cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
-  log "Generated core.yaml for host"
 }
 
 start_network() {
@@ -66,18 +54,17 @@ start_network() {
   log "Network started"
 }
 
-# اجرای peer داخل کانتینر peer0.org1.example.com
 create_and_join_channels() {
-  log "Creating and joining channels using peer0.org1 container..."
+  log "Creating and joining channels..."
+
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
             DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
 
-  PEER_CONTAINER="peer0.org1.example.com"
   for ch in "${channels[@]}"; do
     # ایجاد کانال
-    docker exec "$PEER_CONTAINER" peer channel create \
+    docker exec peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
@@ -87,9 +74,9 @@ create_and_join_channels() {
 
     # جوین همه سازمان‌ها
     for i in {1..8}; do
-      PEER="peer0.org${i}.example.com"
-      docker exec "$$ PEER" peer channel join -b "/etc/hyperledger/configtx/ $${ch}.block" && \
-        log "Org${i} joined $$ ch" || log "Org $${i} already joined $ch"
+      PEER_CONTAINER="peer0.org${i}.example.com"
+      docker exec "$PEER_CONTAINER" peer channel join -b "/etc/hyperledger/configtx/${ch}.block" && \
+        log "Org${i} joined $ch" || log "Org${i} already joined $ch"
     done
   done
 }
