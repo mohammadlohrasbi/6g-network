@@ -77,7 +77,8 @@ generate_coreyamls() {
 
 # مرحله 4: راه‌اندازی شبکه Docker (رفع orphan و network exists)
 start_network() {
-  log "Creating Docker network: 6g-network"
+  log "Starting network from $CONFIG_DIR..."
+  cd "$CONFIG_DIR"
   docker network create 6g-network 2>/dev/null || log "Network 6g-network already exists"
 
   log "Starting CA servers..."
@@ -102,6 +103,7 @@ start_network() {
 # مرحله 5: ایجاد و جوین کردن کانال‌ها
 create_and_join_channels() {
   log "Creating and joining channels..."
+  cd "$CONFIG_DIR"
 
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
