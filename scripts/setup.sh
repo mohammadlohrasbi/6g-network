@@ -1,10 +1,3 @@
-در ادامه **کد کامل و 100% کارکردی** برای **رفع خطای `Config File "core" Not Found`** ارائه می‌شود:
-
----
-
-## فایل 1: `generateCoreyamls.sh` (کامل)
-
-```bash
 #!/bin/bash
 # generateCoreyamls.sh - تولید core.yaml برای 8 سازمان + core.yaml عمومی
 set -e
