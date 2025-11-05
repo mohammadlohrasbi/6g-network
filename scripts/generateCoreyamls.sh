@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# generateCoreyamls.sh - تولید فایل core.yaml برای هر سازمان
+# generateCoreyamls.sh - تولید core.yaml برای هر Peer
 # خروجی: /root/6g-network/config/core-org1.yaml تا core-org8.yaml
-# استفاده در docker-compose.yml با volume
+# این فایل‌ها در docker-compose.yml به Peerها mount می‌شوند.
 
 set -e
 
@@ -50,7 +50,6 @@ peer:
       stateDatabase: goleveldb
 EOF
 
-  echo " Generated: $CORE_FILE"
+  echo "Generated: $CORE_FILE"
 done
-
-echo "All 8 core.yaml files generated successfully in $CONFIG_DIR"
+echo "All 8 core.yaml files generated in $CONFIG_DIR"
