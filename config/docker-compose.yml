@@ -25,7 +25,7 @@ services:
     networks:
       - 6g-network
 
-  # === Peer0 Org1 ===
+  # Peer0 Org1
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -47,7 +47,7 @@ services:
       - /var/run/:/host/var/run/
       - ./config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./config/core-org1.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/core-org1.yaml:/etc/hyperledger/fabric/core.yaml  # این خط کلیدی است
       - peer0.org1.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -55,7 +55,7 @@ services:
     networks:
       - 6g-network
 
-  # === Peer0 Org2 ===
+  # Peer0 Org2
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -85,7 +85,7 @@ services:
     networks:
       - 6g-network
 
-  # === Peer0 Org3 ===
+  # Peer0 Org3
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
@@ -115,7 +115,7 @@ services:
     networks:
       - 6g-network
 
-  # === Org4 to Org8 (same pattern) ===
+  # Peer0 Org4
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
@@ -145,6 +145,7 @@ services:
     networks:
       - 6g-network
 
+  # Peer0 Org5
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
@@ -174,6 +175,7 @@ services:
     networks:
       - 6g-network
 
+  # Peer0 Org6
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
@@ -203,6 +205,7 @@ services:
     networks:
       - 6g-network
 
+  # Peer0 Org7
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
@@ -232,6 +235,7 @@ services:
     networks:
       - 6g-network
 
+  # Peer0 Org8
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
