@@ -15,16 +15,23 @@ log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
+# اضافه کردن hosts
+add_hosts() {
+  log "Adding host entries..."
+  grep -q "orderer.example.com" /etc/hosts || echo "127.0.0.1 orderer.example.com" >> /etc/hosts
+  for i in {1..8}; do
+    grep -q "peer0.org$$ {i}.example.com" /etc/hosts || echo "127.0.0.1 peer0.org $${i}.example.com" >> /etc/hosts
+  done
+}
+
 generate_crypto() {
   log "Generating crypto-config..."
-  [ ! -f "$CONFIG_DIR/cryptogen.yaml" ] && { echo "cryptogen.yaml not found!"; exit 1; }
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
 
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
-  [ ! -f "$CONFIG_DIR/configtx.yaml" ] && { echo "configtx.yaml not found!"; exit 1; }
   mkdir -p "$CHANNEL_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/system-genesis.block" -channelID system-channel
   log "Genesis block generated"
@@ -37,47 +44,52 @@ generate_channel_artifacts() {
   )
 
   for ch in "${channels[@]}"; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" -channelID "$ch"
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$$ CHANNEL_DIR/ $${ch,,}.tx" -channelID "$ch"
     log "Created: ${ch,,}.tx"
   done
 }
 
 generate_coreyamls() {
   log "Generating core.yaml files..."
-  [ -f "$SCRIPTS_DIR/generateCoreyamls.sh" ] && "$SCRIPTS_DIR/generateCoreyamls.sh" || { echo "generateCoreyamls.sh not found!"; exit 1; }
+  "$SCRIPTS_DIR/generateCoreyamls.sh"
+  cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
+  log "Generated core.yaml for host"
 }
 
 start_network() {
   log "Starting network..."
-
-  docker network create 6g-network 2>/dev/null || log "Network 6g-network already exists"
-
-  [ -f "$CONFIG_DIR/docker-compose-ca.yml" ] && docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
+  docker network create 6g-network 2>/dev/null || log "Network exists"
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   sleep 10
-
-  [ -f "$CONFIG_DIR/docker-compose.yml" ] && docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
-  sleep 20
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
+  sleep 30
   log "Network started"
 }
 
+# اجرای peer داخل کانتینر peer0.org1.example.com
 create_and_join_channels() {
-  log "Creating and joining channels..."
+  log "Creating and joining channels using peer0.org1 container..."
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
             DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
 
-  for i in {1..8}; do
-    export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-    export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
-    export CORE_PEER_LOCALMSPID="Org${i}MSP"
-    export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
+  PEER_CONTAINER="peer0.org1.example.com"
+  for ch in "${channels[@]}"; do
+    # ایجاد کانال
+    docker exec "$PEER_CONTAINER" peer channel create \
+      -o orderer.example.com:7050 \
+      -c "$ch" \
+      -f "/etc/hyperledger/configtx/${ch,,}.tx" \
+      --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
+      --outputBlock "/etc/hyperledger/configtx/${ch}.block" || true
+    log "Created channel: $ch"
 
-    for ch in "${channels[@]}"; do
-      [ $i -eq 1 ] && peer channel create -o orderer.example.com:7050 -c "$ch" -f "$CHANNEL_DIR/${ch,,}.tx" \
-        --tls --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
-        --outputBlock "$CHANNEL_DIR/${ch}.block" || true
-      peer channel join -b "$CHANNEL_DIR/${ch}.block" || log "Org${i} already joined $ch"
+    # جوین همه سازمان‌ها
+    for i in {1..8}; do
+      PEER="peer0.org${i}.example.com"
+      docker exec "$$ PEER" peer channel join -b "/etc/hyperledger/configtx/ $${ch}.block" && \
+        log "Org${i} joined $$ ch" || log "Org $${i} already joined $ch"
     done
   done
 }
