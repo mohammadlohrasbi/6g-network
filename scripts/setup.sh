@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
-# شامل: تولید crypto, channel, core.yaml, راه‌اندازی Docker, ایجاد کانال, نصب و commit chaincode
+# شامل: تولید crypto, channel, core.yaml, رفع orphan, رفع network exists, نصب chaincode
 set -e
 
 # متغیرهای اصلی
@@ -69,20 +69,20 @@ generate_coreyamls() {
   log "Generating core.yaml files..."
   if [ -f "$SCRIPTS_DIR/generateCoreyamls.sh" ]; then
     "$SCRIPTS_DIR/generateCoreyamls.sh"
-    log "Generated 8 core-orgX.yaml files"
+    log "Generated 8 core-orgX.yaml files in $CONFIG_DIR"
   else
     log "generateCoreyamls.sh not found. Skipping."
   fi
 }
 
-# مرحله 4: راه‌اندازی شبکه Docker
+# مرحله 4: راه‌اندازی شبکه Docker (رفع orphan و network exists)
 start_network() {
   log "Creating Docker network: 6g-network"
-  docker network create 6g-network || true
+  docker network create 6g-network 2>/dev/null || log "Network 6g-network already exists"
 
   log "Starting CA servers..."
   if [ -f "$CONFIG_DIR/docker-compose-ca.yml" ]; then
-    docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d
+    docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   else
     log "docker-compose-ca.yml not found. Skipping CA startup."
   fi
@@ -90,9 +90,9 @@ start_network() {
 
   log "Starting Orderer and Peers..."
   if [ -f "$CONFIG_DIR/docker-compose.yml" ]; then
-    docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d
+    docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   else
-    echo "خطا: docker-compose.yml یافت نشد!"
+    echo "خطا: docker-compose.yml یافت نشد در $CONFIG_DIR"
     exit 1
   fi
   sleep 20
