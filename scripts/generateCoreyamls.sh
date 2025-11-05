@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# generateCoreyamls.sh - تولید core.yaml برای هر Peer
-# خروجی: /root/6g-network/config/core-org1.yaml تا core-org8.yaml
-# این فایل‌ها در docker-compose.yml به Peerها mount می‌شوند.
-
+# generateCoreyamls.sh - تولید core.yaml برای 8 سازمان
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -13,7 +10,7 @@ mkdir -p "$CONFIG_DIR"
 echo "Generating core.yaml files for 8 organizations..."
 
 for i in {1..8}; do
-  CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
+  CORE_FILE="$$ CONFIG_DIR/core-org $${i}.yaml"
   PORT=$((7151 + (i-1)*1000))
   CHAINCODE_PORT=$((7152 + (i-1)*1000))
 
@@ -23,12 +20,12 @@ peer:
   networkId: 6g-network
   listenAddress: 0.0.0.0:${PORT}
   chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
-  address: peer0.org${i}.example.com:${PORT}
+  address: peer0.org$$ {i}.example.com: $${PORT}
   gossip:
-    bootstrap: peer0.org${i}.example.com:${PORT}
+    bootstrap: peer0.org$$ {i}.example.com: $${PORT}
     useLeaderElection: true
     orgLeader: false
-    endpoint: peer0.org${i}.example.com:${PORT}
+    endpoint: peer0.org$$ {i}.example.com: $${PORT}
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: Org${i}MSP
   tls:
@@ -52,4 +49,5 @@ EOF
 
   echo "Generated: $CORE_FILE"
 done
+
 echo "All 8 core.yaml files generated in $CONFIG_DIR"
