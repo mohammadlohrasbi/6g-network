@@ -15,8 +15,6 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_FILELEDGER_LOCATION=/var/hyperledger/production/orderer
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: orderer
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -26,6 +24,8 @@ services:
       - orderer-data:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -57,6 +57,8 @@ services:
     command: peer node start
     ports:
       - 7151:7151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -88,6 +90,8 @@ services:
     command: peer node start
     ports:
       - 8151:8151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -119,6 +123,8 @@ services:
     command: peer node start
     ports:
       - 9151:9151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -150,6 +156,8 @@ services:
     command: peer node start
     ports:
       - 10151:10151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -181,6 +189,8 @@ services:
     command: peer node start
     ports:
       - 11151:11151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -212,6 +222,8 @@ services:
     command: peer node start
     ports:
       - 12151:12151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -243,6 +255,8 @@ services:
     command: peer node start
     ports:
       - 13151:13151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
@@ -274,6 +288,8 @@ services:
     command: peer node start
     ports:
       - 14151:14151
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - 6g-network
 
