@@ -54,7 +54,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml  # مهم: mount به core.yaml
       - peer0.org1.example.com:/var/hyperledger/production
     command: peer node start
     ports:
