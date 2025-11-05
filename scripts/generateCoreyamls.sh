@@ -1,6 +1,5 @@
 #!/bin/bash
-# generateCoreyamls.sh – تولید core.yaml برای 8 سازمان
-# خروجی: /root/6g-network/config/core-org1.yaml … core-org8.yaml
+# generateCoreyamls.sh - تولید core.yaml برای 8 سازمان + core.yaml عمومی
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -14,21 +13,20 @@ for i in {1..8}; do
   PORT=$((7151 + (i-1)*1000))
   CHAINCODE_PORT=$((7152 + (i-1)*1000))
 
-  # استفاده از <<'EOF' تا متغیرها در زمان نوشتن جایگزین نشوند
-  cat > "$CORE_FILE" <<'EOF'
+  cat > "$CORE_FILE" <<EOF
 peer:
-  id: peer0.org{{ORG}}.example.com
+  id: peer0.org${i}.example.com
   networkId: 6g-network
-  listenAddress: 0.0.0.0:{{PORT}}
-  chaincodeListenAddress: 0.0.0.0:{{CHAINCODE_PORT}}
-  address: peer0.org{{ORG}}.example.com:{{PORT}}
+  listenAddress: 0.0.0.0:${PORT}
+  chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
+  address: peer0.org${i}.example.com:${PORT}
   gossip:
-    bootstrap: peer0.org{{ORG}}.example.com:{{PORT}}
+    bootstrap: peer0.org${i}.example.com:${PORT}
     useLeaderElection: true
     orgLeader: false
-    endpoint: peer0.org{{ORG}}.example.com:{{PORT}}
+    endpoint: peer0.org${i}.example.com:${PORT}
   mspConfigPath: /etc/hyperledger/fabric/msp
-  localMspId: Org{{ORG}}MSP
+  localMspId: Org${i}MSP
   tls:
     enabled: true
     cert:
@@ -48,10 +46,11 @@ peer:
       stateDatabase: goleveldb
 EOF
 
-  # جایگزینی متغیرها
-  sed -i "s/{{ORG}}/$i/g; s/{{PORT}}/$PORT/g; s/{{CHAINCODE_PORT}}/$CHAINCODE_PORT/g" "$CORE_FILE"
-
   echo "Generated: $CORE_FILE"
 done
 
-echo "All 8 core.yaml files generated in $CONFIG_DIR"
+# تولید core.yaml عمومی برای اجرای peer روی host
+cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
+echo "Generated general core.yaml for host: $CONFIG_DIR/core.yaml"
+
+echo "All 8 core.yaml files + core.yaml generated in $CONFIG_DIR"
