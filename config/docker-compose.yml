@@ -22,6 +22,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - orderer-data:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
@@ -51,6 +52,7 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org1.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -81,6 +83,7 @@ services:
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org2.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -111,6 +114,7 @@ services:
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org3.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -141,6 +145,7 @@ services:
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org4.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -171,6 +176,7 @@ services:
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org5.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -201,6 +207,7 @@ services:
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org6.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -231,6 +238,7 @@ services:
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org7.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -261,6 +269,7 @@ services:
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - peer0.org8.example.com:/var/hyperledger/production
     command: peer node start
     ports:
