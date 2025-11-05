@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -16,14 +16,12 @@ log() {
 
 generate_crypto() {
   log "Generating crypto-config..."
-  [ ! -f "$CONFIG_DIR/cryptogen.yaml" ] && { echo "cryptogen.yaml not found!"; exit 1; }
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
 
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
-  [ ! -f "$CONFIG_DIR/configtx.yaml" ] && { echo "configtx.yaml not found!"; exit 1; }
   mkdir -p "$CHANNEL_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/system-genesis.block" -channelID system-channel
   log "Genesis block generated"
@@ -43,15 +41,15 @@ generate_channel_artifacts() {
 
 generate_coreyamls() {
   log "Generating core.yaml files..."
-  [ -f "$SCRIPTS_DIR/generateCoreyamls.sh" ] && "$SCRIPTS_DIR/generateCoreyamls.sh" || { echo "generateCoreyamls.sh not found!"; exit 1; }
+  "$SCRIPTS_DIR/generateCoreyamls.sh"
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
   log "Generated core.yaml for host"
 }
 
 start_network() {
   log "Starting network..."
-  docker network create 6g-network 2>/dev/null || log "Network 6g-network already exists"
-  [ -f "$CONFIG_DIR/docker-compose-ca.yml" ] && docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
+  docker network create 6g-network 2>/dev/null || log "Network exists"
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   sleep 30
@@ -61,6 +59,10 @@ start_network() {
 create_and_join_channels() {
   log "Creating and joining channels..."
 
+  # IP host
+  HOST_IP=$(ip route show default | awk '/default/ {print $3}')
+  log "Using host IP: $HOST_IP"
+
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
             DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
@@ -69,25 +71,25 @@ create_and_join_channels() {
   for ch in "${channels[@]}"; do
     # ایجاد کانال
     docker exec peer0.org1.example.com peer channel create \
-      -o host.docker.internal:7050 \
+      -o "$HOST_IP:7050" \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" || true
 
     # کپی block به host
-    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block"
+    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
 
     # جوین همه سازمان‌ها
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
-      docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block"
+      docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
       docker exec "$PEER" peer channel join -b "/tmp/${ch}.block" && \
         log "Org${i} joined $ch" || log "Org${i} already joined $ch"
-      docker exec "$PEER" rm "/tmp/${ch}.block"
+      docker exec "$PEER" rm -f "/tmp/${ch}.block" 2>/dev/null || true
     done
-    rm "$CHANNEL_DIR/${ch}.block"
+    rm -f "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
   done
 }
 
