@@ -97,6 +97,7 @@ start_network() {
     exit 1
   fi
   sleep 20
+  cd - > /dev/null
   log "Network started. Use 'docker ps' to verify."
 }
 
@@ -135,6 +136,7 @@ create_and_join_channels() {
       peer channel join -b "$CHANNEL_DIR/${channel}.block" && log "Org${i} joined $channel" || log "Org${i} already joined $channel"
     done
   done
+  cd - > /dev/null
 }
 
 # مرحله 6: بسته‌بندی و نصب chaincode
