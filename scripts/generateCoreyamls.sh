@@ -49,8 +49,5 @@ EOF
   echo "Generated: $CORE_FILE"
 done
 
-# تولید core.yaml عمومی برای اجرای peer روی host
 cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
-echo "Generated general core.yaml for host: $CONFIG_DIR/core.yaml"
-
-echo "All 8 core.yaml files + core.yaml generated in $CONFIG_DIR"
+echo "Generated: $CONFIG_DIR/core.yaml (for host peer commands)"
