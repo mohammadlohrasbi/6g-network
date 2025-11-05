@@ -1,9 +1,6 @@
 version: '3.8'
 
 services:
-  # ========================================
-  # Orderer
-  # ========================================
   orderer.example.com:
     container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
@@ -18,21 +15,17 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_FILELEDGER_LOCATION=/var/hyperledger/production/orderer
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: orderer
     volumes:
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - ./config/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      - ./config/channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - orderer-data:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org1
-  # ========================================
+  # === Peer0 Org1 ===
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -52,9 +45,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml  # مهم: mount به core.yaml
+      - ./config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org1.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org1.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -62,9 +55,7 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org2
-  # ========================================
+  # === Peer0 Org2 ===
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -84,9 +75,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org2.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org2.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -94,9 +85,7 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org3
-  # ========================================
+  # === Peer0 Org3 ===
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
@@ -116,9 +105,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org3.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org3.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -126,9 +115,7 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org4
-  # ========================================
+  # === Org4 to Org8 (same pattern) ===
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
@@ -148,9 +135,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org4.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org4.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -158,9 +145,6 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org5
-  # ========================================
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
@@ -180,9 +164,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org5.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org5.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -190,9 +174,6 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org6
-  # ========================================
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
@@ -212,9 +193,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org6.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org6.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -222,9 +203,6 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org7
-  # ========================================
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
@@ -244,9 +222,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org7.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org7.example.com:/var/hyperledger/production
     command: peer node start
     ports:
@@ -254,9 +232,6 @@ services:
     networks:
       - 6g-network
 
-  # ========================================
-  # Peer0 Org8
-  # ========================================
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
@@ -276,9 +251,9 @@ services:
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
-      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./config/crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./config/core-org8.yaml:/etc/hyperledger/fabric/core.yaml
       - peer0.org8.example.com:/var/hyperledger/production
     command: peer node start
     ports:
