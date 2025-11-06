@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Orderer
   orderer.example.com:
     container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
@@ -16,8 +15,6 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_FILELEDGER_LOCATION=/var/hyperledger/production/orderer
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: orderer
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -30,7 +27,6 @@ services:
     networks:
       - 6g-network
 
-  # Peer0 Org1
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -62,7 +58,6 @@ services:
     networks:
       - 6g-network
 
-  # Peer0 Org2
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -94,7 +89,6 @@ services:
     networks:
       - 6g-network
 
-  # Peer0 Org3
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
