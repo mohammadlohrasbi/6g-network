@@ -1,3 +1,4 @@
+# docker-compose.yml - کامل و نهایی
 version: '3.8'
 
 services:
@@ -24,6 +25,8 @@ services:
       - orderer-data:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
@@ -55,6 +58,8 @@ services:
     command: peer node start
     ports:
       - 7151:7151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
@@ -86,6 +91,8 @@ services:
     command: peer node start
     ports:
       - 8151:8151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
@@ -117,10 +124,11 @@ services:
     command: peer node start
     ports:
       - 9151:9151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
-  # Peer0 Org4
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
@@ -149,10 +157,11 @@ services:
     command: peer node start
     ports:
       - 10151:10151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
-  # Peer0 Org5
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
@@ -181,10 +190,11 @@ services:
     command: peer node start
     ports:
       - 11151:11151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
-  # Peer0 Org6
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
@@ -213,10 +223,11 @@ services:
     command: peer node start
     ports:
       - 12151:12151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
-  # Peer0 Org7
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
@@ -245,10 +256,11 @@ services:
     command: peer node start
     ports:
       - 13151:13151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
-  # Peer0 Org8
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
@@ -277,6 +289,8 @@ services:
     command: peer node start
     ports:
       - 14151:14151
+    extra_hosts:
+      - "orderer.example.com:172.17.0.1"
     networks:
       - 6g-network
 
