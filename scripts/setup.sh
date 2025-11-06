@@ -1,12 +1,11 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
 CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
-CHAINCODE_DIR="$ROOT_DIR/chaincode"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 
 export FABRIC_CFG_PATH="$CONFIG_DIR"
@@ -17,14 +16,12 @@ log() {
 
 generate_crypto() {
   log "Generating crypto-config..."
-  [ ! -f "$CONFIG_DIR/cryptogen.yaml" ] && { echo "cryptogen.yaml not found!"; exit 1; }
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
 
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
-  [ ! -f "$CONFIG_DIR/configtx.yaml" ] && { echo "configtx.yaml not found!"; exit 1; }
   mkdir -p "$CHANNEL_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/system-genesis.block" -channelID system-channel
   log "Genesis block generated"
@@ -44,15 +41,15 @@ generate_channel_artifacts() {
 
 generate_coreyamls() {
   log "Generating core.yaml files..."
-  [ -f "$SCRIPTS_DIR/generateCoreyamls.sh" ] && "$SCRIPTS_DIR/generateCoreyamls.sh" || { echo "generateCoreyamls.sh not found!"; exit 1; }
+  "$SCRIPTS_DIR/generateCoreyamls.sh"
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
   log "Generated core.yaml for host"
 }
 
 start_network() {
   log "Starting network..."
-  docker network create 6g-network 2>/dev/null || log "Network 6g-network already exists"
-  [ -f "$CONFIG_DIR/docker-compose-ca.yml" ] && docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
+  docker network create 6g-network 2>/dev/null || log "Network exists"
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   sleep 30
@@ -62,9 +59,9 @@ start_network() {
 create_and_join_channels() {
   log "Creating and joining channels..."
 
-  # IP host
-  HOST_IP=$(ip route show default | awk '/default/ {print $3}')
-  log "Using host IP: $HOST_IP"
+  # IP داخلی Docker Bridge (ثابت)
+  HOST_IP="172.17.0.1"
+  log "Using Docker Bridge IP: $HOST_IP"
 
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
