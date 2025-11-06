@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric با 8 سازمان
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -65,7 +65,6 @@ create_and_join_channels() {
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
 
   for ch in "${channels[@]}"; do
-    # ایجاد کانال با نام سرویس
     docker exec peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 \
       -c "$ch" \
@@ -73,11 +72,9 @@ create_and_join_channels() {
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" || true
 
-    # کپی block به host
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
 
-    # جوین همه سازمان‌ها
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
