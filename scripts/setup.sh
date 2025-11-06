@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric (Linux)
+# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -59,7 +59,6 @@ start_network() {
 create_and_join_channels() {
   log "Creating and joining channels..."
 
-  # استفاده از نام سرویس در شبکه مشترک
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
             DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
