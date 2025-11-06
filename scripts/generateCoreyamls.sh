@@ -1,5 +1,5 @@
 #!/bin/bash
-# generateCoreyamls.sh - تولید core.yaml برای 8 سازمان + core.yaml عمومی
+# generateCoreyamls.sh - تولید core.yaml برای 8 سازمان
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -50,4 +50,6 @@ EOF
 done
 
 cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
-echo "Generated: $CONFIG_DIR/core.yaml (for host peer commands)"
+echo "Generated general core.yaml for host: $CONFIG_DIR/core.yaml"
+
+echo "All 8 core.yaml files generated in $CONFIG_DIR"
