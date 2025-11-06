@@ -1,4 +1,3 @@
-# docker-compose.yml - کامل و نهایی (100% کارکردی در Linux)
 version: '3.8'
 
 services:
@@ -59,7 +58,6 @@ services:
     networks:
       - 6g-network
 
-  # Peer0 Org2 تا Org8 (همه مشابه، فقط پورت‌ها تغییر می‌کند)
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -91,6 +89,7 @@ services:
     networks:
       - 6g-network
 
+  # Peer0 Org3
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
