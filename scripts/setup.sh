@@ -52,16 +52,12 @@ start_network() {
   docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
-  sleep 30
+  sleep 40
   log "Network started"
 }
 
 create_and_join_channels() {
   log "Creating and joining channels..."
-
-  # IP داخلی Docker Bridge (ثابت)
-  HOST_IP="172.17.0.1"
-  log "Using Docker Bridge IP: $HOST_IP"
 
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
             ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
@@ -69,9 +65,9 @@ create_and_join_channels() {
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
 
   for ch in "${channels[@]}"; do
-    # ایجاد کانال
+    # ایجاد کانال با نام سرویس
     docker exec peer0.org1.example.com peer channel create \
-      -o "$HOST_IP:7050" \
+      -o orderer.example.com:7050 \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
