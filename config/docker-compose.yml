@@ -1,4 +1,4 @@
-# مسیر: /root/6g-network/config/docker-compose.yml
+# /root/6g-network/config/docker-compose.yml
 version: '3.8'
 
 services:
@@ -15,10 +15,12 @@ services:
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
+      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/orderer/orderer.genesis.block
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/system-genesis.block:/var/hyperledger/config/genesisblock
+      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - orderer-data:/var/hyperledger/production/orderer
