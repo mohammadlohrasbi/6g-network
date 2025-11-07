@@ -192,9 +192,12 @@ done
 
 ```bash
 cd /root/6g-network/config
-docker-compose -f docker-compose-ca.yml down
-docker-compose -f docker-compose.yml down
-docker-compose -f docker-compose-ca.yml up -d --remove-orphans
+docker system prune -a --volumes -f
+docker volume prune -f
+docker network prune -f
+docker-compose -f /root/6g-network/config/docker-compose.yml down -v --remove-orphans
+docker-compose -f /root/6g-network/config/docker-compose-ca.yml down --remove-orphans
+docker-compose -f docker-compose-ca.yml up -d
 ```
 
 **تأیید خروجی**:
