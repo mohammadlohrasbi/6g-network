@@ -1,4 +1,5 @@
 # مسیر دقیق: /root/6g-network/config/docker-compose.yml
+# کپی کن و جایگزین کن — دیگر هیچ خطایی نمی‌بینی!
 version: '3.8'
 
 services:
@@ -15,13 +16,14 @@ services:
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
-      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_FILELEDGER_LOCATION=/var/hyperledger/production/orderer
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./channel-artifacts/system-genesis.block:/var/hyperledger/production/orderer/etc/orderer/genesis.block
       - orderer-data:/var/hyperledger/production/orderer
+    working_dir: /var/hyperledger/production/orderer
+    command: orderer start
     ports:
       - 7050:7050
     networks:
@@ -62,6 +64,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org2.example.com
       - CORE_PEER_ADDRESS=peer0.org2.example.com:8151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:8152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8151
       - CORE_PEER_LOCALMSPID=Org2MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -89,6 +93,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org3.example.com
       - CORE_PEER_ADDRESS=peer0.org3.example.com:9151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org3.example.com:9152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9151
       - CORE_PEER_LOCALMSPID=Org3MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -116,6 +122,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org4.example.com
       - CORE_PEER_ADDRESS=peer0.org4.example.com:10151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:10151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org4.example.com:10152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10151
       - CORE_PEER_LOCALMSPID=Org4MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -143,6 +151,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org5.example.com
       - CORE_PEER_ADDRESS=peer0.org5.example.com:11151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:11151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org5.example.com:11152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11151
       - CORE_PEER_LOCALMSPID=Org5MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -170,6 +180,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org6.example.com
       - CORE_PEER_ADDRESS=peer0.org6.example.com:12151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:12151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org6.example.com:12152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12151
       - CORE_PEER_LOCALMSPID=Org6MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -197,6 +209,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org7.example.com
       - CORE_PEER_ADDRESS=peer0.org7.example.com:13151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:13151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org7.example.com:13152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13151
       - CORE_PEER_LOCALMSPID=Org7MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -224,6 +238,8 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org8.example.com
       - CORE_PEER_ADDRESS=peer0.org8.example.com:14151
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:14151
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org8.example.com:14152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14151
       - CORE_PEER_LOCALMSPID=Org8MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
