@@ -111,7 +111,7 @@ services:
       - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
-      - peer0.org3.example.com:/var/hyperledger/production
+      - peer0.org3.example.com:/etc/hyperledger/production
     command: peer node start
     ports:
       - 9151:9151
