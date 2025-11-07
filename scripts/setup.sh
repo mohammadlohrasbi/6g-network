@@ -47,6 +47,16 @@ start_network() {
   sleep 60
   log "Network started"
 }
+# تابع انتظار برای آماده شدن peer
+wait_for_peer() {
+  local peer=$1
+  until docker exec "$peer" peer version >/dev/null 2>&1; do
+    log "در حال انتظار برای $peer..."
+    sleep 5
+  done
+  log "$peer آماده است"
+}
+# تابع ایجاد و جوین کانال
 create_and_join_channels() {
   log "Creating and joining channels..."
   channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
@@ -55,14 +65,21 @@ create_and_join_channels() {
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
+    # دریافت IP orderer
+    ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com)
     docker exec peer0.org1.example.com peer channel create \
-      -o orderer.example.com:7050 \
+      -o "$ORDERER_IP:7050" \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
+
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
+    # انتظار برای آماده شدن همه peers
+    for i in {1..8}; do
+      wait_for_peer "peer0.org${i}.example.com"
+    done
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
@@ -104,7 +121,7 @@ package_and_install_chaincode() {
 }
 # مرحله 7: تأیید و commit chaincode
 approve_and_commit_chaincode() {
-  log "Approving and committing chaincodes..."
+  log "Approving and committing channelcodes..."
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
