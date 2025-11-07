@@ -43,7 +43,8 @@ start_network() {
   docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
-  sleep 40
+  log "در حال انتظار برای راه‌اندازی کامل کانتینرها..."
+  sleep 60
   log "Network started"
 }
 create_and_join_channels() {
@@ -53,16 +54,24 @@ create_and_join_channels() {
             DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
   for ch in "${channels[@]}"; do
+    log "در حال ایجاد کانال $ch ..."
     docker exec peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
-      --outputBlock "/tmp/${ch}.block" || true
+      --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
+
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
+
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
+      # انتظار برای آماده شدن peer
+      until docker exec "$PEER" peer version >/dev/null 2>&1; do
+        log "در حال انتظار برای peer0.org${i}.example.com..."
+        sleep 5
+      done
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
       docker exec "$PEER" peer channel join -b "/tmp/${ch}.block" && \
         log "Org${i} joined $ch" || log "Org${i} already joined $ch"
@@ -152,24 +161,7 @@ approve_and_commit_chaincode() {
           --name "$contract" \
           --version 1.0 \
           --sequence 1 \
-          --init-required \
-          --peerAddresses peer0.org1.example.com:7151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org2.example.com:8151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org3.example.com:9151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org4.example.com:10151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org5.example.com:11151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org6.example.com:12151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org7.example.com:13151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls/ca.crt" \
-          --peerAddresses peer0.org8.example.com:14151 \
-          --tlsRootCertFiles "$CRYPTO_DIR/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls/ca.crt" \
-          > /dev/null 2>&1 || true
+          --init-required > /dev/null 2>&1 || true
         log "Committed: $contract on $channel"
       done
     done
