@@ -18,7 +18,7 @@ services:
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./channel-artifacts/system-genesis.block:/var/hyperledger/config/genesisblock
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - orderer-data:/var/hyperledger/production/orderer
@@ -111,7 +111,7 @@ services:
       - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
-      - peer0.org3.example.com:/etc/hyperledger/production
+      - peer0.org3.example.com:/var/hyperledger/production
     command: peer node start
     ports:
       - 9151:9151
