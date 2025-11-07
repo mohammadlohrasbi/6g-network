@@ -9,13 +9,13 @@ services:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_LISTENPORT=7050
-      - ORDERER_GENERAL_GENESISPROFILE=SystemChannel
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_GENESISPROFILE=SystemChannel
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -26,7 +26,7 @@ services:
     ports:
       - 7050:7050
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -39,7 +39,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7151
       - CORE_PEER_LOCALMSPID=Org1MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -57,7 +57,7 @@ services:
     ports:
       - 7151:7151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
@@ -69,7 +69,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8151
       - CORE_PEER_LOCALMSPID=Org2MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -87,7 +87,7 @@ services:
     ports:
       - 8151:8151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
@@ -99,7 +99,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9151
       - CORE_PEER_LOCALMSPID=Org3MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -117,7 +117,7 @@ services:
     ports:
       - 9151:9151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
@@ -129,7 +129,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10151
       - CORE_PEER_LOCALMSPID=Org4MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -147,7 +147,7 @@ services:
     ports:
       - 10151:10151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
@@ -159,7 +159,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11151
       - CORE_PEER_LOCALMSPID=Org5MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -177,7 +177,7 @@ services:
     ports:
       - 11151:11151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
@@ -189,7 +189,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12151
       - CORE_PEER_LOCALMSPID=Org6MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -207,7 +207,7 @@ services:
     ports:
       - 12151:12151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
@@ -219,7 +219,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13151
       - CORE_PEER_LOCALMSPID=Org7MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -237,7 +237,7 @@ services:
     ports:
       - 13151:13151
     networks:
-      - fabric-net
+      - 6g-network
 
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
@@ -249,7 +249,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14151
       - CORE_PEER_LOCALMSPID=Org8MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-net_default
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=6g-network_6g-network
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -267,7 +267,7 @@ services:
     ports:
       - 14151:14151
     networks:
-      - fabric-net
+      - 6g-network
 
 volumes:
   orderer-data:
@@ -281,5 +281,5 @@ volumes:
   peer0.org8.example.com:
 
 networks:
-  fabric-net:
+  6g-network:
     driver: bridge
