@@ -57,26 +57,56 @@ start_network() {
 
 wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
+  local timeout=300
+  local count=0
   until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com)" = "running" ]; do
+    if [ $count -ge $timeout ]; then
+      log "Orderer timeout! Checking logs..."
+      docker logs orderer.example.com
+      exit 1
+    fi
     log "Orderer هنوز راه‌اندازی نشده..."
     sleep 5
+    count=$((count + 5))
   done
+  local count=0
   until docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; do
+    if [ $count -ge $timeout ]; then
+      log "Orderer health timeout! Checking logs..."
+      docker logs orderer.example.com
+      exit 1
+    fi
     log "Orderer هنوز آماده نیست..."
     sleep 5
+    count=$((count + 5))
   done
   log "Orderer آماده است!"
 }
 
 wait_for_peer() {
   local peer=$1
-  log "در حال انتظار برای $peer..."
+  local timeout=300
+  local count=0
   until [ "$(docker inspect -f '{{.State.Status}}' "$peer")" = "running" ]; do
+    if [ $count -ge $timeout ]; then
+      log "$peer timeout! Checking logs..."
+      docker logs "$peer"
+      exit 1
+    fi
+    log "$peer هنوز راه‌اندازی نشده..."
     sleep 5
+    count=$((count + 5))
   done
+  local count=0
   until docker exec "$peer" peer version >/dev/null 2>&1; do
+    if [ $count -ge $timeout ]; then
+      log "$peer health timeout! Checking logs..."
+      docker logs "$peer"
+      exit 1
+    fi
     log "$peer هنوز آماده نیست..."
     sleep 5
+    count=$((count + 5))
   done
   log "$peer آماده است"
 }
