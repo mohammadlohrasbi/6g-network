@@ -57,26 +57,36 @@ start_network() {
 
 wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
-  local timeout=300
+  local timeout=600
   local count=0
-  until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com 2>/dev/null || echo 'exited')" = "running" ]; do
+  while true; do
+    local status=$(docker inspect -f '{{.State.Status}}' orderer.example.com 2>/dev/null || echo 'not_found')
+    if [ "$status" = "running" ]; then
+      break
+    fi
     if [ $count -ge $timeout ]; then
-      log "Orderer timeout! Checking logs..."
-      docker logs orderer.example.com
+      log "Orderer timeout! Status: $status"
+      log "Orderer logs:"
+      docker logs orderer.example.com --tail 50
       exit 1
     fi
-    log "Orderer هنوز راه‌اندازی نشده..."
+    log "Orderer status: $status"
     sleep 5
     count=$((count + 5))
   done
+
   local count=0
-  until docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; do
+  while true; do
+    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
+      break
+    fi
     if [ $count -ge $timeout ]; then
-      log "Orderer health timeout! Checking logs..."
-      docker logs orderer.example.com
+      log "Orderer health timeout!"
+      log "Orderer logs:"
+      docker logs orderer.example.com --tail 50
       exit 1
     fi
-    log "Orderer هنوز آماده نیست..."
+    log "Orderer health check failed..."
     sleep 5
     count=$((count + 5))
   done
@@ -85,26 +95,36 @@ wait_for_orderer() {
 
 wait_for_peer() {
   local peer=$1
-  local timeout=300
+  local timeout=600
   local count=0
-  until [ "$(docker inspect -f '{{.State.Status}}' "$peer" 2>/dev/null || echo 'exited')" = "running" ]; do
+  while true; do
+    local status=$(docker inspect -f '{{.State.Status}}' "$peer" 2>/dev/null || echo 'not_found')
+    if [ "$status" = "running" ]; then
+      break
+    fi
     if [ $count -ge $timeout ]; then
-      log "$peer timeout! Checking logs..."
-      docker logs "$peer"
+      log "$peer timeout! Status: $status"
+      log "$peer logs:"
+      docker logs "$peer" --tail 50
       exit 1
     fi
-    log "$peer هنوز راه‌اندازی نشده..."
+    log "$peer status: $status"
     sleep 5
     count=$((count + 5))
   done
+
   local count=0
-  until docker exec "$peer" peer version >/dev/null 2>&1; do
+  while true; do
+    if docker exec "$peer" peer version >/dev/null 2>&1; then
+      break
+    fi
     if [ $count -ge $timeout ]; then
-      log "$peer health timeout! Checking logs..."
-      docker logs "$peer"
+      log "$peer health timeout!"
+      log "$peer logs:"
+      docker logs "$peer" --tail 50
       exit 1
     fi
-    log "$peer هنوز آماده نیست..."
+    log "$peer health check failed..."
     sleep 5
     count=$((count + 5))
   done
