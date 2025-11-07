@@ -57,7 +57,11 @@ start_network() {
 
 wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
-  until docker exec peer0.org1.example.com ping -c 1 orderer.example.com >/dev/null 2>&1; do
+  until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com)" = "running" ]; do
+    log "Orderer هنوز راه‌اندازی نشده..."
+    sleep 5
+  done
+  until docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; do
     log "Orderer هنوز آماده نیست..."
     sleep 5
   done
@@ -67,7 +71,11 @@ wait_for_orderer() {
 wait_for_peer() {
   local peer=$1
   log "در حال انتظار برای $peer..."
+  until [ "$(docker inspect -f '{{.State.Status}}' "$peer")" = "running" ]; do
+    sleep 5
+  done
   until docker exec "$peer" peer version >/dev/null 2>&1; do
+    log "$peer هنوز آماده نیست..."
     sleep 5
   done
   log "$peer آماده است"
@@ -112,7 +120,7 @@ package_and_install_chaincode() {
     log "Chaincode directory not found, skipping..."
     return
   fi
-  for part in {1..8}; do
+  for part in {1..10}; do
     PART_DIR="$CHAINCODE_DIR/part$part"
     [ ! -d "$PART_DIR" ] && continue
     for contract_dir in "$PART_DIR"/*/; do
