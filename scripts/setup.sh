@@ -67,11 +67,6 @@ create_and_join_channels() {
 
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
-      # انتظار برای آماده شدن peer
-      until docker exec "$PEER" peer version >/dev/null 2>&1; do
-        log "در حال انتظار برای peer0.org${i}.example.com..."
-        sleep 5
-      done
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
       docker exec "$PEER" peer channel join -b "/tmp/${ch}.block" && \
         log "Org${i} joined $ch" || log "Org${i} already joined $ch"
