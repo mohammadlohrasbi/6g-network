@@ -57,11 +57,7 @@ start_network() {
 
 wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
-  until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com)" = "running" ]; do
-    log "Orderer هنوز راه‌اندازی نشده..."
-    sleep 5
-  done
-  until docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; do
+  until docker exec peer0.org1.example.com ping -c 1 orderer.example.com >/dev/null 2>&1; do
     log "Orderer هنوز آماده نیست..."
     sleep 5
   done
@@ -71,11 +67,7 @@ wait_for_orderer() {
 wait_for_peer() {
   local peer=$1
   log "در حال انتظار برای $peer..."
-  until [ "$(docker inspect -f '{{.State.Status}}' "$peer")" = "running" ]; do
-    sleep 5
-  done
   until docker exec "$peer" peer version >/dev/null 2>&1; do
-    log "$peer هنوز آماده نیست..."
     sleep 5
   done
   log "$peer آماده است"
@@ -114,21 +106,19 @@ create_and_join_channels() {
   done
 }
 
-# مرحله 6: بسته‌بندی و نصب chaincode
 package_and_install_chaincode() {
   log "Packaging and installing chaincodes..."
   if [ ! -d "$CHAINCODE_DIR" ]; then
     log "Chaincode directory not found, skipping..."
     return
-  end
-  for part in {1..10}; do
+  fi
+  for part in {1..8}; do
     PART_DIR="$CHAINCODE_DIR/part$part"
     [ ! -d "$PART_DIR" ] && continue
     for contract_dir in "$PART_DIR"/*/; do
       [ ! -d "$contract_dir" ] && continue
       contract=$(basename "$contract_dir")
       tar_file="$PART_DIR/${contract}.tar.gz"
-      # بسته‌بندی از org1
       if [ ! -f "$tar_file" ]; then
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
@@ -140,7 +130,6 @@ package_and_install_chaincode() {
           --label "${contract}_1.0" >/dev/null 2>&1
         log "Packaged: $contract"
       fi
-      # نصب روی همه peers
       for i in {1..8}; do
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
@@ -154,13 +143,12 @@ package_and_install_chaincode() {
   done
 }
 
-# مرحله 7: تأیید و commit chaincode
-approve_and_commit_channelcode() {
+approve_and_commit_chaincode() {
   log "Approving and committing chaincodes..."
   if [ ! -d "$CHAINCODE_DIR" ]; then
     log "Chaincode directory not found, skipping..."
     return
-  end
+  fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
@@ -174,7 +162,6 @@ approve_and_commit_channelcode() {
       for contract_dir in "$PART_DIR"/*/; do
         [ ! -d "$contract_dir" ] && continue
         contract=$(basename "$contract_dir")
-        # دریافت package_id از org1
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
         export CORE_PEER_LOCALMSPID="Org1MSP"
@@ -184,7 +171,6 @@ approve_and_commit_channelcode() {
           log "Skipping $contract (not installed)"
           continue
         fi
-        # تأیید برای همه سازمان‌ها
         for i in {1..8}; do
           export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
           export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
@@ -201,7 +187,6 @@ approve_and_commit_channelcode() {
             --sequence 1 \
             --init-required >/dev/null 2>&1 || true
         done
-        # Commit فقط یک بار (از Org1)
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
         export CORE_PEER_LOCALMSPID="Org1MSP"
@@ -221,7 +206,6 @@ approve_and_commit_channelcode() {
   done
 }
 
-# اجرای اصلی
 main() {
   log "Starting 6G Network Setup..."
   generate_crypto
@@ -230,8 +214,9 @@ main() {
   start_network
   create_and_join_channels
   package_and_install_chaincode
-  approve_and_commit_channelcode
+  approve_and_commit_chaincode
   log "6G Network setup completed successfully!"
   log "Use 'docker ps' to check running containers."
 }
+
 main
