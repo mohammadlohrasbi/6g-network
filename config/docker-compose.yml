@@ -9,6 +9,7 @@ services:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_GENESISPROFILE=SystemChannel
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
@@ -27,7 +28,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org1 ===
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -59,7 +59,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org2 ===
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
@@ -90,7 +89,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org3 ===
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
@@ -121,7 +119,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org4 ===
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
@@ -152,7 +149,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org5 ===
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
@@ -183,7 +179,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org6 ===
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
@@ -214,7 +209,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org7 ===
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
@@ -245,7 +239,6 @@ services:
     networks:
       - fabric-net
 
-  # === Org8 ===
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
