@@ -16,11 +16,11 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
-      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/config/genesisblock
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/system-genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./channel-artifacts/system-genesis.block:/var/hyperledger/config/genesisblock
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
       - orderer-data:/var/hyperledger/production/orderer
@@ -215,7 +215,7 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org7.example.com
-      - CORE_PEER_ADDRESS=peer0.org7.example.com:13151
+      - CORE_PEER_ADDRESS=peerer0.org7.example.com:13151
       - CORE_PEER_CHAINCODEADDRESS=peer0.org7.example.com:13152
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13151
       - CORE_PEER_LOCALMSPID=Org7MSP
