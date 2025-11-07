@@ -59,7 +59,7 @@ wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
   local timeout=300
   local count=0
-  until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com)" = "running" ]; do
+  until [ "$(docker inspect -f '{{.State.Status}}' orderer.example.com 2>/dev/null || echo 'exited')" = "running" ]; do
     if [ $count -ge $timeout ]; then
       log "Orderer timeout! Checking logs..."
       docker logs orderer.example.com
@@ -87,7 +87,7 @@ wait_for_peer() {
   local peer=$1
   local timeout=300
   local count=0
-  until [ "$(docker inspect -f '{{.State.Status}}' "$peer")" = "running" ]; do
+  until [ "$(docker inspect -f '{{.State.Status}}' "$peer" 2>/dev/null || echo 'exited')" = "running" ]; do
     if [ $count -ge $timeout ]; then
       log "$peer timeout! Checking logs..."
       docker logs "$peer"
@@ -120,7 +120,7 @@ create_and_join_channels() {
             FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
-    ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com)
+    ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com || echo "172.18.0.2")
     docker exec peer0.org1.example.com peer channel create \
       -o "$ORDERER_IP:7050" \
       -c "$ch" \
