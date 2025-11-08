@@ -43,6 +43,7 @@ generate_channel_artifacts() {
     configtxgen -profile SystemChannel \
       -outputBlock "$CHANNEL_DIR/genesis.block" \
       -channelID system-channel
+    # چک دوباره
     if [ -d "$CHANNEL_DIR/genesis.block" ]; then
       log "Genesis block is directory! Removing and recreating..."
       rm -rf "$CHANNEL_DIR/genesis.block"
@@ -303,7 +304,7 @@ main() {
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
-  log "6G Network setup setup completed successfully!"
+  log "6G Network setup completed successfully!"
   log "Use 'docker ps' to check running containers."
 }
 
