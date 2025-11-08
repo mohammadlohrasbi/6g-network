@@ -14,6 +14,15 @@ log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
+# دستورات پاک‌سازی جاسازی شده
+cleanup() {
+  log "پاک‌سازی کامل سیستم..."
+  docker system prune -a --volumes -f
+  docker network prune -f
+  rm -rf "$CHANNEL_DIR/genesis.block" "$CHANNEL_DIR/etc" 2>/dev/null || true
+  log "پاک‌سازی تمام شد."
+}
+
 generate_crypto() {
   log "Generating crypto-config..."
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
@@ -24,7 +33,7 @@ generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
   mkdir -p "$CHANNEL_DIR/etc/orderer"
-  # دستور جاسازی شده: ساخت genesis.block برای Orderer
+  # دستور جاسازی شده: ساخت genesis.block
   configtxgen -profile SystemChannel \
     -outputBlock "$CHANNEL_DIR/etc/orderer/genesis.block" \
     -channelID system-channel
@@ -272,6 +281,7 @@ approve_and_commit_chaincode() {
 
 main() {
   log "Starting 6G Network Setup..."
+  cleanup
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
