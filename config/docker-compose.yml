@@ -1,5 +1,4 @@
 # /root/6g-network/config/docker-compose.yml
-# فایل کامل و نهایی — ۱۰۰٪ کار می‌کند. کپی کنید، جایگزین کنید، و `./setup.sh` بزنید.
 version: '3.8'
 
 services:
