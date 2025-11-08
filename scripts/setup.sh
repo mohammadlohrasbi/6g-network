@@ -18,9 +18,11 @@ cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
-  # پاک‌سازی crypto-config و channel-artifacts
-  rm -rf "$CRYPTO_DIR"
-  rm -rf "$CHANNEL_DIR"
+  # پاک‌سازی genesis.block اگر دایرکتوری باشد
+  if [ -d "$CHANNEL_DIR/genesis.block" ]; then
+    log "حذف دایرکتوری genesis.block..."
+    rm -rf "$CHANNEL_DIR/genesis.block"
+  fi
   log "پاک‌سازی تمام شد."
 }
 
@@ -33,11 +35,23 @@ generate_crypto() {
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
-  # ساخت genesis block
-  configtxgen -profile SystemChannel \
-    -outputBlock "$CHANNEL_DIR/genesis.block" \
-    -channelID system-channel
-  log "Genesis block generated"
+  # ساخت genesis.block و چک کردن که فایل باشد
+  if [ -f "$CHANNEL_DIR/genesis.block" ]; then
+    log "Genesis block exists."
+  else
+    log "Creating genesis block..."
+    configtxgen -profile SystemChannel \
+      -outputBlock "$CHANNEL_DIR/genesis.block" \
+      -channelID system-channel
+    if [ -d "$CHANNEL_DIR/genesis.block" ]; then
+      log "Genesis block is directory! Removing and recreating..."
+      rm -rf "$CHANNEL_DIR/genesis.block"
+      configtxgen -profile SystemChannel \
+        -outputBlock "$CHANNEL_DIR/genesis.block" \
+        -channelID system-channel
+    fi
+  fi
+  log "Genesis block generated as file in $CHANNEL_DIR/genesis.block"
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
@@ -289,7 +303,7 @@ main() {
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
-  log "6G Network setup completed successfully!"
+  log "6G Network setup setup completed successfully!"
   log "Use 'docker ps' to check running containers."
 }
 
