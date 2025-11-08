@@ -14,16 +14,13 @@ log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
-# پاک‌سازی کامل (جاسازی شده)
 cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
-  # حذف genesis.block اگر دایرکتوری باشد
-  if [ -d "$CHANNEL_DIR/genesis.block" ]; then
-    log "حذف دایرکتوری genesis.block اشتباه..."
-    rm -rf "$CHANNEL_DIR/genesis.block"
-  fi
+  # پاک‌سازی crypto-config و channel-artifacts
+  rm -rf "$CRYPTO_DIR"
+  rm -rf "$CHANNEL_DIR"
   log "پاک‌سازی تمام شد."
 }
 
@@ -36,24 +33,11 @@ generate_crypto() {
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
-  mkdir -p "$CHANNEL_DIR/etc/orderer"
-  # بررسی و ساخت genesis.block (جاسازی شده)
-  if [ -f "$CHANNEL_DIR/genesis.block" ]; then
-    log "فایل genesis.block وجود دارد."
-  else
-    log "ساخت فایل genesis.block..."
-    configtxgen -profile SystemChannel \
-      -outputBlock "$CHANNEL_DIR/genesis.block" \
-      -channelID system-channel
-    if [ -d "$CHANNEL_DIR/genesis.block" ]; then
-      log "خطا: genesis.block دایرکتوری شد! پاک‌سازی و ساخت دوباره..."
-      rm -rf "$CHANNEL_DIR/genesis.block"
-      configtxgen -profile SystemChannel \
-        -outputBlock "$CHANNEL_DIR/genesis.block" \
-        -channelID system-channel
-    fi
-  fi
-  log "Genesis block generated in $CHANNEL_DIR/genesis.block"
+  # ساخت genesis block
+  configtxgen -profile SystemChannel \
+    -outputBlock "$CHANNEL_DIR/genesis.block" \
+    -channelID system-channel
+  log "Genesis block generated"
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
