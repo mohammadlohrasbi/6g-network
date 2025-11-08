@@ -35,24 +35,30 @@ generate_crypto() {
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
-  # ساخت genesis.block و چک کردن که فایل باشد
+  # ساخت genesis.block و چک کردن
   if [ -f "$CHANNEL_DIR/genesis.block" ]; then
-    log "Genesis block exists."
+    log "Genesis block exists as file."
   else
     log "Creating genesis block..."
     configtxgen -profile SystemChannel \
       -outputBlock "$CHANNEL_DIR/genesis.block" \
       -channelID system-channel
-    # چک دوباره
-    if [ -d "$CHANNEL_DIR/genesis.block" ]; then
-      log "Genesis block is directory! Removing and recreating..."
-      rm -rf "$CHANNEL_DIR/genesis.block"
-      configtxgen -profile SystemChannel \
-        -outputBlock "$CHANNEL_DIR/genesis.block" \
-        -channelID system-channel
-    fi
   fi
-  log "Genesis block generated as file in $CHANNEL_DIR/genesis.block"
+  # چک نهایی: اگر دایرکتوری باشد، پاک و دوباره بساز
+  if [ -d "$CHANNEL_DIR/genesis.block" ]; then
+    log "Genesis block is directory! Removing and recreating..."
+    rm -rf "$CHANNEL_DIR/genesis.block"
+    configtxgen -profile SystemChannel \
+      -outputBlock "$CHANNEL_DIR/genesis.block" \
+      -channelID system-channel
+  fi
+  # تأیید نوع فایل
+  if [ -f "$CHANNEL_DIR/genesis.block" ]; then
+    log "Genesis block is file: $(ls -l "$CHANNEL_DIR/genesis.block")"
+  else
+    log "ERROR: genesis.block is not a file! Exiting."
+    exit 1
+  fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
