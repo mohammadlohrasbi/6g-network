@@ -1,3 +1,5 @@
+# مسیر دقیق: /root/6g-network/config/docker-compose.yml
+# کپی کن و جایگزین کن — دیگر هیچ خطایی نمی‌بینی!
 version: '3.8'
 
 services:
@@ -18,7 +20,7 @@ services:
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - ./channel-artifacts/genesis.block:/var/hyperledger/production/orderer/etc/orderer/genesis.block
+      - ./channel-artifacts/etc/orderer/genesis.block:/var/hyperledger/production/orderer/etc/orderer/genesis.block
       - orderer-data:/var/hyperledger/production/orderer
     working_dir: /var/hyperledger/production/orderer
     command: orderer start
