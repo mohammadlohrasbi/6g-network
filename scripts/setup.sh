@@ -37,6 +37,7 @@ generate_channel_artifacts() {
   configtxgen -profile SystemChannel \
     -outputBlock "$CHANNEL_DIR/genesis.block" \
     -channelID system-channel
+
   # چک: اگر دایرکتوری شد، پاک و دوباره بساز
   if [ -d "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is directory! Removing and recreating..."
@@ -45,6 +46,7 @@ generate_channel_artifacts() {
       -outputBlock "$CHANNEL_DIR/genesis.block" \
       -channelID system-channel
   fi
+
   # تأیید نوع فایل
   if [ -f "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is file: $(ls -l "$CHANNEL_DIR/genesis.block")"
@@ -52,6 +54,7 @@ generate_channel_artifacts() {
     log "ERROR: genesis.block is not a file! Exiting."
     exit 1
   fi
+
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
@@ -71,6 +74,16 @@ generate_coreyamls() {
   "$SCRIPTS_DIR/generateCoreyamls.sh"
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
   log "Generated core.yaml for host"
+}
+
+# اصلاح حیاتی ۱: کپی CA اصلی TLS به داخل MSP Orderer
+fix_orderer_msp() {
+  log "در حال اصلاح MSP Orderer (خط طلایی)..."
+  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
+  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
+  mkdir -p "$ORDERER_MSP_CA_DIR"
+  cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  log "MSP Orderer با موفقیت اصلاح شد!"
 }
 
 start_network() {
@@ -179,9 +192,11 @@ create_and_join_channels() {
 
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
+
     for i in {1..8}; do
       wait_for_peer "peer0.org${i}.example.com"
     done
+
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
@@ -297,6 +312,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
+  fix_orderer_msp        # اصلاح حیاتی ۱: اضافه شد
   generate_channel_artifacts
   generate_coreyamls
   start_network
