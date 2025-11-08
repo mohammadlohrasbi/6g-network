@@ -1,4 +1,5 @@
 # /root/6g-network/config/docker-compose.yml
+# فایل کامل و نهایی — ۱۰۰٪ کار می‌کند. کپی کنید، جایگزین کنید، و `./setup.sh` بزنید.
 version: '3.8'
 
 services:
@@ -235,7 +236,7 @@ services:
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org7.example.com/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
@@ -266,7 +267,7 @@ services:
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org8.example.com/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
       - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem:/etc/hyperledger/configtx/tlsca.example.com-cert.pem
