@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh - راه‌اندازی کامل شبکه 6G Fabric
+# /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -23,8 +23,12 @@ generate_crypto() {
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
-  configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/system-genesis.block" -channelID system-channel
-  log "Genesis block generated"
+  mkdir -p "$CHANNEL_DIR/etc/orderer"
+  # دستور جاسازی شده: ساخت genesis.block برای Orderer
+  configtxgen -profile SystemChannel \
+    -outputBlock "$CHANNEL_DIR/etc/orderer/genesis.block" \
+    -channelID system-channel
+  log "Genesis block generated in $CHANNEL_DIR/etc/orderer/genesis.block"
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
@@ -32,7 +36,9 @@ generate_channel_artifacts() {
     FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for ch in "${channels[@]}"; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" -channelID "$ch"
+    configtxgen -profile ApplicationChannel \
+      -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
+      -channelID "$ch"
     log "Created: ${ch,,}.tx"
   done
 }
