@@ -19,7 +19,7 @@ cleanup() {
   docker system prune -a --volumes -f
   docker network prune -f
   # حذف genesis.block اگر دایرکتوری یا فایل باشد
-  rm -rf "$CHANNEL_DIR/genesis.block"
+  rm -rf "$CRYPTO_DIR" "$CHANNEL_DIR"
   log "پاک‌سازی تمام شد."
 }
 
@@ -31,6 +31,8 @@ generate_crypto() {
 
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
+  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt" \
+     "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/ca.example.com-cert.pem"
   mkdir -p "$CHANNEL_DIR"
   # ساخت genesis.block و چک نهایی
   log "Creating genesis block..."
