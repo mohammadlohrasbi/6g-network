@@ -18,11 +18,8 @@ cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
-  # پاک‌سازی genesis.block اگر دایرکتوری باشد
-  if [ -d "$CHANNEL_DIR/genesis.block" ]; then
-    log "حذف دایرکتوری genesis.block..."
-    rm -rf "$CHANNEL_DIR/genesis.block"
-  fi
+  # حذف genesis.block اگر دایرکتوری یا فایل باشد
+  rm -rf "$CHANNEL_DIR/genesis.block"
   log "پاک‌سازی تمام شد."
 }
 
@@ -35,16 +32,12 @@ generate_crypto() {
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
-  # ساخت genesis.block و چک کردن
-  if [ -f "$CHANNEL_DIR/genesis.block" ]; then
-    log "Genesis block exists as file."
-  else
-    log "Creating genesis block..."
-    configtxgen -profile SystemChannel \
-      -outputBlock "$CHANNEL_DIR/genesis.block" \
-      -channelID system-channel
-  fi
-  # چک نهایی: اگر دایرکتوری باشد، پاک و دوباره بساز
+  # ساخت genesis.block و چک نهایی
+  log "Creating genesis block..."
+  configtxgen -profile SystemChannel \
+    -outputBlock "$CHANNEL_DIR/genesis.block" \
+    -channelID system-channel
+  # چک: اگر دایرکتوری شد، پاک و دوباره بساز
   if [ -d "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is directory! Removing and recreating..."
     rm -rf "$CHANNEL_DIR/genesis.block"
