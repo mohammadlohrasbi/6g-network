@@ -18,7 +18,7 @@ cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
-  # حذف genesis.block اگر دایرکتوری یا فایل باشد
+  # حذف genesis.block if دایرکتوری یا فایل باشد
   rm -rf "$CHANNEL_DIR/genesis.block"
   log "پاک‌سازی تمام شد."
 }
@@ -27,6 +27,24 @@ generate_crypto() {
   log "Generating crypto-config..."
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
+}
+fix_orderer_msp() {
+  log "در حال اصلاح MSP Orderer (حل خطای x509)..."
+  MSP_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
+  CACERTS_DIR="$MSP_DIR/cacerts"
+  TLSCACERTS_DIR="$MSP_DIR/tlscacerts"
+  
+  mkdir -p "$CACERTS_DIR" "$TLSCACERTS_DIR"
+  
+  # CA اصلی سازمان → cacerts
+  cp "$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem" \
+     "$CACERTS_DIR/ca.example.com-cert.pem"
+  
+  # TLS CA → tlscacerts (این خط طلایی بود!)
+  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt" \
+     "$TLSCACERTS_DIR/tlsca.example.com-cert.pem"
+  
+  log "MSP Orderer کاملاً درست شد (cacerts + tlscacerts)"
 }
 
 generate_channel_artifacts() {
@@ -173,7 +191,7 @@ create_and_join_channels() {
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
-      --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
+      --outputBlock "/tmp/${ch}.block" && log "کانال $ch created" || log "خطا در ایجاد کانال $ch - continue..."
 
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
@@ -295,7 +313,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp  # اصلاح حیاتی 1: اضافه شد!
+  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
   generate_channel_artifacts
   generate_coreyamls
   start_network
