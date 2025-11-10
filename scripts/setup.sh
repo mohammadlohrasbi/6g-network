@@ -29,17 +29,6 @@ generate_crypto() {
   log "Crypto-config generated"
 }
 
-# اصلاح حیاتی ۱: fix_orderer_msp (تعریف شد!)
-fix_orderer_msp() {
-  log "در حال اصلاح MSP Orderer..."
-  # کپی CA اصلی سازمان به MSP Orderer (این خط طلایی بود!)
-  ORDERER_CA="$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
-  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
-  mkdir -p "$ORDERER_MSP_CA_DIR"
-  cp "$ORDERER_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
-  log "MSP Orderer اصلاح شد."
-}
-
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
@@ -116,7 +105,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2;&1; then
+    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -153,7 +142,7 @@ wait_for_peer() {
   done
   local count=0
   while true; do
-    if docker exec "$peer" peer version >/dev/null 2;&1; then
+    if docker exec "$peer" peer version >/dev/null 2>&1; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -180,7 +169,7 @@ create_and_join_channels() {
     log "در حال ایجاد کانال $ch ..."
     ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com || echo "172.18.0.2")
     docker exec peer0.org1.example.com peer channel create \
-      -o "$ORDER_IP:7050" \
+      -o "$ORDERER_IP:7050" \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
@@ -281,7 +270,7 @@ approve_and_commit_chaincode() {
             --version 1.0 \
             --package-id "$package_id" \
             --sequence 1 \
-            --init-required >/dev/null 2;&1 || true
+            --init-required >/dev/null 2>&1 || true
         done
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
@@ -295,7 +284,7 @@ approve_and_commit_chaincode() {
           --name "$contract" \
           --version 1.0 \
           --sequence 1 \
-          --init-required >/dev/null 2;&1 || true
+          --init-required >/dev/null 2>&1 || true
         log "Committed: $contract on $channel"
       done
     done
