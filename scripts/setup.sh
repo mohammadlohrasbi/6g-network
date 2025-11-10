@@ -29,15 +29,14 @@ generate_crypto() {
   log "Crypto-config generated"
 }
 
-# اصلاح MSP Orderer - حیاتی برای حل خطای x509
 fix_orderer_msp() {
   log "در حال اصلاح MSP Orderer..."
-  # کپی CA سازمان به MSP Orderer
+  # کپی CA سازمان به MSP Orderer (اصلاح حیاتی!)
   ORDERER_CA="$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
   ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
   mkdir -p "$ORDERER_MSP_CA_DIR"
   cp "$ORDERER_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
-  # کپی TLS CA به ROOTCAS
+  # کپی TLS CA به ROOTCAS (اصلاح حیاتی!)
   ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
   cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/tlsca.example.com-cert.pem"
   log "MSP Orderer اصلاح شد."
@@ -309,9 +308,9 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
-  generating_channel_artifacts
-  generating_coreyamls
+  fix_orderams  # اصلاح حیاتی 1: اضافه شد!
+  generate_channel_artifacts
+  generate_coreyamls
   start_network
   wait_for_orderer
   create_and_join_channels
