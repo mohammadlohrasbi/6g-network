@@ -29,6 +29,15 @@ generate_crypto() {
   log "Crypto-config generated"
 }
 
+fix_orderer_msp() {
+  log "در حال اصلاح MSP Orderer..."
+  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
+  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
+  mkdir -p "$ORDERER_MSP_CA_DIR"
+  cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  log "MSP Orderer اصلاح شد."
+}
+
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
@@ -73,16 +82,6 @@ generate_coreyamls() {
   log "Generated core.yaml for host"
 }
 
-# اصلاح حیاتی ۱: اصلاح MSP Orderer
-fix_orderer_msp() {
-  log "در حال اصلاح MSP Orderer..."
-  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
-  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
-  mkdir -p "$ORDERER_MSP_CA_DIR"
-  cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
-  log "MSP Orderer اصلاح شد."
-}
-
 start_network() {
   log "Starting network..."
   docker network create 6g-network 2>/dev/null || log "Network exists"
@@ -118,15 +117,15 @@ wait_for_orderer() {
     if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
       break
     fi
-  if [ $count -ge $timeout ]; then
-    log "Orderer health timeout!"
-    log "Orderer logs:"
-    docker logs orderer.example.com --tail 50
-    exit 1
-  fi
-  log "Orderer health check failed..."
-  sleep 5
-  count=$((count + 5))
+    if [ $count -ge $timeout ]; then
+      log "Orderer health timeout!"
+      log "Orderer logs:"
+      docker logs orderer.example.com --tail 50
+      exit 1
+    fi
+    log "Orderer health check failed..."
+    sleep 5
+    count=$((count + 5))
   done
   log "Orderer آماده است!"
 }
@@ -305,6 +304,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
+  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
   generate_channel_artifacts
   generate_coreyamls
   start_network
