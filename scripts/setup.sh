@@ -1,6 +1,7 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
+
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
@@ -8,9 +9,11 @@ CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 CHAINCODE_DIR="$ROOT_DIR/chaincode"
 export FABRIC_CFG_PATH="$CONFIG_DIR"
+
 log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
+
 cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
@@ -19,11 +22,24 @@ cleanup() {
   rm -rf "$CHANNEL_DIR/genesis.block"
   log "پاک‌سازی تمام شد."
 }
+
 generate_crypto() {
   log "Generating crypto-config..."
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
+
+# اصلاح حیاتی ۱: fix_orderer_msp (تعریف شد!)
+fix_orderer_msp() {
+  log "در حال اصلاح MSP Orderer..."
+  # کپی CA اصلی سازمان به MSP Orderer (این خط طلایی بود!)
+  ORDERER_CA="$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
+  mkdir -p "$ORDERER_MSP_CA_DIR"
+  cp "$ORDERER_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  log "MSP Orderer اصلاح شد."
+}
+
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
   mkdir -p "$CHANNEL_DIR"
@@ -60,12 +76,14 @@ generate_channel_artifacts() {
     log "Created: ${ch,,}.tx"
   done
 }
+
 generate_coreyamls() {
   log "Generating core.yaml files..."
   "$SCRIPTS_DIR/generateCoreyamls.sh"
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
   log "Generated core.yaml for host"
 }
+
 start_network() {
   log "Starting network..."
   docker network create 6g-network 2>/dev/null || log "Network exists"
@@ -76,8 +94,9 @@ start_network() {
   sleep 120
   log "Network started"
 }
+
 wait_for_orderer() {
-  log "در حال انتظار برای راه‌اندازی Orderer..."
+  log "در انتظار راه‌اندازی Orderer..."
   local timeout=600
   local count=0
   while true; do
@@ -97,7 +116,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
+    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2;&1; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -112,6 +131,7 @@ wait_for_orderer() {
   done
   log "Orderer آماده است!"
 }
+
 wait_for_peer() {
   local peer=$1
   local timeout=600
@@ -133,7 +153,7 @@ wait_for_peer() {
   done
   local count=0
   while true; do
-    if docker exec "$peer" peer version >/dev/null 2>&1; then
+    if docker exec "$peer" peer version >/dev/null 2;&1; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -148,24 +168,24 @@ wait_for_peer() {
   done
   log "$peer آماده است"
 }
+
 create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
-  channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )
+  channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
+            ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
+            DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
+            FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
     ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com || echo "172.18.0.2")
     docker exec peer0.org1.example.com peer channel create \
-      -o "$ORDERER_IP:7050" \
+      -o "$ORDER_IP:7050" \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
+
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
     for i in {1..8}; do
@@ -261,7 +281,7 @@ approve_and_commit_chaincode() {
             --version 1.0 \
             --package-id "$package_id" \
             --sequence 1 \
-            --init-required >/dev/null 2>&1 || true
+            --init-required >/dev/null 2;&1 || true
         done
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
         export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
@@ -275,7 +295,7 @@ approve_and_commit_chaincode() {
           --name "$contract" \
           --version 1.0 \
           --sequence 1 \
-          --init-required >/dev/null 2>&1 || true
+          --init-required >/dev/null 2;&1 || true
         log "Committed: $contract on $channel"
       done
     done
@@ -286,7 +306,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
+  fix_orderer_msp  # اصلاح حیاتی 1: اضافه شد!
   generate_channel_artifacts
   generate_coreyamls
   start_network
