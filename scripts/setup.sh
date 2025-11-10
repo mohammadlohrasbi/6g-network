@@ -308,7 +308,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderams  # اصلاح حیاتی 1: اضافه شد!
+  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
   generate_channel_artifacts
   generate_coreyamls
   start_network
