@@ -1,7 +1,6 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric
 set -e
-
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
@@ -9,37 +8,30 @@ CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 CHAINCODE_DIR="$ROOT_DIR/chaincode"
 export FABRIC_CFG_PATH="$CONFIG_DIR"
-
 log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
-
 cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
   # حذف genesis.block اگر دایرکتوری یا فایل باشد
-  rm -rf "$CRYPTO_DIR" "$CHANNEL_DIR"
+  rm -rf "$CHANNEL_DIR/genesis.block"
   log "پاک‌سازی تمام شد."
 }
-
 generate_crypto() {
   log "Generating crypto-config..."
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
-
 generate_channel_artifacts() {
   log "Generating channel artifacts..."
-  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt" \
-     "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/ca.example.com-cert.pem"
   mkdir -p "$CHANNEL_DIR"
   # ساخت genesis.block و چک نهایی
   log "Creating genesis block..."
   configtxgen -profile SystemChannel \
     -outputBlock "$CHANNEL_DIR/genesis.block" \
     -channelID system-channel
-
   # چک: اگر دایرکتوری شد، پاک و دوباره بساز
   if [ -d "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is directory! Removing and recreating..."
@@ -48,7 +40,6 @@ generate_channel_artifacts() {
       -outputBlock "$CHANNEL_DIR/genesis.block" \
       -channelID system-channel
   fi
-
   # تأیید نوع فایل
   if [ -f "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is file: $(ls -l "$CHANNEL_DIR/genesis.block")"
@@ -56,7 +47,6 @@ generate_channel_artifacts() {
     log "ERROR: genesis.block is not a file! Exiting."
     exit 1
   fi
-
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
     ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
@@ -70,24 +60,12 @@ generate_channel_artifacts() {
     log "Created: ${ch,,}.tx"
   done
 }
-
 generate_coreyamls() {
   log "Generating core.yaml files..."
   "$SCRIPTS_DIR/generateCoreyamls.sh"
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
   log "Generated core.yaml for host"
 }
-
-# اصلاح حیاتی ۱: کپی CA اصلی TLS به داخل MSP Orderer
-fix_orderer_msp() {
-  log "در حال اصلاح MSP Orderer (خط طلایی)..."
-  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
-  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
-  mkdir -p "$ORDERER_MSP_CA_DIR"
-  cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
-  log "MSP Orderer با موفقیت اصلاح شد!"
-}
-
 start_network() {
   log "Starting network..."
   docker network create 6g-network 2>/dev/null || log "Network exists"
@@ -98,7 +76,6 @@ start_network() {
   sleep 120
   log "Network started"
 }
-
 wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
   local timeout=600
@@ -118,7 +95,6 @@ wait_for_orderer() {
     sleep 5
     count=$((count + 5))
   done
-
   local count=0
   while true; do
     if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
@@ -136,7 +112,6 @@ wait_for_orderer() {
   done
   log "Orderer آماده است!"
 }
-
 wait_for_peer() {
   local peer=$1
   local timeout=600
@@ -156,7 +131,6 @@ wait_for_peer() {
     sleep 5
     count=$((count + 5))
   done
-
   local count=0
   while true; do
     if docker exec "$peer" peer version >/dev/null 2>&1; then
@@ -174,7 +148,6 @@ wait_for_peer() {
   done
   log "$peer آماده است"
 }
-
 create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
@@ -191,14 +164,11 @@ create_and_join_channels() {
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
-
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
-
     for i in {1..8}; do
       wait_for_peer "peer0.org${i}.example.com"
     done
-
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
@@ -209,7 +179,6 @@ create_and_join_channels() {
     rm -f "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
   done
 }
-
 package_and_install_chaincode() {
   log "Packaging and installing chaincodes..."
   if [ ! -d "$CHAINCODE_DIR" ]; then
@@ -246,7 +215,6 @@ package_and_install_chaincode() {
     done
   done
 }
-
 approve_and_commit_chaincode() {
   log "Approving and committing chaincodes..."
   if [ ! -d "$CHAINCODE_DIR" ]; then
@@ -309,12 +277,10 @@ approve_and_commit_chaincode() {
     done
   done
 }
-
 main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp        # اصلاح حیاتی ۱: اضافه شد
   generate_channel_artifacts
   generate_coreyamls
   start_network
@@ -324,5 +290,4 @@ main() {
   log "6G Network setup completed successfully!"
   log "Use 'docker ps' to check running containers."
 }
-
 main
