@@ -31,10 +31,13 @@ generate_crypto() {
 
 fix_orderer_msp() {
   log "در حال اصلاح MSP Orderer..."
-  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
+  # کپی CA سازمان به MSP Orderer (اصلاح حیاتی!)
+  ORG_CA="$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
   ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
   mkdir -p "$ORDERER_MSP_CA_DIR"
-  cp "$ORDERER_TLS_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  cp "$ORG_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  # کپی TLS CA به ROOTCAS (اصلاح حیاتی!)
+  ORDERER_TLS_CA="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
   log "MSP Orderer اصلاح شد."
 }
 
@@ -304,7 +307,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
+  fix_orderer_msp
   generate_channel_artifacts
   generate_coreyamls
   start_network
