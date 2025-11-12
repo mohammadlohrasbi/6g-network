@@ -18,7 +18,7 @@ cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f
   docker network prune -f
-  # حذف genesis.block if دایرکتوری یا فایل باشد
+  # حذف genesis.block اگر دایرکتوری یا فایل باشد
   rm -rf "$CHANNEL_DIR/genesis.block"
   log "پاک‌سازی تمام شد."
 }
@@ -28,23 +28,14 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
   log "Crypto-config generated"
 }
+
 fix_orderer_msp() {
-  log "در حال اصلاح MSP Orderer (حل خطای x509)..."
-  MSP_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
-  CACERTS_DIR="$MSP_DIR/cacerts"
-  TLSCACERTS_DIR="$MSP_DIR/tlscacerts"
-  
-  mkdir -p "$CACERTS_DIR" "$TLSCACERTS_DIR"
-  
-  # CA اصلی سازمان → cacerts
-  cp "$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem" \
-     "$CACERTS_DIR/ca.example.com-cert.pem"
-  
-  # TLS CA → tlscacerts (این خط طلایی بود!)
-  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt" \
-     "$TLSCACERTS_DIR/tlsca.example.com-cert.pem"
-  
-  log "MSP Orderer کاملاً درست شد (cacerts + tlscacerts)"
+  log "در حال اصلاح MSP Orderer..."
+  ORDERER_CA="$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+  ORDERER_MSP_CA_DIR="$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts"
+  mkdir -p "$ORDERER_MSP_CA_DIR"
+  cp "$ORDERER_CA" "$ORDERER_MSP_CA_DIR/ca.example.com-cert.pem"
+  log "MSP Orderer اصلاح شد."
 }
 
 generate_channel_artifacts() {
@@ -179,10 +170,12 @@ wait_for_peer() {
 create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
-  channels=(NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel \
-            ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel \
-            DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel \
-            FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel)
+  channels=(
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+  )
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
     ORDERER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' orderer.example.com || echo "172.18.0.2")
@@ -191,7 +184,7 @@ create_and_join_channels() {
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
-      --outputBlock "/tmp/${ch}.block" && log "کانال $ch created" || log "خطا در ایجاد کانال $ch - continue..."
+      --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
 
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
@@ -313,7 +306,7 @@ main() {
   log "Starting 6G Network Setup..."
   cleanup
   generate_crypto
-  fix_orderer_msp  # اصلاح حیاتی ۱: اضافه شد!
+  fix_orderer_msp  # اصلاح حیاتی 1: اضافه شد!
   generate_channel_artifacts
   generate_coreyamls
   start_network
