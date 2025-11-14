@@ -48,10 +48,7 @@ generate_channel_artifacts() {
     exit 1
   fi
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel  # کاهش برای تست
   )
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
@@ -73,7 +70,7 @@ start_network() {
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   log "در حال انتظار برای راه‌اندازی کامل کانتینرها..."
-  sleep 300  # افزایش برای اطمینان
+  sleep 300
   log "Network started"
 }
 wait_for_orderer() {
@@ -97,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker exec orderer.example.com curl -f http://localhost:8443/healthz >/dev/null 2>&1; then  # تغییر به پورت 8443
+    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -152,10 +149,7 @@ create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel  # کاهش برای تست
   )
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
@@ -223,10 +217,7 @@ approve_and_commit_chaincode() {
     return
   fi
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel  # کاهش برای تست
   )
   for channel in "${channels[@]}"; do
     for part in {1..10}; do
