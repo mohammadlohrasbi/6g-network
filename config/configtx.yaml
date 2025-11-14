@@ -1,11 +1,8 @@
-# configtx.yaml - Complete configuration for Hyperledger Fabric with 8 organizations
-# Save this in /root/6g-network/config/configtx.yaml
-
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
     ID: OrdererMSP
-    MSPDir: crypto-config/ordererOrganizations/example.com/msp
+    MSPDir: ./crypto-config/ordererOrganizations/example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -20,7 +17,7 @@ Organizations:
   - &Org1
     Name: Org1MSP
     ID: Org1MSP
-    MSPDir: crypto-config/peerOrganizations/org1.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org1.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -36,12 +33,12 @@ Organizations:
         Rule: "OR('Org1MSP.peer')"
     AnchorPeers:
       - Host: peer0.org1.example.com
-        Port: 7151
+        Port: 17051
 
   - &Org2
     Name: Org2MSP
     ID: Org2MSP
-    MSPDir: crypto-config/peerOrganizations/org2.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org2.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -57,12 +54,12 @@ Organizations:
         Rule: "OR('Org2MSP.peer')"
     AnchorPeers:
       - Host: peer0.org2.example.com
-        Port: 8151
+        Port: 18051
 
   - &Org3
     Name: Org3MSP
     ID: Org3MSP
-    MSPDir: crypto-config/peerOrganizations/org3.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org3.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -78,12 +75,12 @@ Organizations:
         Rule: "OR('Org3MSP.peer')"
     AnchorPeers:
       - Host: peer0.org3.example.com
-        Port: 9151
+        Port: 19051
 
   - &Org4
     Name: Org4MSP
     ID: Org4MSP
-    MSPDir: crypto-config/peerOrganizations/org4.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org4.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -99,12 +96,12 @@ Organizations:
         Rule: "OR('Org4MSP.peer')"
     AnchorPeers:
       - Host: peer0.org4.example.com
-        Port: 10151
+        Port: 20051
 
   - &Org5
     Name: Org5MSP
     ID: Org5MSP
-    MSPDir: crypto-config/peerOrganizations/org5.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org5.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -120,12 +117,12 @@ Organizations:
         Rule: "OR('Org5MSP.peer')"
     AnchorPeers:
       - Host: peer0.org5.example.com
-        Port: 11151
+        Port: 21051
 
   - &Org6
     Name: Org6MSP
     ID: Org6MSP
-    MSPDir: crypto-config/peerOrganizations/org6.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org6.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -141,12 +138,12 @@ Organizations:
         Rule: "OR('Org6MSP.peer')"
     AnchorPeers:
       - Host: peer0.org6.example.com
-        Port: 12151
+        Port: 22051
 
   - &Org7
     Name: Org7MSP
     ID: Org7MSP
-    MSPDir: crypto-config/peerOrganizations/org7.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org7.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -162,12 +159,12 @@ Organizations:
         Rule: "OR('Org7MSP.peer')"
     AnchorPeers:
       - Host: peer0.org7.example.com
-        Port: 13151
+        Port: 23051
 
   - &Org8
     Name: Org8MSP
     ID: Org8MSP
-    MSPDir: crypto-config/peerOrganizations/org8.example.com/msp
+    MSPDir: ./crypto-config/peerOrganizations/org8.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -183,7 +180,7 @@ Organizations:
         Rule: "OR('Org8MSP.peer')"
     AnchorPeers:
       - Host: peer0.org8.example.com
-        Port: 14151
+        Port: 24051
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -211,26 +208,24 @@ Application: &ApplicationDefaults
     Endorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
-
   Capabilities:
     <<: *ApplicationCapabilities
 
 Orderer: &OrdererDefaults
   OrdererType: etcdraft
+  Addresses:
+    - orderer.example.com:7050
   EtcdRaft:
     Consenters:
       - Host: orderer.example.com
         Port: 7050
-        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-  Addresses:
-    - orderer.example.com:7050
+        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
   BatchTimeout: 2s
   BatchSize:
-    MaxMessageCount: 10
-    AbsoluteMaxBytes: 99 MB
-    PreferredMaxBytes: 512 KB
-
+    MaxMessageCount: 500
+    AbsoluteMaxBytes: 10 MB
+    PreferredMaxBytes: 2 MB
   Organizations:
   Policies:
     Readers:
@@ -245,7 +240,6 @@ Orderer: &OrdererDefaults
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"
-
   Capabilities:
     <<: *OrdererCapabilities
 
@@ -260,7 +254,6 @@ Channel: &ChannelDefaults
     Admins:
       Type: ImplicitMeta
       Rule: "MAJORITY Admins"
-
   Capabilities:
     <<: *ChannelCapabilities
 
@@ -271,6 +264,8 @@ Profiles:
       <<: *OrdererDefaults
       Organizations:
         - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
     Consortiums:
       SampleConsortium:
         Organizations:
@@ -282,9 +277,7 @@ Profiles:
           - *Org6
           - *Org7
           - *Org8
-
   ApplicationChannel:
-    Consortium: SampleConsortium
     <<: *ChannelDefaults
     Application:
       <<: *ApplicationDefaults
