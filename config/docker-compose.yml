@@ -26,6 +26,7 @@ services:
       - ./channel-artifacts/system-genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml
       - orderer-data:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
