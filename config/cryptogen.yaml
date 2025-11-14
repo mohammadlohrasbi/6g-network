@@ -1,5 +1,5 @@
 OrdererOrgs:
-  - Name: Example
+  - Name: Orderer
     Domain: example.com
     EnableNodeOUs: true
     Specs:
