@@ -2,7 +2,7 @@ General:
     ListenAddress: 0.0.0.0
     ListenPort: 7050
     TLS:
-        Enabled: false
+        Enabled: true
         PrivateKey: tls/server.key
         Certificate: tls/server.crt
         RootCAs:
