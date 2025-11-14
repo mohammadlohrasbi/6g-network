@@ -32,7 +32,7 @@ generate_channel_artifacts() {
   configtxgen -profile SystemChannel \
     -outputBlock "$CHANNEL_DIR/genesis.block" \
     -channelID system-channel
-  # چک: اگر دایرکتوری شد، پاک و دوباره بساز
+  # چک: اگر دایرکتوری شد, پاک و دوباره بساز
   if [ -d "$CHANNEL_DIR/genesis.block" ]; then
     log "Genesis block is directory! Removing and recreating..."
     rm -rf "$CHANNEL_DIR/genesis.block"
@@ -48,9 +48,12 @@ generate_channel_artifacts() {
     exit 1
   fi
   channels=(
-    NetworkChannel ResourceChannel  # کاهش برای تست
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
-  for ch in "${channels[@]}"; do
+  for ch in "${channels[@]}" ; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
       -channelID "$ch"
@@ -149,7 +152,10 @@ create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
   channels=(
-    NetworkChannel ResourceChannel  # کاهش برای تست
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
@@ -189,7 +195,7 @@ package_and_install_chaincode() {
       tar_file="$PART_DIR/${contract}.tar.gz"
       if [ ! -f "$tar_file" ]; then
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
+        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
         export CORE_PEER_LOCALMSPID="Org1MSP"
         export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
         docker exec peer0.org1.example.com peer lifecycle chaincode package "$tar_file" \
@@ -200,7 +206,7 @@ package_and_install_chaincode() {
       fi
       for i in {1..8}; do
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
+        export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((17051 + (i-1)*1000))"
         export CORE_PEER_LOCALMSPID="Org${i}MSP"
         export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
         docker cp "$tar_file" peer0.org${i}.example.com:/tmp/
@@ -217,7 +223,10 @@ approve_and_commit_chaincode() {
     return
   fi
   channels=(
-    NetworkChannel ResourceChannel  # کاهش برای تست
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for channel in "${channels[@]}"; do
     for part in {1..10}; do
@@ -227,7 +236,7 @@ approve_and_commit_chaincode() {
         [ ! -d "$contract_dir" ] && continue
         contract=$(basename "$contract_dir")
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
+        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
         export CORE_PEER_LOCALMSPID="Org1MSP"
         export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
         package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep "${contract}_1.0" | awk -F', ' '{print $2}' | cut -d' ' -f2 || echo "")
@@ -237,7 +246,7 @@ approve_and_commit_chaincode() {
         fi
         for i in {1..8}; do
           export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-          export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((7151 + (i-1)*1000))"
+          export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((17051 + (i-1)*1000))"
           export CORE_PEER_LOCALMSPID="Org${i}MSP"
           export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
           docker exec peer0.org${i}.example.com peer lifecycle chaincode approveformyorg \
@@ -252,7 +261,7 @@ approve_and_commit_chaincode() {
             --init-required >/dev/null 2>&1 || true
         done
         export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:7151"
+        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
         export CORE_PEER_LOCALMSPID="Org1MSP"
         export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
         docker exec peer0.org1.example.com peer lifecycle chaincode commit \
