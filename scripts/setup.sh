@@ -70,7 +70,7 @@ start_network() {
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   log "در حال انتظار برای راه‌اندازی کامل کانتینرها..."
-  sleep 20
+  sleep 300
   log "Network started"
 }
 wait_for_orderer() {
