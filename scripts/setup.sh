@@ -48,12 +48,9 @@ generate_channel_artifacts() {
     exit 1
   fi
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel # کاهش برای تست
   )
-  for ch in "${channels[@]}" ; do
+  for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
       -channelID "$ch"
@@ -152,10 +149,7 @@ create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel # کاهش برای تست
   )
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
@@ -223,10 +217,7 @@ approve_and_commit_chaincode() {
     return
   fi
   channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+    NetworkChannel ResourceChannel # کاهش برای تست
   )
   for channel in "${channels[@]}"; do
     for part in {1..10}; do
