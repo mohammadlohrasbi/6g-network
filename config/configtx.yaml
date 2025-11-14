@@ -278,7 +278,7 @@ Profiles:
           - *Org7
           - *Org8
   ApplicationChannel:
-    Consortium: SampleConsortium  # اصلاح حیاتی: اضافه کردن Consortium برای رفع خطا
+    Consortium: SampleConsortium  # اصلاح برای رفع خطا
     <<: *ChannelDefaults
     Application:
       <<: *ApplicationDefaults
