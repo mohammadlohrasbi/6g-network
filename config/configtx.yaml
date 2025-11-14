@@ -212,7 +212,7 @@ Application: &ApplicationDefaults
     <<: *ApplicationCapabilities
 
 Orderer: &OrdererDefaults
-  OrdererType: etcdraft
+  OrdererType: solo
   Addresses:
     - orderer.example.com:7050
   EtcdRaft:
