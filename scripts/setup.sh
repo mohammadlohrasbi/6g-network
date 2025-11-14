@@ -48,7 +48,10 @@ generate_channel_artifacts() {
     exit 1
   fi
   channels=(
-    NetworkChannel ResourceChannel  # کاهش به 2 برای تست - بعدا افزایش دهید
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
@@ -70,7 +73,7 @@ start_network() {
   sleep 10
   docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
   log "در حال انتظار برای راه‌اندازی کامل کانتینرها..."
-  sleep 180  # افزایش زمان برای اطمینان
+  sleep 300  # افزایش برای اطمینان
   log "Network started"
 }
 wait_for_orderer() {
@@ -94,7 +97,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker exec orderer.example.com curl -f http://localhost:7050/healthz >/dev/null 2>&1; then
+    if docker exec orderer.example.com curl -f http://localhost:8443/healthz >/dev/null 2>&1; then  # تغییر به پورت 8443
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -149,7 +152,10 @@ create_and_join_channels() {
   log "Creating and joining channels..."
   wait_for_orderer
   channels=(
-    NetworkChannel ResourceChannel  # کاهش به 2 برای تست
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
@@ -157,7 +163,7 @@ create_and_join_channels() {
       -o orderer.example.com:7050 \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
-      --tls --cafile "/etc/hyperledger/fabric/orderer_tls/ca.crt" \  # اصلاح مسیر cafile
+      --tls --cafile "/etc/hyperledger/fabric/orderer_tls/ca.crt" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
@@ -217,7 +223,10 @@ approve_and_commit_chaincode() {
     return
   fi
   channels=(
-    NetworkChannel ResourceChannel  # کاهش به 2 برای تست
+    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
+    ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
+    DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
+    FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
   )
   for channel in "${channels[@]}"; do
     for part in {1..10}; do
