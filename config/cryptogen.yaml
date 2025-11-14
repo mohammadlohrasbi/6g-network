@@ -1,9 +1,18 @@
----
 OrdererOrgs:
   - Name: Orderer
     Domain: example.com
+    EnableNodeOUs: true
     Specs:
       - Hostname: orderer
+    CA:
+      Hostname: ca
+      Key:
+        Algo: ec
+        Size: 256
+      CSR:
+        Hosts:
+          - localhost
+          - ca.example.com
 
 PeerOrgs:
   - Name: Org1
@@ -11,6 +20,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org1
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -24,6 +36,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org2
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -37,6 +52,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org3
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -50,6 +68,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org4
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -63,6 +84,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org5
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -76,6 +100,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org6
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -89,6 +116,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org7
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
@@ -102,6 +132,9 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org8
+      Key:
+        Algo: ec
+        Size: 256
       CSR:
         Hosts:
           - localhost
