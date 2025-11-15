@@ -94,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker logs orderer.example.com | grep -i "serve requests"; then
+    if docker logs orderer.example.com | grep -i "starting orderer"; then
       break
     fi
     if [ $count -ge $timeout ]; then
