@@ -49,7 +49,7 @@ generate_channel_artifacts() {
   fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )  # تغییر: لیست کانال‌ها کامل شده (20 کانال)
+  )  # کامنت: لیست کامل 20 کانال
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
@@ -94,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # تغییر: grep دقیق برای match log orderer
+    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # کامنت: grep دقیق برای match لاگ orderer (case-sensitive, but exact string)
       break
     fi
     if [ $count -ge $timeout ]; then
