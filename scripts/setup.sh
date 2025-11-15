@@ -94,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then
+    if docker logs orderer.example.com | grep -i "serve requests"; then
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -143,7 +143,7 @@ wait_for_peer() {
     sleep 5
     count=$((count + 5))
   done
-  log "$peer آماده است"
+  log "$peer آماده است!"
 }
 create_and_join_channels() {
   log "Creating and joining channels..."
