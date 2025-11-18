@@ -94,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # کامنت: grep دقیق برای match لاگ orderer (case-sensitive, but exact string)
+    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # تغییر کلیدی: دقیق match با لاگ
       break
     fi
     if [ $count -ge $timeout ]; then
