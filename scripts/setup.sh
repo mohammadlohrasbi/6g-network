@@ -49,7 +49,7 @@ generate_channel_artifacts() {
   fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )  # کامنت: لیست کامل 20 کانال
+  )  # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
@@ -94,7 +94,7 @@ wait_for_orderer() {
   done
   local count=0
   while true; do
-    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # تغییر کلیدی: دقیق match با لاگ
+    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # کامنت: تغییر کلیدی – grep دقیق برای match لاگ orderer (case-sensitive, exact string از لاگ)
       break
     fi
     if [ $count -ge $timeout ]; then
@@ -150,7 +150,7 @@ create_and_join_channels() {
   wait_for_orderer
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )  # تغییر: لیست کانال‌ها کامل شده (20 کانال)
+  )  # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
     docker exec peer0.org1.example.com peer channel create \
