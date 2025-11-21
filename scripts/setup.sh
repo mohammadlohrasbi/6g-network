@@ -77,37 +77,28 @@ wait_for_orderer() {
   log "در انتظار راه‌اندازی Orderer..."
   local timeout=600
   local count=0
-  while true; do
-    local status=$(docker inspect -f '{{.State.Status}}' orderer.example.com 2>/dev/null || echo 'not_found')
-    if [ "$status" = "running" ]; then
+  local found=0
+  while [ $count -lt $timeout ]; do
+    if [ $found -eq 0 ]; then
+      if docker logs orderer.example.com 2>&1 | grep -q "Beginning to serve requests"; then
+        found=1
+        log "Orderer آماده است!"
+      fi
+    fi
+    if [ $found -eq 1 ]; then
       break
     fi
-    if [ $count -ge $timeout ]; then
-      log "Orderer timeout! Status: $status"
-      log "Orderer logs:"
-      docker logs orderer.example.com --tail 50
-      exit 1
-    fi
-    log "Orderer status: $status"
+    log "Orderer health check failed... (waiting)"
     sleep 5
     count=$((count + 5))
   done
-  local count=0
-  while true; do
-    if docker logs orderer.example.com | grep -q "Beginning to serve requests"; then  # کامنت: تغییر کلیدی – grep دقیق برای match لاگ orderer (case-sensitive, exact string از لاگ)
-      break
-    fi
-    if [ $count -ge $timeout ]; then
-      log "Orderer health timeout!"
-      log "Orderer logs:"
-      docker logs orderer.example.com --tail 50
-      exit 1
-    fi
-    log "Orderer health check failed..."
-    sleep 5
-    count=$((count + 5))
-  done
-  log "Orderer آماده است!"
+
+  if [ $found -eq 0 ]; then
+    log "Orderer health timeout!"
+    log "Orderer logs:"
+    docker logs orderer.example.com --tail 50
+    exit 1
+  fi
 }
 wait_for_peer() {
   local peer=$1
