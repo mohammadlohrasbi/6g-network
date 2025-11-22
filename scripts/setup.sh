@@ -148,7 +148,8 @@ create_and_join_channels() {
       -o orderer.example.com:7050 \
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
-      --tls --cafile "/etc/hyperledger/fabric/orderer_tls/ca.crt" \
+      --tls \
+      --cafile "/etc/hyperledger/fabric/orderer_tls/ca.crt" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
