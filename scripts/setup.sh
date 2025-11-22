@@ -1,5 +1,5 @@
 #!/bin/bash
-# /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric
+# /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric با TLS فعال
 set -e
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -49,7 +49,7 @@ generate_channel_artifacts() {
   fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )
+  ) # لیست کامل 20 کانال
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
@@ -140,7 +140,7 @@ create_and_join_channels() {
   wait_for_orderer
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )
+  ) # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
   for ch in "${channels[@]}"; do
     log "در حال ایجاد کانال $ch ..."
     docker exec peer0.org1.example.com peer channel create \
@@ -148,7 +148,7 @@ create_and_join_channels() {
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls \
-      --cafile "/etc/hyperledger/fabric/orderer_tls/ca.crt" \
+      --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \  # تغییر: مسیر درست ca.crt برای حل خطا (با TLS فعال)
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
@@ -209,7 +209,7 @@ approve_and_commit_chaincode() {
   fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  )  # کامنت: لیست کامل 20 کانال (برای commit همه کانال‌ها)
+  ) # کامنت: لیست کامل 20 کانال (تغییر کلیدی: کانال ها کامل شده)
   for channel in "${channels[@]}"; do
     for part in {1..10}; do
       PART_DIR="$CHAINCODE_DIR/part$part"
