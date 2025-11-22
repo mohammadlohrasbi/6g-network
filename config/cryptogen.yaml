@@ -5,14 +5,14 @@ OrdererOrgs:
     Specs:
       - Hostname: orderer
     CA:
-      Hostname: ca
+      Hostname: ca-orderer
       Key:
         Algo: ec
         Size: 256
       CSR:
         Hosts:
           - localhost
-          - ca.example.com
+          - orderer.example.com
 
 PeerOrgs:
   - Name: Org1
