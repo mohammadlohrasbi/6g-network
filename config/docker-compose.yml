@@ -13,7 +13,7 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
       - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/fabric/genesis.block
