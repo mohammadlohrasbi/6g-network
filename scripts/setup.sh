@@ -74,7 +74,7 @@ start_network() {
   log "Network started"
 }
 wait_for_orderer() {
-  log "در انتظار راه‌اندازی Orderer..."
+  log "ﺩﺭ ﺎﻨﺘﻇﺍﺭ ﺭﺎﻫ<200c>ﺎﻧﺩﺍﺰﯾ Orderer..."
   local timeout=600
   local count=0
   local found=0
@@ -82,7 +82,7 @@ wait_for_orderer() {
     if [ $found -eq 0 ]; then
       if docker logs orderer.example.com 2>&1 | grep -q "Beginning to serve requests"; then
         found=1
-        log "Orderer آماده است!"
+        log "Orderer ﺂﻣﺍﺪﻫ ﺎﺴﺗ!"
       fi
     fi
     if [ $found -eq 1 ]; then
@@ -92,6 +92,7 @@ wait_for_orderer() {
     sleep 5
     count=$((count + 5))
   done
+
   if [ $found -eq 0 ]; then
     log "Orderer health timeout!"
     log "Orderer logs:"
