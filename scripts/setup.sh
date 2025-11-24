@@ -49,7 +49,7 @@ generate_channel_artifacts() {
   fi
   channels=(
     NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  ) # لیست کامل 20 کانال
+  ) # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
   for ch in "${channels[@]}"; do
     configtxgen -profile ApplicationChannel \
       -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
@@ -74,7 +74,7 @@ start_network() {
   log "Network started"
 }
 wait_for_orderer() {
-  log "ﺩﺭ ﺎﻨﺘﻇﺍﺭ ﺭﺎﻫ<200c>ﺎﻧﺩﺍﺰﯾ Orderer..."
+  log "در انتظار راه‌اندازی Orderer..."
   local timeout=600
   local count=0
   local found=0
@@ -82,7 +82,7 @@ wait_for_orderer() {
     if [ $found -eq 0 ]; then
       if docker logs orderer.example.com 2>&1 | grep -q "Beginning to serve requests"; then
         found=1
-        log "Orderer ﺂﻣﺍﺪﻫ ﺎﺴﺗ!"
+        log "Orderer آماده است!"
       fi
     fi
     if [ $found -eq 1 ]; then
@@ -92,7 +92,6 @@ wait_for_orderer() {
     sleep 5
     count=$((count + 5))
   done
-
   if [ $found -eq 0 ]; then
     log "Orderer health timeout!"
     log "Orderer logs:"
@@ -149,7 +148,7 @@ create_and_join_channels() {
       -c "$ch" \
       -f "/etc/hyperledger/configtx/${ch,,}.tx" \
       --tls \
-      --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \  # تغییر: مسیر درست ca.crt برای حل خطا (با TLS فعال)
+      --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
       --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
     log "Created channel: $ch"
