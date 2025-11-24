@@ -1,6 +1,5 @@
-version: '2'
-networks:
-  6g-network:
+version: '3.7'
+
 services:
   ca-org1:
     image: hyperledger/fabric-ca:1.5.7
@@ -27,6 +26,7 @@ services:
     container_name: ca-org1
     networks:
       - 6g-network
+
   ca-org2:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -52,6 +52,7 @@ services:
     container_name: ca-org2
     networks:
       - 6g-network
+
   ca-org3:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -77,6 +78,7 @@ services:
     container_name: ca-org3
     networks:
       - 6g-network
+
   ca-org4:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -102,6 +104,7 @@ services:
     container_name: ca-org4
     networks:
       - 6g-network
+
   ca-org5:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -127,6 +130,7 @@ services:
     container_name: ca-org5
     networks:
       - 6g-network
+
   ca-org6:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -152,6 +156,7 @@ services:
     container_name: ca-org6
     networks:
       - 6g-network
+
   ca-org7:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -177,6 +182,7 @@ services:
     container_name: ca-org7
     networks:
       - 6g-network
+
   ca-org8:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -202,3 +208,6 @@ services:
     container_name: ca-org8
     networks:
       - 6g-network
+
+networks:
+  6g-network:
