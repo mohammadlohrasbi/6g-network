@@ -66,7 +66,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=8054
+      - FABRIC_CA_SERVER_PORT=7254
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:18054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -75,7 +75,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/ca/ca-org2.org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "8054:8054"
+      - "7254:7254"
       - "18054:18054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org2
@@ -94,7 +94,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=9054
+      - FABRIC_CA_SERVER_PORT=7354
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:19054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -103,7 +103,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/ca/ca-org3.org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "9054:9054"
+      - "7354:7354"
       - "19054:19054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org3
@@ -122,7 +122,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=10054
+      - FABRIC_CA_SERVER_PORT=7454
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:20054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -131,7 +131,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/ca/ca-org4.org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "10054:10054"
+      - "7454:7454"
       - "20054:20054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org4
@@ -149,7 +149,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=11054
+      - FABRIC_CA_SERVER_PORT=7554
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:21054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -158,7 +158,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/ca/ca-org5.org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "11054:11054"
+      - "7554:7554"
       - "21054:21054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org5
@@ -176,7 +176,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=12054
+      - FABRIC_CA_SERVER_PORT=7654
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:22054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -185,7 +185,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/ca/ca-org6.org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "12054:12054"
+      - "7654:7654"
       - "22054:22054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org6
@@ -203,7 +203,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=13054
+      - FABRIC_CA_SERVER_PORT=7754
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:23054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -212,7 +212,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/ca/ca-org7.org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "13054:13054"
+      - "7754:7754"
       - "23054:23054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org7
@@ -230,7 +230,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
-      - FABRIC_CA_SERVER_PORT=14054
+      - FABRIC_CA_SERVER_PORT=7854
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:24054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
@@ -239,7 +239,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/ca/ca-org8.org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "14054:14054"
+      - "7854:7854"
       - "24054:24054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org8
