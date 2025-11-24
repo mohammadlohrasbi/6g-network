@@ -5,7 +5,8 @@ General:
         Enabled: true
         PrivateKey: tls/server.key
         Certificate: tls/server.crt
-        RootCAs: []
+        RootCAs:
+          - tls/ca.crt
         ClientAuthRequired: false
         ClientRootCAs: []
     Keepalive:
