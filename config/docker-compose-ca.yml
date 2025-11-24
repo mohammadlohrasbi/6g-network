@@ -25,6 +25,7 @@ services:
     ports:
       - "7054:7054"          # اصلی — فقط ca-orderer روی 7054
       - "17054:17054"        # عملیات
+      - "7055:7054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-orderer
     networks:
