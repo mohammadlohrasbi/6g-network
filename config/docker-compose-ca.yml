@@ -23,8 +23,8 @@ services:
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "7054:7054"
-      - "17054:17054"
+      - "7054:7054"          # اصلی — فقط ca-orderer روی 7054
+      - "17054:17054"        # عملیات
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-orderer
     networks:
@@ -49,7 +49,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/ca/ca-org1.org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "7154:7154"
+      - "7154:7154"          # تغییر: قبلاً 7054 بود → حالا 7154
       - "17154:17154"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org1
@@ -82,8 +82,6 @@ services:
     networks:
       - 6g-network
 
-  # همین برای ca-org3 تا ca-org8 با پورت‌های 9054/19054, 10054/20054, 11054/21054, 12054/22054, 13054/23054, 14054/24054
-
   ca-org3:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -110,8 +108,6 @@ services:
     networks:
       - 6g-network
 
-  # ادامه برای ca-org4 تا ca-org8 (مشابه, فقط پورت و مسیر volume تغییر می‌کند)
-  # مثال ca-org4:
   ca-org4:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -138,7 +134,6 @@ services:
     networks:
       - 6g-network
 
-  # ca-org5:
   ca-org5:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -165,7 +160,6 @@ services:
     networks:
       - 6g-network
 
-  # ca-org6:
   ca-org6:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -192,7 +186,6 @@ services:
     networks:
       - 6g-network
 
-  # ca-org7:
   ca-org7:
     image: hyperledger/fabric-ca:1.5.7
     environment:
@@ -219,7 +212,6 @@ services:
     networks:
       - 6g-network
 
-  # ca-org8:
   ca-org8:
     image: hyperledger/fabric-ca:1.5.7
     environment:
