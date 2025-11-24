@@ -1,14 +1,12 @@
 General:
-    ListenAddress: 0.0.0.0
-    ListenPort: 7050
-    TLS:
-        Enabled: true
-        PrivateKey: tls/server.key
-        Certificate: tls/server.crt
-        RootCAs:
-          - tls/ca.crt
-        ClientAuthRequired: false
-        ClientRootCAs: []
+  TLS:
+    Enabled: true
+    PrivateKey: tls/server.key
+    Certificate: tls/server.crt
+    RootCAs:
+      - tls/ca.crt
+    ClientAuthRequired: false
+    ClientRootCAs: []
     Keepalive:
         ServerMinInterval: 60s
         ServerInterval: 7200s
