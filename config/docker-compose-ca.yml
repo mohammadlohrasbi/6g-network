@@ -25,7 +25,6 @@ services:
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
       - "7054:7054"     # TLS
-      - "7055:7054"     # غیر-TLS (برای enroll)
       - "17054:17054"   # عملیات
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-orderer
