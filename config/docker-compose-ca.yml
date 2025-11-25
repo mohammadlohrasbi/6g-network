@@ -19,17 +19,14 @@ services:
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:17054
       - FABRIC_CA_SERVER_DEBUG=true
     volumes:
+      # اصلاح کلیدی: فقط فایل‌های واقعی و درست مپ شده‌اند
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/tls-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/tls-key.pem:/etc/hyperledger/fabric-ca-server/msp/keystore/tls-key.pem
-      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem   # اصلاح شد
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "7054:7054"     # TLS
-      - "17054:17054"   # عملیات
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    container_name: ca-orderer
-    networks:
-      - 6g-network
+      - "7054:7054"
+      - "17054:17054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-orderer
     networks:
@@ -54,7 +51,7 @@ services:
       - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/ca/ca-org1.org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "7154:7154"          # تغییر: قبلاً 7054 بود → حالا 7154
+      - "7154:7154"
       - "17154:17154"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-org1
