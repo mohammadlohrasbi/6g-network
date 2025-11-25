@@ -6,6 +6,7 @@ networks:
 services:
   ca-orderer:
     image: hyperledger/fabric-ca:1.5.7
+    container_name: ca-orderer
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_CA_NAME=ca-orderer
@@ -23,9 +24,13 @@ services:
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - /root/6g-network/config/crypto-config/ordererOrganizations/example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/msp/keystore/ca-key.pem
     ports:
-      - "7054:7054"          # اصلی — فقط ca-orderer روی 7054
-      - "17054:17054"        # عملیات
-      - "7055:7054"
+      - "7054:7054"     # TLS
+      - "7055:7054"     # غیر-TLS (برای enroll)
+      - "17054:17054"   # عملیات
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    container_name: ca-orderer
+    networks:
+      - 6g-network
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     container_name: ca-orderer
     networks:
