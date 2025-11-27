@@ -255,6 +255,7 @@ ls -l /root/6g-network/wallet
 ```bash
 cd /root/6g-network/scripts
 chmod +x *.sh
+./enroll-admins.sh
 for i in {1..10}; do ./generateChaincodes_part${i}.sh; done
 ./generateConnectionJson.sh
 ./generateConnectionProfiles.sh
