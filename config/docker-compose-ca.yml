@@ -2,6 +2,7 @@ version: '3.7'
 
 networks:
   6g-network:
+    name: config_6g-network
 
 services:
   ca-orderer:
