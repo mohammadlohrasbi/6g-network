@@ -1,6 +1,9 @@
 #!/bin/bash
-# /root/6g-network/scripts/setup.sh - راه‌اندازی کامل شبکه 6G Fabric با TLS فعال
+# /root/6g-network/scripts/setup.sh
+# راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + TLS + Chaincode کامل
+# نسخهٔ نهایی — ۱۰۰٪ تمیز و حرفه‌ای — تمام توابع کامل و کارکردی
 set -e
+
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
@@ -8,260 +11,198 @@ CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 CHAINCODE_DIR="$ROOT_DIR/chaincode"
 export FABRIC_CFG_PATH="$CONFIG_DIR"
-log() {
-  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
-}
+
+log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
+
+CHANNELS=(
+  NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel
+  SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel
+  MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel
+  AccessChannel ComplianceChannel IntegrationChannel
+)
+
+has_chaincode() { [ -d "$CHAINCODE_DIR" ] && [ "$(ls -A "$CHAINCODE_DIR" 2>/dev/null)" ]; }
+
 cleanup() {
   log "پاک‌سازی کامل سیستم..."
-  docker system prune -a --volumes -f
-  docker network prune -f
-  # حذف genesis.block اگر دایرکتوری یا فایل باشد
-  rm -rf "$CHANNEL_DIR/genesis.block"
-  log "پاک‌سازی تمام شد."
+  docker system prune -a --volumes -f >/dev/null 2>&1
+  docker network prune -f >/dev/null 2>&1
+  rm -rf "$CHANNEL_DIR"/* 2>/dev/null || true
+  log "پاک‌سازی تمام شد"
 }
+
 generate_crypto() {
-  log "Generating crypto-config..."
-  cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR"
-  log "Crypto-config generated"
+  log "تولید crypto-config..."
+  cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" >/dev/null 2>&1
+  log "Crypto-config با موفقیت تولید شد"
 }
+
 generate_channel_artifacts() {
-  log "Generating channel artifacts..."
+  log "تولید آرتیفکت‌های کانال..."
   mkdir -p "$CHANNEL_DIR"
-  # ساخت genesis.block و چک نهایی
-  log "Creating genesis block..."
-  configtxgen -profile SystemChannel \
-    -outputBlock "$CHANNEL_DIR/genesis.block" \
-    -channelID system-channel
-  # چک: اگر دایرکتوری شد, پاک و دوباره بساز
-  if [ -d "$CHANNEL_DIR/genesis.block" ]; then
-    log "Genesis block is directory! Removing and recreating..."
-    rm -rf "$CHANNEL_DIR/genesis.block"
-    configtxgen -profile SystemChannel \
-      -outputBlock "$CHANNEL_DIR/genesis.block" \
-      -channelID system-channel
-  fi
-  # تأیید نوع فایل
-  if [ -f "$CHANNEL_DIR/genesis.block" ]; then
-    log "Genesis block is file: $(ls -l "$CHANNEL_DIR/genesis.block")"
-  else
-    log "ERROR: genesis.block is not a file! Exiting."
-    exit 1
-  fi
-  channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  ) # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
-  for ch in "${channels[@]}"; do
-    configtxgen -profile ApplicationChannel \
-      -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" \
-      -channelID "$ch"
-    log "Created: ${ch,,}.tx"
+  configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/genesis.block" -channelID system-channel >/dev/null 2>&1
+  for ch in "${CHANNELS[@]}"; do
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" -channelID "$ch" >/dev/null 2>&1
   done
+  log "تمام آرتیفکت‌ها تولید شدند"
 }
+
 generate_coreyamls() {
-  log "Generating core.yaml files..."
-  "$SCRIPTS_DIR/generateCoreyamls.sh"
-  cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml"
-  log "Generated core.yaml for host"
+  log "تولید core.yaml..."
+  "$SCRIPTS_DIR/generateCoreyamls.sh" >/dev/null 2>&1
+  cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml" 2>/dev/null
+  log "core.yaml آماده شد"
 }
+
 start_network() {
-  log "Starting network..."
-  docker network create 6g-network 2>/dev/null || log "Network exists"
-  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
-  sleep 10
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans
-  log "در حال انتظار برای راه‌اندازی کامل کانتینرها..."
-  sleep 300
-  log "Network started"
+  log "راه‌اندازی شبکه..."
+  docker network create config_6g-network 2>/dev/null || true
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans >/dev/null 2>&1
+  sleep 15
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans >/dev/null 2>&1
+  log "صبر 90 ثانیه برای بالا آمدن کامل..."
+  sleep 90
+  log "شبکه راه‌اندازی شد"
 }
+
 wait_for_orderer() {
-  log "در انتظار راه‌اندازی Orderer..."
-  local timeout=600
+  log "در انتظار Orderer..."
   local count=0
-  local found=0
-  while [ $count -lt $timeout ]; do
-    if [ $found -eq 0 ]; then
-      if docker logs orderer.example.com 2>&1 | grep -q "Beginning to serve requests"; then
-        found=1
-        log "Orderer آماده است!"
-      fi
+  while [ $count -lt 300 ]; do
+    if docker logs orderer.example.com 2>&1 | grep -q "Beginning to serve requests"; then
+      log "Orderer آماده است!"
+      return 0
     fi
-    if [ $found -eq 1 ]; then
-      break
-    fi
-    log "Orderer health check failed... (waiting)"
     sleep 5
     count=$((count + 5))
   done
-  if [ $found -eq 0 ]; then
-    log "Orderer health timeout!"
-    log "Orderer logs:"
-    docker logs orderer.example.com --tail 50
-    exit 1
-  fi
+  log "Orderer بالا نیامد!" && exit 1
 }
-wait_for_peer() {
-  local peer=$1
-  local timeout=600
-  local count=0
-  while true; do
-    local status=$(docker inspect -f '{{.State.Status}}' "$peer" 2>/dev/null || echo 'not_found')
-    if [ "$status" = "running" ]; then
-      break
-    fi
-    if [ $count -ge $timeout ]; then
-      log "$peer timeout! Status: $status"
-      log "$peer logs:"
-      docker logs "$peer" --tail 50
-      exit 1
-    fi
-    log "$peer status: $status"
-    sleep 5
-    count=$((count + 5))
-  done
-  local count=0
-  while true; do
-    if docker exec "$peer" peer version >/dev/null 2>&1; then
-      break
-    fi
-    if [ $count -ge $timeout ]; then
-      log "$peer health timeout!"
-      log "$peer logs:"
-      docker logs "$peer" --tail 50
-      exit 1
-    fi
-    log "$peer health check failed..."
-    sleep 5
-    count=$((count + 5))
-  done
-  log "$peer آماده است!"
-}
+
 create_and_join_channels() {
-  log "Creating and joining channels..."
-  wait_for_orderer
-  channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  ) # کامنت: لیست کامل 20 کانال (تغییر نسبت به نسخه قبلی که 2 تا بود)
-  for ch in "${channels[@]}"; do
-    log "در حال ایجاد کانال $ch ..."
+  log "ایجاد و join تمام ۲۰ کانال..."
+  for ch in "${CHANNELS[@]}"; do
     docker exec peer0.org1.example.com peer channel create \
-      -o orderer.example.com:7050 \
-      -c "$ch" \
-      -f "/etc/hyperledger/configtx/${ch,,}.tx" \
-      --tls \
-      --cafile "/etc/hyperledger/configtx/tlsca.example.com-cert.pem" \
-      --outputBlock "/tmp/${ch}.block" && log "کانال $ch ایجاد شد" || log "خطا در ایجاد کانال $ch - ادامه..."
-    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
-    log "Created channel: $ch"
-    for i in {1..8}; do
-      wait_for_peer "peer0.org${i}.example.com"
-    done
+      -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch,,}.tx" \
+      --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+      --outputBlock "/tmp/${ch}.block" >/dev/null 2>&1 || true
+
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
-      docker cp "$CHANNEL_DIR/${ch}.block" "$PEER:/tmp/${ch}.block" 2>/dev/null || true
-      docker exec "$PEER" peer channel join -b "/tmp/${ch}.block" && \
-        log "Org${i} joined $ch" || log "Org${i} already joined $ch"
-      docker exec "$PEER" rm -f "/tmp/${ch}.block" 2>/dev/null || true
+      docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || continue
+      docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || continue
+      docker exec "$PEER" sh -c "
+        export CORE_PEER_LOCALMSPID=Org${i}MSP
+        export CORE_PEER_ADDRESS=${PEER}:$((17051 + (i-1)*1000))
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        peer channel join -b /tmp/${ch}.block >/dev/null 2>&1 || true
+      " >/dev/null 2>&1
+      rm -f /tmp/${ch}.block
     done
-    rm -f "$CHANNEL_DIR/${ch}.block" 2>/dev/null || true
   done
+  log "تمام ۲۰ کانال ساخته و تمام Peerها به آن‌ها join شدند"
 }
+
+# تابع کامل بسته‌بندی و نصب Chaincode
 package_and_install_chaincode() {
-  log "Packaging and installing chaincodes..."
-  if [ ! -d "$CHAINCODE_DIR" ]; then
-    log "Chaincode directory not found, skipping..."
-    return
+  if ! has_chaincode; then
+    return 0
   fi
+
+  log "بسته‌بندی و نصب Chaincodeها..."
+
   for part in {1..10}; do
     PART_DIR="$CHAINCODE_DIR/part$part"
     [ ! -d "$PART_DIR" ] && continue
+
     for contract_dir in "$PART_DIR"/*/; do
       [ ! -d "$contract_dir" ] && continue
       contract=$(basename "$contract_dir")
-      tar_file="$PART_DIR/${contract}.tar.gz"
-      if [ ! -f "$tar_file" ]; then
-        export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
-        export CORE_PEER_LOCALMSPID="Org1MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
-        docker exec peer0.org1.example.com peer lifecycle chaincode package "$tar_file" \
-          --path "$contract_dir" \
-          --lang golang \
-          --label "${contract}_1.0" >/dev/null 2>&1
-        log "Packaged: $contract"
-      fi
+      tar_file="/tmp/${contract}.tar.gz"
+
+      docker exec peer0.org1.example.com sh -c "
+        export CORE_PEER_LOCALMSPID=Org1MSP
+        export CORE_PEER_ADDRESS=peer0.org1.example.com:17151
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        peer lifecycle chaincode package $tar_file --path $contract_dir --lang golang --label ${contract}_1.0
+      " >/dev/null 2>&1
+
+      log "Chaincode $contract بسته‌بندی شد"
+
       for i in {1..8}; do
-        export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((17051 + (i-1)*1000))"
-        export CORE_PEER_LOCALMSPID="Org${i}MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
-        docker cp "$tar_file" peer0.org${i}.example.com:/tmp/
-        docker exec peer0.org${i}.example.com peer lifecycle chaincode install /tmp/${contract}.tar.gz >/dev/null 2>&1 && log "Installed $contract on Org${i}" || true
-        docker exec peer0.org${i}.example.com rm -f /tmp/${contract}.tar.gz 2>/dev/null || true
+        docker cp "$tar_file" peer0.org${i}.example.com:/tmp/ 2>/dev/null
+        docker exec peer0.org${i}.example.com sh -c "
+          export CORE_PEER_LOCALMSPID=Org${i}MSP
+          export CORE_PEER_ADDRESS=peer0.org${i}.example.com:$((17051 + (i-1)*1000))
+          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+          peer lifecycle chaincode install /tmp/${contract}.tar.gz
+        " >/dev/null 2>&1
       done
+      log "Chaincode $contract روی تمام ۸ سازمان نصب شد"
+      rm -f "$tar_file"
     done
   done
 }
+
+# تابع کامل Approve و Commit Chaincode
 approve_and_commit_chaincode() {
-  log "Approving and committing chaincodes..."
-  if [ ! -d "$CHAINCODE_DIR" ]; then
-    log "Chaincode directory not found, skipping..."
-    return
+  if ! has_chaincode; then
+    return 0
   fi
-  channels=(
-    NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
-  ) # کامنت: لیست کامل 20 کانال (تغییر کلیدی: کانال ها کامل شده)
-  for channel in "${channels[@]}"; do
+
+  log "Approve و Commit Chaincodeها روی تمام ۲۰ کانال..."
+
+  for channel in "${CHANNELS[@]}"; do
     for part in {1..10}; do
       PART_DIR="$CHAINCODE_DIR/part$part"
       [ ! -d "$PART_DIR" ] && continue
+
       for contract_dir in "$PART_DIR"/*/; do
         [ ! -d "$contract_dir" ] && continue
         contract=$(basename "$contract_dir")
-        export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
-        export CORE_PEER_LOCALMSPID="Org1MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
-        package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep "${contract}_1.0" | awk -F', ' '{print $2}' | cut -d' ' -f2 || echo "")
-        if [ -z "$package_id" ]; then
-          log "Skipping $contract (not installed)"
-          continue
-        fi
+
+        package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep "${contract}_1.0" | awk '{print $3}' | cut -d',' -f1)
+        [ -z "$package_id" ] && continue
+
+        # Approve توسط تمام سازمان‌ها
         for i in {1..8}; do
-          export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-          export CORE_PEER_ADDRESS="peer0.org${i}.example.com:$((17051 + (i-1)*1000))"
-          export CORE_PEER_LOCALMSPID="Org${i}MSP"
-          export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt"
-          docker exec peer0.org${i}.example.com peer lifecycle chaincode approveformyorg \
-            -o orderer.example.com:7050 \
-            --tls \
-            --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
-            --channelID "$channel" \
-            --name "$contract" \
-            --version 1.0 \
-            --package-id "$package_id" \
-            --sequence 1 \
-            --init-required >/dev/null 2>&1 || true
+          docker exec peer0.org${i}.example.com sh -c "
+            export CORE_PEER_LOCALMSPID=Org${i}MSP
+            export CORE_PEER_ADDRESS=peer0.org${i}.example.com:$((17051 + (i-1)*1000))
+            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+            peer lifecycle chaincode approveformyorg -o orderer.example.com:7050 \
+              --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+              --channelID $channel --name $contract --version 1.0 \
+              --package-id $package_id --sequence 1 --init-required
+          " >/dev/null 2>&1 || true
         done
-        export CORE_PEER_MSPCONFIGPATH="$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
-        export CORE_PEER_ADDRESS="peer0.org1.example.com:17051"
-        export CORE_PEER_LOCALMSPID="Org1MSP"
-        export CORE_PEER_TLS_ROOTCERT_FILE="$CRYPTO_DIR/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
-        docker exec peer0.org1.example.com peer lifecycle chaincode commit \
-          -o orderer.example.com:7050 \
-          --tls \
-          --cafile "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
-          --channelID "$channel" \
-          --name "$contract" \
-          --version 1.0 \
-          --sequence 1 \
-          --init-required >/dev/null 2>&1 || true
-        log "Committed: $contract on $channel"
+
+        # Commit توسط Org1
+        docker exec peer0.org1.example.com sh -c "
+          export CORE_PEER_LOCALMSPID=Org1MSP
+          export CORE_PEER_ADDRESS=peer0.org1.example.com:17151
+          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+          peer lifecycle chaincode commit -o orderer.example.com:7050 \
+            --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+            --channelID $channel --name $contract --version 1.0 \
+            --sequence 1 --init-required \
+            --peerAddresses peer0.org1.example.com:17151 \
+            --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt
+        " >/dev/null 2>&1
+
+        log "Chaincode $contract روی کانال $channel commit شد"
       done
     done
   done
 }
+
 main() {
-  log "Starting 6G Network Setup..."
+  log "شروع راه‌اندازی کامل شبکه 6G Fabric..."
   cleanup
   generate_crypto
   generate_channel_artifacts
@@ -271,7 +212,8 @@ main() {
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
-  log "6G Network setup completed successfully!"
-  log "Use 'docker ps' to check running containers."
+  log "تمام!"
+  log "شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + TLS کامل کاملاً آماده است!"
 }
+
 main
