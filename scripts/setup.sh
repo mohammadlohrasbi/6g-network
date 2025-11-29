@@ -104,7 +104,6 @@ create_and_join_channels() {
   log "تمام ۲۰ کانال ساخته و تمام Peerها به آن‌ها join شدند"
 }
 
-# بسته‌بندی صحیح و بدون خطا با ساختار استاندارد Fabric
 package_and_install_chaincode() {
   if ! has_chaincode; then
     return 0
@@ -116,12 +115,10 @@ package_and_install_chaincode() {
     [ ! -d "$contract_dir" ] && continue
     contract=$(basename "$contract_dir")
 
-    # ایجاد ساختار استاندارد برای chaincode
     temp_pkg="/tmp/chaincode_pkg/$contract"
     mkdir -p "$temp_pkg/src"
-
-    # کپی فایل اصلی + ایجاد META-INF
     cp "$contract_dir/chaincode.go" "$temp_pkg/src/"
+
     mkdir -p "$temp_pkg/META-INF"
     cat > "$temp_pkg/META-INF/MANIFEST.MF" <<EOF
 Manifest-Version: 1.0
@@ -129,7 +126,6 @@ Chaincode-Type: golang
 Label: ${contract}_1.0
 EOF
 
-    # بسته‌بندی توسط Org1
     docker cp "$temp_pkg" peer0.org1.example.com:/tmp/$contract
     docker exec peer0.org1.example.com sh -c "
       export CORE_PEER_LOCALMSPID=Org1MSP
@@ -141,7 +137,6 @@ EOF
 
     log "Chaincode $contract با موفقیت بسته‌بندی شد"
 
-    # نصب روی تمام ۸ سازمان
     for i in {1..8}; do
       docker cp /tmp/${contract}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null
       docker exec peer0.org${i}.example.com sh -c "
@@ -154,10 +149,7 @@ EOF
     done
 
     log "Chaincode $contract روی تمام ۸ سازمان نصب شد"
-
-    # پاک‌سازی
     rm -rf "$temp_pkg" /tmp/${contract}.tar.gz
-  done
   done
 }
 
