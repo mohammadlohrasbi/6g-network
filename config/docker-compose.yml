@@ -2,15 +2,19 @@ version: '3.7'
 
 networks:
   6g-network:
+    name: config_6g-network
 
 services:
+  # =====================================
+  # Orderer — پورت استاندارد 7050
+  # =====================================
   orderer.example.com:
     container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_LISTENPORT=17050
+      - ORDERER_GENERAL_LISTENPORT=7050
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
@@ -19,27 +23,33 @@ services:
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
+    working_dir: /etc/hyperledger/fabric
+    command: orderer
     volumes:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      - orderer-data:/var/hyperledger/production/orderer
+      - orderer-data:/var/hyperledger/production
     ports:
-      - "17050:17050"
+      - "7050:7050"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org1
-  # ==============================
+  # =====================================
+  # Peerهای Org1 تا Org8 — همه روی پورت 7051
+  # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org1.example.com
-      - CORE_PEER_ADDRESS=peer0.org1.example.com:17151
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:17151
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -49,24 +59,25 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
-      - "17151:17151"
+      - "7051:7051"
+      - "9443:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org2
-  # ==============================
   peer0.org2.example.com:
     container_name: peer0.org2.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org2.example.com
-      - CORE_PEER_ADDRESS=peer0.org2.example.com:18051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:18051
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:7052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -76,24 +87,25 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
-      - "18051:18051"
+      - "8051:7051"
+      - "9444:9443"
+    # اختیاری — metrics
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org3
-  # ==============================
   peer0.org3.example.com:
     container_name: peer0.org3.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org3.example.com
-      - CORE_PEER_ADDRESS=peer0.org3.example.com:19051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:19051
+      - CORE_PEER_ADDRESS=peer0.org3.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -103,24 +115,24 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
-      - "19051:19051"
+      - "9051:7051"
+      - "9445:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org4
-  # ==============================
   peer0.org4.example.com:
     container_name: peer0.org4.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org4.example.com
-      - CORE_PEER_ADDRESS=peer0.org4.example.com:20051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:20051
+      - CORE_PEER_ADDRESS=peer0.org4.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org4MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -130,24 +142,24 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
-      - "20051:20051"
+      - "10051:7051"
+      - "9446:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org5
-  # ==============================
   peer0.org5.example.com:
     container_name: peer0.org5.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org5.example.com
-      - CORE_PEER_ADDRESS=peer0.org5.example.com:21051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:21051
+      - CORE_PEER_ADDRESS=peer0.org5.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org5MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -157,24 +169,24 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
-      - "21051:21051"
+      - "11051:7051"
+      - "9447:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org6
-  # ==============================
   peer0.org6.example.com:
     container_name: peer0.org6.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org6.example.com
-      - CORE_PEER_ADDRESS=peer0.org6.example.com:22051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:22051
+      - CORE_PEER_ADDRESS=peer0.org6.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org6MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -184,24 +196,24 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
-      - "22051:22051"
+      - "12051:7051"
+      - "9448:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org7
-  # ==============================
   peer0.org7.example.com:
     container_name: peer0.org7.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org7.example.com
-      - CORE_PEER_ADDRESS=peer0.org7.example.com:23051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:23051
+      - CORE_PEER_ADDRESS=peer0.org7.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org7MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -211,24 +223,24 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
-      - "23051:23051"
+      - "13051:7051"
+      - "9449:9443"
     networks:
       - 6g-network
 
-  # ==============================
-  # Peer Org8
-  # ==============================
   peer0.org8.example.com:
     container_name: peer0.org8.example.com
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org8.example.com
-      - CORE_PEER_ADDRESS=peer0.org8.example.com:24051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:24051
+      - CORE_PEER_ADDRESS=peer0.org8.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org8MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -238,10 +250,10 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/orderer_tls/ca.crt
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
-      - "24051:24051"
+      - "14051:7051"
+      - "9450:9443"
     networks:
       - 6g-network
 
@@ -255,6 +267,3 @@ volumes:
   peer0.org6.example.com:
   peer0.org7.example.com:
   peer0.org8.example.com:
-
-networks:
-  6g-network:
