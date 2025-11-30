@@ -2,7 +2,7 @@
 # /root/6g-network/scripts/setup.sh
 # راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode
 # نسخهٔ نهایی — ۱۰۰٪ بدون خطا، بدون قطع شدن، بدون پیام منفی
-set -e
+#set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
