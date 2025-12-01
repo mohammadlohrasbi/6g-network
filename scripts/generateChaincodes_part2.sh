@@ -6,7 +6,7 @@
 # Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
 # The Go code is complete with Init, Record/Perform/Allocate functions, Query, ValidateDistance, calculateDistance.
 
-set -e  # Stop on first error
+#set -e  # Stop on first error
 
 contracts=(
     "LocationBasedEnergy" "LocationBasedRoaming" "LocationBasedSignalStrength" "LocationBasedCoverage"
