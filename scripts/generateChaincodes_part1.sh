@@ -5,7 +5,7 @@
 # No dependency on external JSON files - hardcoded contracts and Go code.
 # The Go code is complete with Init, Assign/Update/Record functions, Query, ValidateDistance, calculateDistance.
 
-set -e  # Stop on first error
+#set -e  # Stop on first error
 
 contracts=(
     "LocationBasedAssignment" "LocationBasedConnection" "LocationBasedBandwidth" "LocationBasedQoS"
