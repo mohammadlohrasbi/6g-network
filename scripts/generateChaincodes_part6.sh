@@ -6,7 +6,7 @@
 # Added complete case for all contracts with customized structs and functions based on fields from errors.
 # The Go code is complete with Init, Record/Log functions, Query, and other relevant methods.
 
-set -e  # Stop on first error
+#set -e  # Stop on first error
 
 contracts=(
     "MonitorNetwork" "MonitorIoT" "LogFault" "LogPerformance" "LogSession" "LogTraffic" "LogInterference" "LogResourceAudit"
