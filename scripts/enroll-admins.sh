@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 
