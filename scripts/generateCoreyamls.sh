@@ -1,6 +1,6 @@
 #!/bin/bash
 # generateCoreyamls.sh - تولید core.yaml برای 8 سازمان
-set -e
+#set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
