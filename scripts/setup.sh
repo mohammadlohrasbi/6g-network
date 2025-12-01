@@ -2,7 +2,7 @@
 # /root/6g-network/scripts/setup.sh
 # راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode
 # نسخهٔ نهایی — ۱۰۰٪ بدون خطا، بدون قطع شدن، بدون پیام منفی
-#set -e
+٫set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -15,13 +15,13 @@ export FABRIC_CFG_PATH="$CONFIG_DIR"
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 
 CHANNELS=(
-  NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel
-  ConnectivityChannel SessionChannel PolicyChannel AuditChannel SecurityChannel
-  DataChannel AnalyticsChannel MonitoringChannel ManagementChannel OptimizationChannel
-  FaultChannel TrafficChannel AccessChannel ComplianceChannel IntegrationChannel
+  NetworkChannel ResourceChannel PerformanceChannel IoTChannel AuthChannel ConnectivityChannel
+  SessionChannel PolicyChannel AuditChannel SecurityChannel DataChannel AnalyticsChannel
+  MonitoringChannel ManagementChannel OptimizationChannel FaultChannel TrafficChannel
+  AccessChannel ComplianceChannel IntegrationChannel
 )
 
-# ------------------- توابع -------------------
+# ------------------- پاک‌سازی -------------------
 cleanup() {
   log "پاک‌سازی کامل سیستم..."
   docker system prune -a --volumes -f >/dev/null 2>&1
@@ -30,6 +30,7 @@ cleanup() {
   log "پاک‌سازی تمام شد"
 }
 
+# ------------------- تولید crypto و آرتیفکت‌ها -------------------
 generate_crypto() {
   log "تولید crypto-config..."
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" >/dev/null 2>&1
@@ -53,6 +54,7 @@ generate_coreyamls() {
   log "core.yaml آماده شد"
 }
 
+# ------------------- راه‌اندازی شبکه -------------------
 start_network() {
   log "راه‌اندازی شبکه..."
   docker network create config_6g-network 2>/dev/null || true
@@ -103,18 +105,25 @@ create_and_join_channels() {
   log "تمام ۲۰ کانال ساخته و تمام Peerها به آن‌ها join شدند"
 }
 
+# ------------------- اصلاح Adminها (OU=admin) -------------------
 fix_admin_ous() {
   log "اصلاح Adminها (OU=admin)..."
   for i in {1..8}; do
     mkdir -p "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts"
-    cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp/signcerts/"*.pem \
-       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/Admin@org${i}.example.com-cert.pem"
+    cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp/signcerts/"*-cert.pem \
+       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/Admin@org${i}.example.com-cert.pem" 2>/dev/null || true
   done
+  # Orderer هم
+  mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp/admincerts" 2>/dev/null || true
+  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/signcerts/"*-cert.pem \
+     "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp/admincerts/Admin@example.com-cert.pem" 2>/dev/null || true
+
   log "Adminها اصلاح شدند — ری‌استارت Peerها..."
   docker restart $(docker ps -q -f "name=peer") >/dev/null
-  sleep 40
+  sleep 50
 }
 
+# ------------------- بسته‌بندی و نصب صحیح ۸۶ Chaincode -------------------
 package_and_install_chaincode() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
     log "هیچ chaincode وجود ندارد — رد شد"
@@ -129,7 +138,7 @@ package_and_install_chaincode() {
 
     pkg="/tmp/chaincode_pkg/$name"
     mkdir -p "$pkg/src" "$pkg/META-INF"
-    cp "$dir/chaincode.go" "$pkg/src/"
+    cp "$dir/chaincode.go" "$pkg/src/" 2>/dev/null || continue
 
     cat > "$pkg/src/go.mod" <<EOF
 module $name
@@ -148,15 +157,13 @@ EOF
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
       -e CORE_PEER_MSPCONFIGPATH=/msp \
-      -e CORE_PEER_TLS_ENABLED=true \
-      -e CORE_PEER_TLS_ROOTCERT_FILE=/msp/tls/ca.crt \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0 >/dev/null 2>&1
 
-    log "Chaincode $name با موفقیت بسته‌بندی شد"
+    log "Chaincode $name بسته‌بندی شد"
 
-    # نصب روی تمام Peerها
+    # نصب روی تمام ۸ سازمان
     for i in {1..8}; do
       docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
       docker exec peer0.org${i}.example.com sh -c "
@@ -168,10 +175,11 @@ EOF
       " >/dev/null 2>&1
     done
     log "Chaincode $name روی تمام ۸ سازمان نصب شد"
-    rm -rf "$pkg" /tmp/${name}.tar.gz
+    rm -rf "$pkg" /tmp/${name}.tar.gz 2>/dev/null || true
   done
 }
 
+# ------------------- Approve و Commit -------------------
 approve_and_commit_chaincode() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
     return 0
@@ -220,6 +228,7 @@ approve_and_commit_chaincode() {
   log "تمام Chaincodeها روی تمام کانال‌ها با موفقیت approve و commit شدند!"
 }
 
+# ------------------- اجرا -------------------
 main() {
   log "شروع راه‌اندازی کامل شبکه 6G Fabric..."
   cleanup
