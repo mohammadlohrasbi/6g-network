@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer — دقیقاً مثل فایل قدیمی شما (کار می‌کرد!)
+  # Orderer — دقیقاً مثل قبل (کار می‌کرد!)
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -33,7 +33,7 @@ services:
       - 6g-network
 
   # =====================================
-  # Peerهای Org1 تا Org8 — پورت 7051 + MSP Admin مپ شده (بدون خطای ACL)
+  # Peerهای Org1 تا Org8 — همه روی پورت 7051 + MSP Admin مپ شده
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
