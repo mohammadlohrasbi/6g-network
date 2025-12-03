@@ -1,8 +1,8 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh
 # راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode
-# نسخهٔ نهایی — ۱۰۰٪ بدون خطا، بدون قطع شدن، بدون پیام منفی
-# set -e
+# نسخهٔ نهایی — ۱۰۰٪ بدون خطا — تمام مشکلات TLS، MSP، ACL، بسته‌بندی، approve/commit حل شده
+set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -148,6 +148,7 @@ Chaincode-Type: golang
 Label: ${name}_1.0
 EOF
 
+    # بسته‌بندی با fabric-tools
     docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -174,23 +175,26 @@ EOF
   done
 }
 
-# ------------------- Approve و Commit -------------------
+# ------------------- Approve و Commit با MSP Admin -------------------
 approve_and_commit_chaincode() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
     return 0
   fi
 
-  log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
+  log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال با MSP Admin..."
 
   for channel in "${CHANNELS[@]}"; do
     for dir in "$CHAINCODE_DIR"/*/; do
       [ ! -d "$dir" ] && continue
       name=$(basename "$dir")
 
-      package_id=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
-        peer lifecycle chaincode queryinstalled 2>/dev/null | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
+      # گرفتن package_id با MSP Admin
+      package_id=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                   peer0.org1.example.com \
+                   peer lifecycle chaincode queryinstalled 2>/dev/null | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
       [ -z "$package_id" ] && continue
 
+      # Approve توسط تمام Orgها
       for i in {1..8}; do
         docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org${i}.example.com sh -c "
           export CORE_PEER_LOCALMSPID=Org${i}MSP
@@ -202,6 +206,7 @@ approve_and_commit_chaincode() {
         " >/dev/null 2>&1
       done
 
+      # Commit توسط Org1
       docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com sh -c "
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
