@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer — کاملاً درست و بدون خطای TLS
+  # Orderer
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -20,23 +20,20 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      # اسم واقعی فایل CA Orderer
-      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca-orderer.example.com-cert.pem]
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
     volumes:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      # کپی مستقیم فایل CA اصلی Orderer
-      - ./crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem:/var/hyperledger/orderer/tls/ca-orderer.example.com-cert.pem
     ports:
       - "7050:7050"
     networks:
       - 6g-network
 
   # =====================================
-  # Peerهای Org1 تا Org8 — همه روی پورت 7051 + MSP Admin مپ شده
+  # Peerهای Org1 تا Org8 — پورت 7051 + MSP Admin مپ شده
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
