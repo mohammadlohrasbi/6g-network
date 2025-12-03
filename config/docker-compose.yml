@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer
+  # Orderer — پورت 7050
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -14,7 +14,7 @@ services:
     environment:
       - FABRIC_LOGGING_SPEC=INFO
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LISTENPORT: 7050
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
@@ -33,7 +33,7 @@ services:
       - 6g-network
 
   # =====================================
-  # Peerهای Org1 تا Org8 — پورت 7051 + MSP Admin مپ شده
+  # Peerهای Org1 تا Org8 — همه روی پورت 7051 + MSP Admin مپ شده
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
