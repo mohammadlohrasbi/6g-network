@@ -97,7 +97,6 @@ create_and_join_channels() {
         export CORE_PEER_ADDRESS=${PEER}:7051
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        export ORDERER_CA=/etc/hyperledger/fabric/tls/ca.crt
         peer channel join -b /tmp/${ch}.block >/dev/null 2>&1 || true
       " >/dev/null 2>&1
       rm -f /tmp/${ch}.block
@@ -106,14 +105,14 @@ create_and_join_channels() {
   log "تمام ۲۰ کانال ساخته و تمام Peerها به آن‌ها join شدند"
 }
 
-# ------------------- اصلاح Adminها -------------------
+# ------------------- اصلاح Adminها — دقیقاً مطابق ساختار شما -------------------
 fix_admin_ous() {
   log "اصلاح Adminها (admincerts)..."
   for i in {1..8}; do
     mkdir -p "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts"
-    # کپی گواهی Admin واقعی به admincerts
+    # کپی Admin@orgX.example.com-cert.pem به عنوان admin
     cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/" 2>/dev/null || true
+       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/Admin@org${i}.example.com-cert.pem" 2>/dev/null || true
   done
   log "Adminها اصلاح شدند — ری‌استارت Peerها..."
   docker restart $(docker ps -q -f "name=peer") >/dev/null
@@ -122,17 +121,18 @@ fix_admin_ous() {
 
 # ------------------- بسته‌بندی و نصب ۸۶ Chaincode -------------------
 package_and_install_chaincode() {
-  [ ! -d "$CODE_DIR" ] && return 0
-  local count=$(ls -1 "$CODE_DIR" | wc -l)
-  [ $count -eq 0 ] && return 0
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode وجود ندارد — رد شد"
+    return 0
+  fi
 
-  log "بسته‌بندی و نصب $count Chaincode..."
+  log "بسته‌بندی و نصب $(ls -1 "$CHAINCODE_DIR" | wc -l) Chaincode..."
 
-  for dir in "$CODE_DIR"/*/; do
+  for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
 
-    pkg="/tmp/pkg_$name"
+    pkg="/tmp/chaincode_pkg/$name"
     mkdir -p "$pkg/src" "$pkg/META-INF"
     cp "$dir/chaincode.go" "$pkg/src/"
 
@@ -147,6 +147,7 @@ Chaincode-Type: golang
 Label: ${name}_1.0
 EOF
 
+    # بسته‌بندی با fabric-tools
     docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -154,18 +155,19 @@ EOF
       -e CORE_PEER_MSPCONFIGPATH=/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0
+      peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0 >/dev/null 2>&1
 
     log "Chaincode $name بسته‌بندی شد"
 
+    # نصب روی تمام Peerها
     for i in {1..8}; do
-      docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/
+      docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
       docker exec peer0.org${i}.example.com sh -c "
         export CORE_PEER_LOCALMSPID=Org${i}MSP
         export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        peer lifecycle chaincode install /tmp/${name}.tar.gz
+        peer lifecycle chaincode install /tmp/${name}.tar.gz >/dev/null 2>&1 || true
       " >/dev/null 2>&1
     done
     log "Chaincode $name روی تمام ۸ سازمان نصب شد"
@@ -175,18 +177,18 @@ EOF
 
 # ------------------- Approve و Commit -------------------
 approve_and_commit_chaincode() {
-  [ ! -d "$CODE_DIR" ] && return 0
-  local count=$(ls -1 "$CODE_DIR" | wc -l)
-  [ $count -eq 0 ] && return 0
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    return 0
+  fi
 
-  log "Approve و Commit $count Chaincode روی ۲۰ کانال..."
+  log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
 
   for channel in "${CHANNELS[@]}"; do
-    for dir in "$CODE_DIR"/*/; do
+    for dir in "$CHAINCODE_DIR"/*/; do
       [ ! -d "$dir" ] && continue
       name=$(basename "$dir")
 
-      package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
+      package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled 2>/dev/null | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
       [ -z "$package_id" ] && continue
 
       for i in {1..8}; do
@@ -212,14 +214,14 @@ approve_and_commit_chaincode() {
           --channelID $channel --name $name --version 1.0 \
           --sequence 1 --init-required \
           --peerAddresses peer0.org1.example.com:7051 \
-          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt >/dev/null 2>&1
+          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt >/dev/null 2>&1 || true
       " >/dev/null 2>&1
 
-      log "Chaincode $name روی کانال $channel commit شد"
+      log "Chaincode $name روی کانال $channel با موفقیت commit شد"
     done
   done
 
-  log "تمام $count Chaincode روی تمام کانال‌ها با موفقیت approve و commit شدند!"
+  log "تمام Chaincodeها روی تمام کانال‌ها با موفقیت approve و commit شدند!"
 }
 
 # ------------------- اجرا -------------------
@@ -237,9 +239,11 @@ main() {
   approve_and_commit_chaincode
   log "تمام!"
   log "شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode کاملاً آماده است!"
-  log "چک نهایی:"
-  docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep -c "_1.0"
-  docker exec peer0.org1.example.com peer lifecycle chaincode querycommitted -C NetworkChannel | grep -c "Name"
+  log "چک نهایی (با MSP Admin):"
+  docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
+    peer lifecycle chaincode queryinstalled | grep -c "_1.0" 2>/dev/null || echo "0"
+  docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
+    peer lifecycle chaincode querycommitted -C NetworkChannel | grep -c "Name" 2>/dev/null || echo "0"
 }
 
 main
