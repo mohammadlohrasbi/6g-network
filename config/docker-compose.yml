@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer — دقیقاً مثل قبل (کار می‌کرد!)
+  # Orderer — کاملاً درست
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
