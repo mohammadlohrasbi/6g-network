@@ -33,7 +33,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام Peerها — پورت 7051 + MSP Admin + Orderer CA با مسیر درست
+  # تمام Peerها — پورت 7051 + MSP Admin + Orderer CA مپ شده
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
