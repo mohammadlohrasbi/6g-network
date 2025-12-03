@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer — دقیقاً مثل قبل (کاملاً درست کار می‌کرد)
+  # Orderer — کاملاً درست
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -50,6 +50,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      # مهم: استفاده از گواهی Orderer CA
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
@@ -57,6 +58,7 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
+      # مهم: کپی گواهی Orderer CA
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
