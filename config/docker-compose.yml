@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer — پورت استاندارد 7050
+  # Orderer
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -33,7 +33,7 @@ services:
       - 6g-network
 
   # =====================================
-  # Peerهای Org1 تا Org8 — همه روی پورت 7051
+  # Peerهای Org1 تا Org8 — پورت 7051 + MSP Admin مپ شده
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -70,8 +70,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org2.example.com
       - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:7052
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org2MSP
@@ -90,7 +88,6 @@ services:
     ports:
       - "8051:7051"
       - "9444:9443"
-    # اختیاری — metrics
     networks:
       - 6g-network
 
@@ -100,7 +97,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org3.example.com
       - CORE_PEER_ADDRESS=peer0.org3.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org3MSP
@@ -128,7 +124,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org4.example.com
       - CORE_PEER_ADDRESS=peer0.org4.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org4MSP
@@ -156,7 +151,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org5.example.com
       - CORE_PEER_ADDRESS=peer0.org5.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org5MSP
@@ -184,7 +178,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org6.example.com
       - CORE_PEER_ADDRESS=peer0.org6.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org6MSP
@@ -212,7 +205,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org7.example.com
       - CORE_PEER_ADDRESS=peer0.org7.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org7MSP
@@ -240,7 +232,6 @@ services:
     environment:
       - CORE_PEER_ID=peer0.org8.example.com
       - CORE_PEER_ADDRESS=peer0.org8.example.com:7051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org8MSP
@@ -263,7 +254,6 @@ services:
       - 6g-network
 
 volumes:
-  orderer-data:
   peer0.org1.example.com:
   peer0.org2.example.com:
   peer0.org3.example.com:
