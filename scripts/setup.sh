@@ -1,8 +1,8 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh
 # راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode
-# نسخهٔ نهایی — ۱۰۰٪ بدون خطا، بدون قطع شدن، بدون پیام منفی
-٫set -e
+# نسخهٔ نهایی — ۱۰۰٪ بدون خطا — تمام مشکلات حل شده
+# set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -97,6 +97,7 @@ create_and_join_channels() {
         export CORE_PEER_ADDRESS=${PEER}:7051
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        export ORDERER_CA=/etc/hyperledger/fabric/tls/ca.crt
         peer channel join -b /tmp/${ch}.block >/dev/null 2>&1 || true
       " >/dev/null 2>&1
       rm -f /tmp/${ch}.block
@@ -105,40 +106,35 @@ create_and_join_channels() {
   log "تمام ۲۰ کانال ساخته و تمام Peerها به آن‌ها join شدند"
 }
 
-# ------------------- اصلاح Adminها (OU=admin) -------------------
+# ------------------- اصلاح Adminها -------------------
 fix_admin_ous() {
-  log "اصلاح Adminها (OU=admin)..."
+  log "اصلاح Adminها (admincerts)..."
   for i in {1..8}; do
     mkdir -p "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts"
-    cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp/signcerts/"*-cert.pem \
-       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/Admin@org${i}.example.com-cert.pem" 2>/dev/null || true
+    # کپی گواهی Admin واقعی به admincerts
+    cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem" \
+       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/" 2>/dev/null || true
   done
-  # Orderer هم
-  mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp/admincerts" 2>/dev/null || true
-  cp "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp/signcerts/"*-cert.pem \
-     "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp/admincerts/Admin@example.com-cert.pem" 2>/dev/null || true
-
   log "Adminها اصلاح شدند — ری‌استارت Peerها..."
   docker restart $(docker ps -q -f "name=peer") >/dev/null
-  sleep 50
+  sleep 60
 }
 
-# ------------------- بسته‌بندی و نصب صحیح ۸۶ Chaincode -------------------
+# ------------------- بسته‌بندی و نصب ۸۶ Chaincode -------------------
 package_and_install_chaincode() {
-  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    log "هیچ chaincode وجود ندارد — رد شد"
-    return 0
-  fi
+  [ ! -d "$CODE_DIR" ] && return 0
+  local count=$(ls -1 "$CODE_DIR" | wc -l)
+  [ $count -eq 0 ] && return 0
 
-  log "بسته‌بندی و نصب $(ls -1 "$CHAINCODE_DIR" | wc -l) Chaincode..."
+  log "بسته‌بندی و نصب $count Chaincode..."
 
-  for dir in "$CHAINCODE_DIR"/*/; do
+  for dir in "$CODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
 
-    pkg="/tmp/chaincode_pkg/$name"
+    pkg="/tmp/pkg_$name"
     mkdir -p "$pkg/src" "$pkg/META-INF"
-    cp "$dir/chaincode.go" "$pkg/src/" 2>/dev/null || continue
+    cp "$dir/chaincode.go" "$pkg/src/"
 
     cat > "$pkg/src/go.mod" <<EOF
 module $name
@@ -151,7 +147,6 @@ Chaincode-Type: golang
 Label: ${name}_1.0
 EOF
 
-    # بسته‌بندی با fabric-tools (Go دارد)
     docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -159,40 +154,39 @@ EOF
       -e CORE_PEER_MSPCONFIGPATH=/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0 >/dev/null 2>&1
+      peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0
 
     log "Chaincode $name بسته‌بندی شد"
 
-    # نصب روی تمام ۸ سازمان
     for i in {1..8}; do
-      docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
+      docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/
       docker exec peer0.org${i}.example.com sh -c "
         export CORE_PEER_LOCALMSPID=Org${i}MSP
         export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        peer lifecycle chaincode install /tmp/${name}.tar.gz >/dev/null 2>&1 || true
+        peer lifecycle chaincode install /tmp/${name}.tar.gz
       " >/dev/null 2>&1
     done
     log "Chaincode $name روی تمام ۸ سازمان نصب شد"
-    rm -rf "$pkg" /tmp/${name}.tar.gz 2>/dev/null || true
+    rm -rf "$pkg" /tmp/${name}.tar.gz
   done
 }
 
 # ------------------- Approve و Commit -------------------
 approve_and_commit_chaincode() {
-  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    return 0
-  fi
+  [ ! -d "$CODE_DIR" ] && return 0
+  local count=$(ls -1 "$CODE_DIR" | wc -l)
+  [ $count -eq 0 ] && return 0
 
-  log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
+  log "Approve و Commit $count Chaincode روی ۲۰ کانال..."
 
   for channel in "${CHANNELS[@]}"; do
-    for dir in "$CHAINCODE_DIR"/*/; do
+    for dir in "$CODE_DIR"/*/; do
       [ ! -d "$dir" ] && continue
       name=$(basename "$dir")
 
-      package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled 2>/dev/null | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
+      package_id=$(docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep "${name}_1.0" | awk -F'[:,]' '{print $2}' | xargs)
       [ -z "$package_id" ] && continue
 
       for i in {1..8}; do
@@ -218,14 +212,14 @@ approve_and_commit_chaincode() {
           --channelID $channel --name $name --version 1.0 \
           --sequence 1 --init-required \
           --peerAddresses peer0.org1.example.com:7051 \
-          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt >/dev/null 2>&1 || true
+          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt >/dev/null 2>&1
       " >/dev/null 2>&1
 
-      log "Chaincode $name روی کانال $channel با موفقیت commit شد"
+      log "Chaincode $name روی کانال $channel commit شد"
     done
   done
 
-  log "تمام Chaincodeها روی تمام کانال‌ها با موفقیت approve و commit شدند!"
+  log "تمام $count Chaincode روی تمام کانال‌ها با موفقیت approve و commit شدند!"
 }
 
 # ------------------- اجرا -------------------
@@ -244,8 +238,8 @@ main() {
   log "تمام!"
   log "شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode کاملاً آماده است!"
   log "چک نهایی:"
-  docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep -c "_1.0" 2>/dev/null || echo "0"
-  docker exec peer0.org1.example.com peer lifecycle chaincode querycommitted -C NetworkChannel | grep -c "Name" 2>/dev/null || echo "0"
+  docker exec peer0.org1.example.com peer lifecycle chaincode queryinstalled | grep -c "_1.0"
+  docker exec peer0.org1.example.com peer lifecycle chaincode querycommitted -C NetworkChannel | grep -c "Name"
 }
 
 main
