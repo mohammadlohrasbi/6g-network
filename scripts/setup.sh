@@ -245,7 +245,7 @@ main() {
   generate_coreyamls
   start_network
   wait_for_orderer
-  fix_admin_ous          # حتماً قبل از ایجاد کانال!
+  # fix_admin_ous          # حتماً قبل از ایجاد کانال!
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
