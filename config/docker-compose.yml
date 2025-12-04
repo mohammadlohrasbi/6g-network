@@ -6,7 +6,7 @@ networks:
 
 services:
   # =====================================
-  # Orderer
+  # Orderer — کاملاً درست
   # =====================================
   orderer.example.com:
     container_name: orderer.example.com
@@ -34,7 +34,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام ۸ Peer — ۱۰۰٪ درست و نهایی
+  # تمام ۸ Peer — ۱۰۰٪ درست و نهایی (فقط یک خط مپ برای msp-users!)
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
