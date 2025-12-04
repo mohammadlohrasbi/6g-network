@@ -249,7 +249,7 @@ main() {
   wait_for_orderer
 
   # مهم: اصلاح Adminها بعد از بالا آمدن Peerها!
-  fix_admin_ous
+  # fix_admin_ous
 
   create_and_join_channels
   package_and_install_chaincode
