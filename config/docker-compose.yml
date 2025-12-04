@@ -5,9 +5,6 @@ networks:
     name: config_6g-network
 
 services:
-  # =====================================
-  # Orderer — کاملاً درست
-  # =====================================
   orderer.example.com:
     container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
@@ -32,9 +29,7 @@ services:
     networks:
       - 6g-network
 
-  # =====================================
-  # تمام Peerها — ۸ سازمان — ۱۰۰٪ درست
-  # =====================================
+  # تمام ۸ Peer — با دو تغییر حیاتی!
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -50,7 +45,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      # مهم: این باید گواهی Orderer CA باشد (نه Peer CA!)
+      # تغییر حیاتی ۱: استفاده از گواهی Orderer CA (نه Peer CA!)
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
@@ -58,7 +53,7 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
-      # مهم: کپی گواهی Orderer CA با نام orderer-ca.crt
+      # تغییر حیاتی ۲: کپی گواهی Orderer CA
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
