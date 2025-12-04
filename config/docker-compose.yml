@@ -27,7 +27,6 @@ services:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      # مهم: تمام فایل‌های .tx در دسترس باشند
       - ./channel-artifacts:/etc/hyperledger/configtx
     ports:
       - "7050:7050"
@@ -35,7 +34,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام ۸ Peer — با تمام اصلاحات نهایی
+  # تمام ۸ Peer — ۱۰۰٪ درست (فقط دو تغییر حیاتی!)
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -52,15 +51,15 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      # مهم: استفاده از گواهی Orderer CA
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      # مهم: استفاده از گواهی Orderer CA (نه Peer CA!)
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
@@ -82,14 +81,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
@@ -111,14 +110,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
@@ -140,14 +139,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
@@ -169,14 +168,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
@@ -198,14 +197,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
@@ -227,14 +226,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
@@ -256,14 +255,14 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/msp-users
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
