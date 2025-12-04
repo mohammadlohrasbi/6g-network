@@ -5,6 +5,9 @@ networks:
     name: config_6g-network
 
 services:
+  # =====================================
+  # Orderer — کاملاً درست
+  # =====================================
   orderer.example.com:
     container_name: orderer.example.com
     image: hyperledger/fabric-orderer:2.5
@@ -24,12 +27,16 @@ services:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      # مهم: تمام فایل‌های .tx در دسترس باشند
+      - ./channel-artifacts:/etc/hyperledger/configtx
     ports:
       - "7050:7050"
     networks:
       - 6g-network
 
-  # تمام ۸ Peer — با دو تغییر حیاتی!
+  # =====================================
+  # تمام ۸ Peer — با تمام اصلاحات نهایی
+  # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -45,7 +52,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      # تغییر حیاتی ۱: استفاده از گواهی Orderer CA (نه Peer CA!)
+      # مهم: استفاده از گواهی Orderer CA
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
@@ -53,8 +60,8 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
-      # تغییر حیاتی ۲: کپی گواهی Orderer CA
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
       - "7051:7051"
@@ -83,6 +90,7 @@ services:
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
       - "8051:7051"
@@ -111,6 +119,7 @@ services:
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
       - "9051:7051"
@@ -139,6 +148,7 @@ services:
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
       - "10051:7051"
@@ -167,6 +177,7 @@ services:
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
       - "11051:7051"
@@ -195,6 +206,7 @@ services:
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
       - "12051:7051"
@@ -223,6 +235,7 @@ services:
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
       - "13051:7051"
@@ -251,6 +264,7 @@ services:
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
       - "14051:7051"
