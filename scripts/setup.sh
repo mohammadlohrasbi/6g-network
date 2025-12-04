@@ -237,6 +237,8 @@ approve_and_commit_chaincode() {
 }
 
 # ------------------- اجرا -------------------
+# ... تمام کدهای قبلی بدون تغییر ...
+
 main() {
   log "شروع راه‌اندازی کامل شبکه 6G Fabric..."
   cleanup
@@ -245,17 +247,14 @@ main() {
   generate_coreyamls
   start_network
   wait_for_orderer
-  create_and_join_channels
+
+  # مهم: اصلاح Adminها بعد از بالا آمدن Peerها!
   fix_admin_ous
+
+  create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
   success "تمام! شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode کاملاً آماده است!"
-  log "چک نهایی:"
-  INSTALLED=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
-    peer lifecycle chaincode queryinstalled 2>/dev/null | grep -c "_1.0" || echo "0")
-  COMMITTED=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
-    peer lifecycle chaincode querycommitted -C NetworkChannel 2>/dev/null | grep -c "Name" || echo "0")
-  log "نصب‌شده: $INSTALLED | Commit‌شده روی NetworkChannel: $COMMITTED"
 }
 
 main
