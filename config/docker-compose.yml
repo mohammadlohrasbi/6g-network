@@ -30,7 +30,7 @@ services:
     networks:
       - 6g-network
 
-  # تمام ۸ Peer — ۱۰۰٪ درست (با تمام اصلاحات نهایی!)
+  # تمام ۸ Peer — ۱۰۰٪ درست (admincerts هم داخلش مپ شده!)
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:2.5
@@ -156,7 +156,7 @@ services:
       - CORE_PEER_ID=peer0.org5.example.com
       - CORE_PEER_ADDRESS=peer0.org5.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:7051
-      - CORE_PEER_GOSSIP_BOOT.STRAP=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org5MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
