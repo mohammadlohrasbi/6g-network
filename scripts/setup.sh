@@ -86,14 +86,12 @@ fix_admin_ous() {
   log "اصلاح Adminها (admincerts) — این دقیقاً مشکل شما بود!"
   for i in {1..8}; do
     ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-    # ساخت پوشه admincerts اگر وجود نداشته باشد
     mkdir -p "$ADMIN_MSP/admincerts"
-    # کپی گواهی Admin با نام دقیق
     cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem"
+       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
     log "Admin org${i} در admincerts ثبت شد"
   done
-  "تمام Adminها در admincerts ثبت شدند — ری‌استارت Peerها..."
+  log "تمام Adminها در admincerts ثبت شدند — ری‌استارت Peerها..."
   docker restart $(docker ps -q -f "name=peer") >/dev/null 2>&1
   sleep 60
 }
