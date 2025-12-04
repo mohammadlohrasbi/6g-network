@@ -1,6 +1,6 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh
-# نسخه نهایی — ۱۰۰٪ بدون خطا، با چک دقیق
+# نسخه نهایی — ۱۰۰٪ بدون خطا
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -43,7 +43,7 @@ generate_channel_artifacts() {
   mkdir -p "$CHANNEL_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/genesis.block" -channelID system-channel || error "تولید genesis.block شکست خورد"
   for ch in "${CHANNELS[@]}"; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch,,}.tx" -channelID "$ch" || error "تولید tx برای $ch شکست خورد"
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch}.tx" -channelID "$ch" || error "تولید tx برای $ch شکست خورد"
   done
   success "تمام آرتیفکت‌ها تولید شدند"
 }
@@ -81,7 +81,21 @@ wait_for_orderer() {
   error "Orderer بالا نیامد!"
 }
 
-# ------------------- ایجاد و join کانال‌ها با MSP Admin -------------------
+# ------------------- اصلاح Adminها (قبل از ایجاد کانال!) -------------------
+fix_admin_ous() {
+  log "اصلاح Adminها (admincerts) — این دقیقاً مشکل شما بود!"
+  for i in {1..8}; do
+    ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    mkdir -p "$ADMIN_MSP/admincerts"
+    cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
+       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
+  done
+  success "تمام Adminها در admincerts کپی شدند — ری‌استارت Peerها..."
+  docker restart $(docker ps -q -f "name=peer") >/dev/null
+  sleep 60
+}
+
+# ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
   log "ایجاد و join تمام ۲۰ کانال با هویت Admin..."
   local created=0
@@ -91,7 +105,9 @@ create_and_join_channels() {
       -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch}.tx" \
       --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
       --outputBlock "/tmp/${ch}.block"; then
+      
       success "کانال $ch ساخته شد"
+      
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
         docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ && \
@@ -109,22 +125,6 @@ create_and_join_channels() {
     fi
   done
   [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || error "فقط $created کانال ساخته شد"
-}
-
-# ------------------- اصلاح Adminها -------------------
-
-fix_admin_ous() {
-  log "اصلاح Adminها (admincerts) — این دقیقاً مشکل شما بود!"
-  for i in {1..8}; do
-    ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-    mkdir -p "$ADMIN_MSP/admincerts"
-    # مهم: کپی گواهی Admin با نام دقیق
-    cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
-  done
-  success "تمام Adminها در admincerts کپی شدند — ری‌استارت Peerها..."
-  docker restart $(docker ps -q -f "name=peer") >/dev/null
-  sleep 60
 }
 
 # ------------------- بسته‌بندی و نصب Chaincode -------------------
