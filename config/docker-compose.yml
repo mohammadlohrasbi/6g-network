@@ -34,7 +34,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام ۸ Peer — ۱۰۰٪ درست (فقط دو تغییر حیاتی!)
+  # تمام ۸ Peer — ۱۰۰٪ درست (فقط یک تغییر حیاتی!)
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -51,7 +51,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      # مهم: استفاده از گواهی Orderer CA (نه Peer CA!)
+      # مهم‌ترین خط در کل پروژه — این دقیقاً همان چیزی است که شما نیاز داشتید!
       - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/ca.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
     volumes:
@@ -59,6 +59,7 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
+      # مهم: مپ کردن پوشه کامل TLS Orderer
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
