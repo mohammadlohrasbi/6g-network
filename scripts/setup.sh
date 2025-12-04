@@ -112,14 +112,17 @@ create_and_join_channels() {
 }
 
 # ------------------- اصلاح Adminها -------------------
+
 fix_admin_ous() {
-  log "اصلاح Adminها (admincerts)..."
+  log "اصلاح Adminها (admincerts) — این دقیقاً مشکل شما بود!"
   for i in {1..8}; do
-    mkdir -p "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts"
-    cp "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/admincerts/Admin@org${i}.example.com-cert.pem" 2>/dev/null || error "گواهی Admin org${i} پیدا نشد"
+    ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    mkdir -p "$ADMIN_MSP/admincerts"
+    # مهم: کپی گواهی Admin با نام دقیق
+    cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
+       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
   done
-  success "Adminها اصلاح شدند — ری‌استارت Peerها..."
+  success "تمام Adminها در admincerts کپی شدند — ری‌استارت Peerها..."
   docker restart $(docker ps -q -f "name=peer") >/dev/null
   sleep 60
 }
