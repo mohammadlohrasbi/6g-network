@@ -87,6 +87,7 @@ fix_admin_ous() {
   for i in {1..8}; do
     ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
     mkdir -p "$ADMIN_MSP/admincerts"
+    # مهم: کپی گواهی Admin با نام دقیق
     cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
        "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
     log "Admin org${i} در admincerts ثبت شد"
@@ -245,7 +246,7 @@ main() {
   generate_coreyamls
   start_network
   wait_for_orderer
-  # fix_admin_ous          # حتماً قبل از ایجاد کانال!
+  fix_admin_ous          # حتماً قبل از ایجاد کانال!
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
