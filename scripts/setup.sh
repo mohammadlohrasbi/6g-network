@@ -86,12 +86,15 @@ fix_admin_ous() {
   log "اصلاح Adminها (admincerts) — این دقیقاً مشکل شما بود!"
   for i in {1..8}; do
     ADMIN_MSP="$CRYPTO_DIR/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    # ساخت پوشه admincerts اگر وجود نداشته باشد
     mkdir -p "$ADMIN_MSP/admincerts"
+    # کپی گواهی Admin با نام دقیق
     cp "$ADMIN_MSP/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem" || error "گواهی Admin org${i} پیدا نشد"
+       "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem"
+    log "Admin org${i} در admincerts ثبت شد"
   done
-  success "تمام Adminها در admincerts کپی شدند — ری‌استارت Peerها..."
-  docker restart $(docker ps -q -f "name=peer") >/dev/null
+  "تمام Adminها در admincerts ثبت شدند — ری‌استارت Peerها..."
+  docker restart $(docker ps -q -f "name=peer") >/dev/null 2>&1
   sleep 60
 }
 
@@ -237,24 +240,18 @@ approve_and_commit_chaincode() {
 }
 
 # ------------------- اجرا -------------------
-# ... تمام کدهای قبلی بدون تغییر ...
-
 main() {
-  log "شروع راه‌اندازی کامل شبکه 6G Fabric..."
   cleanup
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
   start_network
   wait_for_orderer
-
-  # مهم: اصلاح Adminها بعد از بالا آمدن Peerها!
-  # fix_admin_ous
-
+  fix_admin_ous          # حتماً قبل از ایجاد کانال!
   create_and_join_channels
   package_and_install_chaincode
   approve_and_commit_chaincode
-  success "تمام! شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode کاملاً آماده است!"
+  success "تمام شد!"
 }
 
 main
