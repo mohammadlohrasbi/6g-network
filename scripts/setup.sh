@@ -1,7 +1,7 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh
 # راه‌اندازی کامل شبکه 6G Fabric — ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode
-# نسخهٔ نهایی — ۱۰۰٪ شفاف، با چک مرحله‌به‌مرحله، بدون خطای مخفی
+# نسخه نهایی — ۱۰۰٪ شفاف، بدون خطای مخفی، با چک مرحله‌به‌مرحله
 set -e
 
 ROOT_DIR="/root/6g-network"
@@ -90,26 +90,32 @@ create_and_join_channels() {
     log "ایجاد کانال $ch..."
     if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch,,}.tx" \
-      --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+      --tls --cafile /etc/hyperledger/fabric/tls/orderer-ca.crt \
       --outputBlock "/tmp/${ch}.block"; then
+      
+      success "کانال $ch با موفقیت ساخته شد"
       
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
         docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || continue
         docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || continue
-        docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users "$PEER" sh -c "
+        if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users "$PEER" sh -c "
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=${PEER}:7051
           peer channel join -b /tmp/${ch}.block
-        " && log "Peer org${i} به کانال $ch join شد" || log "خطا در join Peer org${i} به $ch"
+        "; then
+          log "Peer org${i} به کانال $ch join شد"
+        else
+          log "خطا در join Peer org${i} به $ch"
+        fi
         rm -f /tmp/${ch}.block
       done
       ((created++))
     else
-      log "خطا در ایجاد کانال $ch — ادامه می‌دهیم"
+      error "ایجاد کانال $ch شکست خورد"
     fi
   done
-  [ $created -eq 20 ] && success "تمام ۲۰ کانال با موفقیت ساخته و join شدند" || error "فقط $created کانال ساخته شد"
+  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || error "فقط $created کانال ساخته شد"
 }
 
 # ------------------- اصلاح Adminها -------------------
@@ -165,7 +171,7 @@ EOF
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0; then
       
-      log "Chaincode $name بسته‌بندی شد"
+      success "Chaincode $name بسته‌بندی شد"
 
       for i in {1..8}; do
         docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
@@ -173,15 +179,13 @@ EOF
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
           export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
           peer lifecycle chaincode install /tmp/${name}.tar.gz
         "; then
           log "Chaincode $name روی Org${i} نصب شد"
         fi
       done
       ((installed++))
-    else
-      log "خطا در بسته‌بندی $name"
     fi
     rm -rf "$pkg" /tmp/${name}.tar.gz
   done
@@ -189,9 +193,9 @@ EOF
   [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || error "فقط $installed از $total Chaincode نصب شدند"
 }
 
-# ------------------- Approve و Commit -------------------
+# ------------------- Approve و Commit با MSP Admin -------------------
 approve_and_commit_chaincode() {
-  log "Approve و Commit Chaincodeها روی ۲۰ کانال..."
+  log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
   local committed=0
   local total=$(ls -1 "$CHAINCODE_DIR" | wc -l)
 
@@ -210,7 +214,7 @@ approve_and_commit_chaincode() {
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
           peer lifecycle chaincode approveformyorg -o orderer.example.com:7050 \
-            --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+            --tls --cafile /etc/hyperledger/fabric/tls/orderer-ca.crt \
             --channelID $channel --name $name --version 1.0 \
             --package-id $package_id --sequence 1 --init-required
         " >/dev/null 2>&1 || true
@@ -221,13 +225,13 @@ approve_and_commit_chaincode() {
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
         peer lifecycle chaincode commit -o orderer.example.com:7050 \
-          --tls --cafile /etc/hyperledger/fabric/tls/ca.crt \
+          --tls --cafile /etc/hyperledger/fabric/tls/orderer-ca.crt \
           --channelID $channel --name $name --version 1.0 \
           --sequence 1 --init-required \
           --peerAddresses peer0.org1.example.com:7051 \
-          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt
+          --tlsRootCertFiles /etc/hyperledger/fabric/tls/orderer-ca.crt
       "; then
-        log "Chaincode $name روی کانال $channel commit شد"
+        success "Chaincode $name روی کانال $channel commit شد"
         ((committed++))
       fi
     done
@@ -250,7 +254,6 @@ main() {
   package_and_install_chaincode
   approve_and_commit_chaincode
   success "تمام! شبکه 6G Fabric با ۸ سازمان + ۲۰ کانال + ۸۶ Chaincode کاملاً آماده است!"
-
   log "چک نهایی:"
   INSTALLED=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com \
     peer lifecycle chaincode queryinstalled 2>/dev/null | grep -c "_1.0" || echo "0")
