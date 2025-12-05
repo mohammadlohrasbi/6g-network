@@ -36,7 +36,7 @@ Organizations:
         Rule: "OR('Org1MSP.peer')"
     AnchorPeers:
       - Host: peer0.org1.example.com
-        Port: 7051        # اصلاح شده
+        Port: 7051
 
   - &Org2
     Name: Org2MSP
@@ -57,7 +57,7 @@ Organizations:
         Rule: "OR('Org2MSP.peer')"
     AnchorPeers:
       - Host: peer0.org2.example.com
-        Port: 8051        # اصلاح شده
+        Port: 8051
 
   - &Org3
     Name: Org3MSP
@@ -78,7 +78,7 @@ Organizations:
         Rule: "OR('Org3MSP.peer')"
     AnchorPeers:
       - Host: peer0.org3.example.com
-        Port: 9051        # اصلاح شده
+        Port: 9051
 
   - &Org4
     Name: Org4MSP
@@ -99,7 +99,7 @@ Organizations:
         Rule: "OR('Org4MSP.peer')"
     AnchorPeers:
       - Host: peer0.org4.example.com
-        Port: 10051       # اصلاح شده
+        Port: 10051
 
   - &Org5
     Name: Org5MSP
@@ -120,7 +120,7 @@ Organizations:
         Rule: "OR('Org5MSP.peer')"
     AnchorPeers:
       - Host: peer0.org5.example.com
-        Port: 11051       # اصلاح شده
+        Port: 11051
 
   - &Org6
     Name: Org6MSP
@@ -141,7 +141,7 @@ Organizations:
         Rule: "OR('Org6MSP.peer')"
     AnchorPeers:
       - Host: peer0.org6.example.com
-        Port: 12051       # اصلاح شده
+        Port: 12051
 
   - &Org7
     Name: Org7MSP
@@ -162,7 +162,7 @@ Organizations:
         Rule: "OR('Org7MSP.peer')"
     AnchorPeers:
       - Host: peer0.org7.example.com
-        Port: 13051       # اصلاح شده
+        Port: 13051
 
   - &Org8
     Name: Org8MSP
@@ -183,7 +183,7 @@ Organizations:
         Rule: "OR('Org8MSP.peer')"
     AnchorPeers:
       - Host: peer0.org8.example.com
-        Port: 14051       # اصلاح شده
+        Port: 14051
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -202,10 +202,9 @@ Application: &ApplicationDefaults
     Writers:
       Type: ImplicitMeta
       Rule: "ANY Writers"
-    # مهم‌ترین خط در کل پروژه — فقط یک Admin کافی است!
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"          # ← این خط را از MAJORITY به ANY تغییر دادم
+      Rule: "ANY Admins"                # فقط یک Admin کافی است
     LifecycleEndorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -251,7 +250,7 @@ Channel: &ChannelDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"                # این خط مهم بود — قبلاً MAJORITY بود!
   Capabilities:
     <<: *ChannelCapabilities
 
