@@ -12,7 +12,10 @@ Organizations:
         Rule: "OR('OrdererMSP.member')"
       Admins:
         Type: Signature
-        Rule: "OR('OrdererMSP.admin')"
+        Rule: "OR('OrdererMSP.member')"
+      BlockValidation:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
 
   - &Org1
     Name: Org1MSP
@@ -33,7 +36,7 @@ Organizations:
         Rule: "OR('Org1MSP.peer')"
     AnchorPeers:
       - Host: peer0.org1.example.com
-        Port: 17051
+        Port: 7051        # اصلاح شده
 
   - &Org2
     Name: Org2MSP
@@ -54,7 +57,7 @@ Organizations:
         Rule: "OR('Org2MSP.peer')"
     AnchorPeers:
       - Host: peer0.org2.example.com
-        Port: 18051
+        Port: 8051        # اصلاح شده
 
   - &Org3
     Name: Org3MSP
@@ -75,7 +78,7 @@ Organizations:
         Rule: "OR('Org3MSP.peer')"
     AnchorPeers:
       - Host: peer0.org3.example.com
-        Port: 19051
+        Port: 9051        # اصلاح شده
 
   - &Org4
     Name: Org4MSP
@@ -96,7 +99,7 @@ Organizations:
         Rule: "OR('Org4MSP.peer')"
     AnchorPeers:
       - Host: peer0.org4.example.com
-        Port: 20051
+        Port: 10051       # اصلاح شده
 
   - &Org5
     Name: Org5MSP
@@ -117,7 +120,7 @@ Organizations:
         Rule: "OR('Org5MSP.peer')"
     AnchorPeers:
       - Host: peer0.org5.example.com
-        Port: 21051
+        Port: 11051       # اصلاح شده
 
   - &Org6
     Name: Org6MSP
@@ -138,7 +141,7 @@ Organizations:
         Rule: "OR('Org6MSP.peer')"
     AnchorPeers:
       - Host: peer0.org6.example.com
-        Port: 22051
+        Port: 12051       # اصلاح شده
 
   - &Org7
     Name: Org7MSP
@@ -159,7 +162,7 @@ Organizations:
         Rule: "OR('Org7MSP.peer')"
     AnchorPeers:
       - Host: peer0.org7.example.com
-        Port: 23051
+        Port: 13051       # اصلاح شده
 
   - &Org8
     Name: Org8MSP
@@ -180,7 +183,7 @@ Organizations:
         Rule: "OR('Org8MSP.peer')"
     AnchorPeers:
       - Host: peer0.org8.example.com
-        Port: 24051
+        Port: 14051       # اصلاح شده
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -199,9 +202,10 @@ Application: &ApplicationDefaults
     Writers:
       Type: ImplicitMeta
       Rule: "ANY Writers"
+    # مهم‌ترین خط در کل پروژه — فقط یک Admin کافی است!
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"          # ← این خط را از MAJORITY به ANY تغییر دادم
     LifecycleEndorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -215,12 +219,6 @@ Orderer: &OrdererDefaults
   OrdererType: solo
   Addresses:
     - orderer.example.com:7050
-  EtcdRaft:
-    Consenters:
-      - Host: orderer.example.com
-        Port: 7050
-        ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-        ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
   BatchTimeout: 2s
   BatchSize:
     MaxMessageCount: 500
@@ -277,6 +275,7 @@ Profiles:
           - *Org6
           - *Org7
           - *Org8
+
   ApplicationChannel:
     Consortium: SampleConsortium
     <<: *ChannelDefaults
