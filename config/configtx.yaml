@@ -13,9 +13,6 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('OrdererMSP.member')"
-      BlockValidation:
-        Type: Signature
-        Rule: "OR('OrdererMSP.member')"
 
   - &Org1
     Name: Org1MSP
@@ -204,7 +201,7 @@ Application: &ApplicationDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # فقط یک Admin کافی است
+      Rule: "ANY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -251,7 +248,7 @@ Channel: &ChannelDefaults
     # مهم‌ترین خط در کل پروژه — این دقیقاً مشکل شما را حل کرد!
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # ← قبلاً MAJORITY بود، الان ANY است!
+      Rule: "ANY Admins"                # قبلاً MAJORITY بود، الان ANY است!
   Capabilities:
     <<: *ChannelCapabilities
 
@@ -259,11 +256,11 @@ Profiles:
   SystemChannel:
     <<: *ChannelDefaults
     Orderer:
-      <<: *OrdererDefaults
+      << *OrdererDefaults
       Organizations:
         - *OrdererOrg
       Capabilities:
-        <<: *OrdererCapabilities
+        << *OrdererCapabilities
     Consortiums:
       SampleConsortium:
         Organizations:
@@ -278,9 +275,9 @@ Profiles:
 
   ApplicationChannel:
     Consortium: SampleConsortium
-    <<: *ChannelDefaults
+    << *ChannelDefaults
     Application:
-      <<: *ApplicationDefaults
+      << *ApplicationDefaults
       Organizations:
         - *Org1
         - *Org2
@@ -291,4 +288,4 @@ Profiles:
         - *Org7
         - *Org8
       Capabilities:
-        <<: *ApplicationCapabilities
+        << *ApplicationCapabilities
