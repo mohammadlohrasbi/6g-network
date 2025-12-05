@@ -31,6 +31,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org1.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"          # این خط باعث می‌شود Admin واقعاً admin باشد!
+
   - Name: Org2
     Domain: org2.example.com
     EnableNodeOUs: true
@@ -47,11 +57,22 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org2.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org3
     Domain: org3.example.com
     EnableNodeOUs: true
     CA:
       Hostname: ca-org3
+      Key:
       Key:
         Algo: ec
         Size: 256
@@ -63,6 +84,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org3.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org4
     Domain: org4.example.com
     EnableNodeOUs: true
@@ -79,6 +110,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org4.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org5
     Domain: org5.example.com
     EnableNodeOUs: true
@@ -95,6 +136,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org5.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org6
     Domain: org6.example.com
     EnableNodeOUs: true
@@ -111,6 +162,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org6.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org7
     Domain: org7.example.com
     EnableNodeOUs: true
@@ -127,6 +188,16 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org7.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
+
   - Name: Org8
     Domain: org8.example.com
     EnableNodeOUs: true
@@ -143,3 +214,12 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+    Specs:
+      - Hostname: peer0
+      - Hostname: Admin
+        CommonName: Admin@org8.example.com
+        Attributes:
+          - Name: hf.Revoker
+            Value: "true"
+          - Name: admin
+            Value: "true"
