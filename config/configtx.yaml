@@ -58,7 +58,6 @@ Organizations:
 
   - &Org3
     Name: Org3MSP
-    Name: Org3MSP
     ID: Org3MSP
     MSPDir: ./crypto-config/peerOrganizations/org3.example.com/msp
     Policies:
@@ -248,7 +247,7 @@ Channel: &ChannelDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # این هم باید ANY باشد!
+      Rule: "ANY Admins"                # این خط حیاتی بود — قبلاً MAJORITY بود!
   Capabilities:
     <<: *ChannelCapabilities
 
