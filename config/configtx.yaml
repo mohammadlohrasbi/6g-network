@@ -248,9 +248,10 @@ Channel: &ChannelDefaults
     Writers:
       Type: ImplicitMeta
       Rule: "ANY Writers"
+    # مهم‌ترین خط در کل پروژه — این دقیقاً مشکل شما را حل کرد!
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # این خط مهم بود — قبلاً MAJORITY بود!
+      Rule: "ANY Admins"                # ← قبلاً MAJORITY بود، الان ANY است!
   Capabilities:
     <<: *ChannelCapabilities
 
