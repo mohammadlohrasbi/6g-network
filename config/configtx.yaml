@@ -58,6 +58,7 @@ Organizations:
 
   - &Org3
     Name: Org3MSP
+    Name: Org3MSP
     ID: Org3MSP
     MSPDir: ./crypto-config/peerOrganizations/org3.example.com/msp
     Policies:
@@ -201,7 +202,7 @@ Application: &ApplicationDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"
+      Rule: "ANY Admins"                # فقط یک Admin کافی است
     LifecycleEndorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -245,10 +246,9 @@ Channel: &ChannelDefaults
     Writers:
       Type: ImplicitMeta
       Rule: "ANY Writers"
-    # مهم‌ترین خط در کل پروژه — این دقیقاً مشکل شما را حل کرد!
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # قبلاً MAJORITY بود، الان ANY است!
+      Rule: "ANY Admins"                # این هم باید ANY باشد!
   Capabilities:
     <<: *ChannelCapabilities
 
@@ -256,11 +256,11 @@ Profiles:
   SystemChannel:
     <<: *ChannelDefaults
     Orderer:
-      << *OrdererDefaults
+      <<: *OrdererDefaults
       Organizations:
         - *OrdererOrg
       Capabilities:
-        << *OrdererCapabilities
+        <<: *OrdererCapabilities
     Consortiums:
       SampleConsortium:
         Organizations:
@@ -275,9 +275,9 @@ Profiles:
 
   ApplicationChannel:
     Consortium: SampleConsortium
-    << *ChannelDefaults
+    <<: *ChannelDefaults
     Application:
-      << *ApplicationDefaults
+      <<: *ApplicationDefaults
       Organizations:
         - *Org1
         - *Org2
@@ -288,4 +288,4 @@ Profiles:
         - *Org7
         - *Org8
       Capabilities:
-        << *ApplicationCapabilities
+        <<: *ApplicationCapabilities
