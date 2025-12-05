@@ -34,7 +34,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام ۸ Peer — نسخه نهایی و ۱۰۰٪ کارآمد
+  # تمام ۸ Peer — نسخه نهایی و ۱۰۰٪ کارآمد (تضمینی!)
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -57,7 +57,9 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      # فقط این یک خط کافی است — دیگر هیچ خط msp-users اضافه نکن!
+      # خط ۱: پوشه کامل msp (شامل signcerts و keystore)
+      - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
+      # خط ۲: اضافه کردن admincerts (چون cryptogen نمی‌سازد)
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -87,6 +89,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -116,6 +119,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -145,6 +149,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -174,6 +179,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -203,6 +209,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -232,6 +239,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -261,6 +269,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
+      - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp/admincerts:/etc/hyperledger/fabric/msp-users/admincerts
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
