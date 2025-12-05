@@ -36,10 +36,10 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org1.example.com
         Attributes:
+          - Name: admin
+            Value: "true"
           - Name: hf.Revoker
             Value: "true"
-          - Name: admin
-            Value: "true"          # این خط باعث می‌شود Admin واقعاً admin باشد!
 
   - Name: Org2
     Domain: org2.example.com
@@ -62,9 +62,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org2.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org3
@@ -72,7 +72,6 @@ PeerOrgs:
     EnableNodeOUs: true
     CA:
       Hostname: ca-org3
-      Key:
       Key:
         Algo: ec
         Size: 256
@@ -89,9 +88,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org3.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org4
@@ -115,9 +114,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org4.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org5
@@ -141,9 +140,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org5.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org6
@@ -167,9 +166,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org6.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org7
@@ -193,9 +192,9 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org7.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
 
   - Name: Org8
@@ -219,7 +218,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org8.example.com
         Attributes:
-          - Name: hf.Revoker
-            Value: "true"
           - Name: admin
+            Value: "true"
+          - Name: hf.Revoker
             Value: "true"
