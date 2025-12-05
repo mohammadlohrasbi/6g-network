@@ -201,13 +201,13 @@ Application: &ApplicationDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # فقط یک Admin کافی است
+      Rule: "ANY Admins"                 # تغییر داده شد
     LifecycleEndorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Rule: "ANY Endorsement"            # تغییر داده شد
     Endorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Rule: "ANY Endorsement"            # تغییر داده شد
   Capabilities:
     <<: *ApplicationCapabilities
 
@@ -230,7 +230,7 @@ Orderer: &OrdererDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"                 # تغییر داده شد
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"
@@ -247,7 +247,7 @@ Channel: &ChannelDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                # این خط حیاتی بود — قبلاً MAJORITY بود!
+      Rule: "ANY Admins"                 # تغییر داده شد
   Capabilities:
     <<: *ChannelCapabilities
 
