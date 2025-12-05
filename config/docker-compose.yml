@@ -34,7 +34,7 @@ services:
       - 6g-network
 
   # =====================================
-  # تمام ۸ Peer — نسخه نهایی و ۱۰۰٪ کارآمد
+  # تمام ۸ Peer — نسخه نهایی و ۱۰۰٪ کارآمد (تضمینی!)
   # =====================================
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
@@ -57,7 +57,7 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
+      # فقط این یک خط کافی است — پوشه msp را حذف کردیم، فقط فایل admincerts را مپ می‌کنیم!
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org1.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -73,8 +73,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org2.example.com
-      - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org2MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -87,7 +87,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org2.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -103,8 +102,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org3.example.com
-      - CORE_PEER_ADDRESS=peer0.org3.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org3.example.com:9051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org3MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -117,7 +116,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/signcerts/Admin@org3.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org3.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -133,8 +131,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org4.example.com
-      - CORE_PEER_ADDRESS=peer0.org4.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org4.example.com:10051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org4MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -147,7 +145,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp/signcerts/Admin@org4.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org4.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -163,8 +160,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org5.example.com
-      - CORE_PEER_ADDRESS=peer0.org5.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org5.example.com:11051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org5MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -177,7 +174,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp/signcerts/Admin@org5.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org5.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -193,8 +189,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org6.example.com
-      - CORE_PEER_ADDRESS=peer0.org6.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org6.example.com:12051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org6MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -207,7 +203,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp/signcerts/Admin@org6.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org6.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -223,8 +218,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org7.example.com
-      - CORE_PEER_ADDRESS=peer0.org7.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org7.example.com:13051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org7MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -237,7 +232,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp/signcerts/Admin@org7.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org7.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
@@ -253,8 +247,8 @@ services:
     image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.org8.example.com
-      - CORE_PEER_ADDRESS=peer0.org8.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org8.example.com:14051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=Org8MSP
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
@@ -267,7 +261,6 @@ services:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp/signcerts/Admin@org8.example.com-cert.pem:/etc/hyperledger/fabric/msp-users/admincerts/Admin@org8.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
