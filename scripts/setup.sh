@@ -83,14 +83,20 @@ wait_for_orderer() {
 
 # ------------------- اصلاح Adminها (قبل از ایجاد کانال!) -------------------
 fix_admincerts_on_host() {
-  log "اصلاح admincerts در هاست — قبل از بالا آوردن کانتینرها (بهترین روش!)"
+  log "اصلاح admincerts در هاست — قبل از بالا آوردن کانتینرها (نسخه نهایی و تضمینی)"
   for i in {1..8}; do
-    MSP_DIR="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    MSP_DIR="/root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    
     mkdir -p "$MSP_DIR/admincerts"
-    cp "$MSP_DIR/signcerts/Admin@org${i}.example.com-cert.pem" \
-       "$MSP_DIR/admincerts/Admin@org${i}.example.com-cert.pem"
+    
+    if [ -f "$MSP_DIR/signcerts/cert.pem" ]; then
+      cp "$MSP_DIR/signcerts/cert.pem" "$MSP_DIR/admincerts/Admin@org${i}.example.com-cert.pem"
+      log "admincerts برای Org${i} اصلاح شد"
+    else
+      error "فایل گواهی در $MSP_DIR/signcerts پیدا نشد!"
+    fi
   done
-  log "تمام admincerts در هاست اصلاح شد — دیگر نیازی به داخل کانتینر نیست!"
+  log "تمام admincerts با موفقیت در هاست اصلاح شد"
 }
 
 # ------------------- ایجاد و join کانال‌ها -------------------
