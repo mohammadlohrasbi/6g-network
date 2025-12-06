@@ -220,7 +220,6 @@ Orderer: &OrdererDefaults
     MaxMessageCount: 500
     AbsoluteMaxBytes: 10 MB
     PreferredMaxBytes: 2 MB
-  Organizations:
   Policies:
     Readers:
       Type: ImplicitMeta
