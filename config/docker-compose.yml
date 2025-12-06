@@ -26,9 +26,8 @@ services:
     volumes:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-      #- ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
-      # خط حیاتی: Orderer باید ca.crt خودش را بشناسد!
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/var/hyperledger/orderer/tls/ca.crt
+      # فقط این یک خط کافی است — همه چیز (ca.crt, server.crt, server.key) داخلش هست
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
     ports:
       - "7050:7050"
@@ -265,7 +264,7 @@ services:
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - ./channel-artifacts:/etc/hyperledger/configtx
-      - peer0.org8.example.com:/var/hyperledger/production
+      - peer0.org8.example.com:/var hyperledger/production
     ports:
       - "14051:7051"
       - "9450:9443"
