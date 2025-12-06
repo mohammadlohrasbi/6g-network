@@ -112,21 +112,20 @@ create_and_join_channels() {
       
       success "کانال $ch ساخته شد"
       
+      # پاک کردن فایل قدیمی از Peer1 — این خط حیاتی است!
+      docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+      
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
-        # کپی block — اگر Peer خاموش باشد، ادامه بده
         docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || true
-        docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || { log "Peer org${i} هنوز بالا نیامده — رد شد"; continue; }
+        docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || continue
         
-        # join — اگر شکست خورد، فقط لاگ بده و ادامه بده
         if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users "$PEER" sh -c "
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=${PEER}:7051
           peer channel join -b /tmp/${ch}.block
         "; then
           log "Peer org${i} به کانال $ch join شد"
-        else
-          log "Peer org${i} هنوز آماده نیست — در اجرای بعدی join می‌شود"
         fi
         rm -f /tmp/${ch}.block
       done
@@ -136,7 +135,7 @@ create_and_join_channels() {
       break
     fi
   done
-  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد — دوباره اجرا کنید"
+  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد"
 }
 
 # ------------------- بسته‌بندی و نصب Chaincode -------------------
