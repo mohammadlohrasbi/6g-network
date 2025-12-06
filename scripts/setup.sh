@@ -105,38 +105,45 @@ create_and_join_channels() {
   local created=0
   for ch in "${CHANNELS[@]}"; do
     log "ایجاد کانال $ch..."
-    
-    # پاک کردن فایل قدیمی از Peer1 قبل از ساخت کانال جدید
+
+    # قبل از ساخت کانال جدید، فایل قدیمی را از Peer1 پاک کن
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
-    
+
     if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch}.tx" \
       --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
       --outputBlock "/tmp/${ch}.block"; then
       
-      then
       success "کانال $ch ساخته شد"
       
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
-        docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || true
-        docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || continue
         
+        # کپی بلوک به Peer
+        docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || true
+        docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || { log "Peer org${i} هنوز بالا نیامده — رد شد"; continue; }
+        
+        # Join کردن
         if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users "$PEER" sh -c "
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=${PEER}:7051
           peer channel join -b /tmp/${ch}.block
         "; then
           log "Peer org${i} به کانال $ch join شد"
+        else
+          log "Peer org${i} هنوز آماده نیست — در اجرای بعدی join می‌شود"
         fi
-        rm -f /tmp/${ch}.block
+        
+        rm -f /tmp/${ch}.block 2>/dev/null || true
       done
+      
       ((created++))
     else
       error "ایجاد کانال $ch شکست خورد"
       break
     fi
   done
+  
   [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد — دوباره اجرا کنید"
 }
 
