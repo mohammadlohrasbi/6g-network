@@ -26,8 +26,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org1MSP.peer')"
@@ -47,8 +47,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org2MSP.admin', 'Org2MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org2MSP.peer')"
@@ -68,8 +68,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org3MSP.admin', 'Org3MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org3MSP.peer')"
@@ -89,8 +89,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org4MSP.admin', 'Org4MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org4MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org4MSP.peer')"
@@ -110,8 +110,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org5MSP.admin', 'Org5MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org5MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org5MSP.peer')"
@@ -131,8 +131,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org6MSP.admin', 'Org6MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org6MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org6MSP.peer')"
@@ -152,8 +152,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org7MSP.admin', 'Org7MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org7MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org7MSP.peer')"
@@ -173,8 +173,8 @@ Organizations:
         Type: Signature
         Rule: "OR('Org8MSP.admin', 'Org8MSP.client')"
       Admins:
-        Type: Signature
-        Rule: "OR('Org8MSP.admin')"
+        Type: ImplicitMeta
+        Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: Signature
         Rule: "OR('Org8MSP.peer')"
@@ -201,13 +201,13 @@ Application: &ApplicationDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                 # تغییر داده شد
+      Rule: "ANY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
-      Rule: "ANY Endorsement"            # تغییر داده شد
+      Rule: "ANY Endorsement"
     Endorsement:
       Type: ImplicitMeta
-      Rule: "ANY Endorsement"            # تغییر داده شد
+      Rule: "ANY Endorsement"
   Capabilities:
     <<: *ApplicationCapabilities
 
@@ -230,7 +230,7 @@ Orderer: &OrdererDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                 # تغییر داده شد
+      Rule: "ANY Admins"
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"
@@ -247,7 +247,7 @@ Channel: &ChannelDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "ANY Admins"                 # تغییر داده شد
+      Rule: "ANY Admins"
   Capabilities:
     <<: *ChannelCapabilities
 
