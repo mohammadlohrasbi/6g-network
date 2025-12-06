@@ -105,15 +105,17 @@ create_and_join_channels() {
   local created=0
   for ch in "${CHANNELS[@]}"; do
     log "ایجاد کانال $ch..."
+    
+    # پاک کردن فایل قدیمی از Peer1 قبل از ساخت کانال جدید
+    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+    
     if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com peer channel create \
       -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch}.tx" \
       --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
       --outputBlock "/tmp/${ch}.block"; then
       
+      then
       success "کانال $ch ساخته شد"
-      
-      # پاک کردن فایل قدیمی از Peer1 — این خط حیاتی است!
-      docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
       
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
@@ -135,7 +137,7 @@ create_and_join_channels() {
       break
     fi
   done
-  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد"
+  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد — دوباره اجرا کنید"
 }
 
 # ------------------- بسته‌بندی و نصب Chaincode -------------------
