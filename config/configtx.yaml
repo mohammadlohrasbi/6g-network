@@ -255,8 +255,6 @@ Profiles:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
-      Organizations:
-        - *OrdererOrg
       Capabilities:
         <<: *OrdererCapabilities
     Consortiums:
