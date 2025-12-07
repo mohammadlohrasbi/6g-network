@@ -16,10 +16,7 @@ success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
 CHANNELS=(
-  networkchannel resourcechannel performancechannel iotchannel authchannel connectivitychannel
-  sessionchannel policychannel auditchannel securitychannel datachannel analyticschannel
-  monitoringchannel managementchannel optimizationchannel faultchannel trafficchannel
-  accesschannel compliancechannel integrationchannel
+  networkchannel resourcechannel 
 )
 
 # ------------------- پاک‌سازی -------------------
@@ -156,19 +153,21 @@ package_and_install_chaincode() {
 
   local total=$(ls -1 "$CHAINCODE_DIR" | wc -l)
   local installed=0
-
   log "بسته‌بندی و نصب $total Chaincode..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
-
     pkg="/tmp/chaincode_pkg/$name"
-    mkdir -p "$pkg/src" "$pkg/META-INF"
-    cp "$dir/chaincode.go" "$pkg/src/" || { log "فایل chaincode.go برای $name وجود ندارد"; continue; }
+    mkdir -p "$pkg"
 
-    cat > "$pkg/src/go.mod" <<EOF
+    # فایل‌ها را در ریشه بسته قرار بده (نه در src!)
+    cp "$dir/chaincode.go" "$pkg/"
+    
+    # go.mod هم در ریشه بسته
+    cat > "$pkg/go.mod" <<EOF
 module $name
+
 go 1.19
 EOF
 
@@ -188,14 +187,13 @@ EOF
       peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0; then
       
       success "Chaincode $name بسته‌بندی شد"
-
+      
       for i in {1..8}; do
         docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
         if docker exec peer0.org${i}.example.com sh -c "
           export CORE_PEER_LOCALMSPID=Org${i}MSP
           export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
           export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/orderer-ca.crt
           peer lifecycle chaincode install /tmp/${name}.tar.gz
         "; then
           log "Chaincode $name روی Org${i} نصب شد"
@@ -206,7 +204,7 @@ EOF
     rm -rf "$pkg" /tmp/${name}.tar.gz
   done
 
-  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || error "فقط $installed از $total Chaincode نصب شدند"
+  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || error "فقط $installed از $total نصب شدند"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
