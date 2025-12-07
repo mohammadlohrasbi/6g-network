@@ -169,7 +169,7 @@ package_and_install_chaincode() {
 
     cat > "$pkg/src/go.mod" <<EOF
 module $name
-go 1.21
+go 1.19
 EOF
 
     cat > "$pkg/META-INF/MANIFEST.MF" <<EOF
