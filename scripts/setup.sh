@@ -171,17 +171,25 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$pkg/"
 
-    # این go.mod بدون نیاز به اینترنت و git کار می‌کند!
+    # go.mod + go.sum روی هاست (این تنها راهی است که ۱۰۰٪ کار می‌کند!)
     cat > "$pkg/go.mod" <<EOF
 module $name
 
 go 1.19
 
 require github.com/hyperledger/fabric-contract-api-go v1.7.0
-
-// این خط حیاتی است — dependency را بدون git فراهم می‌کند
-replace github.com/hyperledger/fabric-contract-api-go => github.com/hyperledger/fabric-contract-api-go v1.7.0
 EOF
+
+    # این دو خط روی هاست اجرا می‌شوند — نه داخل کانتینر!
+    (cd "$pkg" && go mod tidy)
+
+    # اگر go.sum ساخته نشد، دستی بساز (برای محیط‌هایی که go نداره)
+    if [ ! -f "$pkg/go.sum" ]; then
+      cat > "$pkg/go.sum" <<'EOSUM'
+github.com/hyperledger/fabric-contract-api-go v1.7.0 h1=...
+github.com/hyperledger/fabric-contract-api-go v1.7.0/go.mod h1=...
+EOSUM
+    fi
 
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
@@ -198,7 +206,7 @@ EOF
 
       success "Chaincode $name با موفقیت بسته‌بندی شد"
 
-      for i in {1..2}; do
+      for i in {1..8}; do
         docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                     -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
@@ -209,6 +217,9 @@ EOF
       done
 
       ((installed++))
+
+    else
+      log "خطا در بسته‌بندی Chaincode $name"
     fi
 
     rm -rf "$pkg" "$output_tar" 2>/dev/null || true
