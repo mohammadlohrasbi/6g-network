@@ -1,7 +1,7 @@
 #!/bin/bash
 # /root/6g-network/scripts/setup.sh
 # نسخه نهایی — ۱۰۰٪ بدون خطا
-# set -e
+set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
