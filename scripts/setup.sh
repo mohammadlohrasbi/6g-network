@@ -171,7 +171,6 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$pkg/"
 
-    # go.mod + go.sum (این دو خط حیاتی هستند!)
     cat > "$pkg/go.mod" <<EOF
 module $name
 
@@ -180,11 +179,17 @@ go 1.19
 require github.com/hyperledger/fabric-contract-api-go v1.7.0
 EOF
 
-    # ساخت go.sum — بدون این Fabric 2.5 خطا می‌دهد!
-    (cd "$pkg" && go mod tidy >/dev/null 2>&1)
+    # خط حیاتی: dependency را با اینترنت دانلود کن!
+    docker run --rm --network host \
+      -v "$pkg":/chaincode -w /chaincode \
+      hyperledger/fabric-tools:2.5 \
+      go get github.com/hyperledger/fabric-contract-api-go@v1.7.0
 
-    # vendor اختیاری ولی ۱۰۰٪ مطمئن
-    (cd "$pkg" && go mod vendor >/dev/null 2>&1 || true)
+    # حالا go.sum ساخته می‌شود
+    docker run --rm \
+      -v "$pkg":/chaincode -w /chaincode \
+      hyperledger/fabric-tools:2.5 \
+      go mod tidy
 
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
@@ -201,15 +206,14 @@ EOF
 
       success "Chaincode $name با موفقیت بسته‌بندی شد"
 
-      for i in {1..2}; do
-        if docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
-           docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                       "peer0.org${i}.example.com" \
-                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-          log "Chaincode $name روی Org${i} نصب شد"
-        fi
+      for i in {1..8}; do
+        docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
+        docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                    -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
+                    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                    "peer0.org${i}.example.com" \
+                    peer lifecycle chaincode install /tmp/${name}.tar.gz && \
+        log "Chaincode $name روی Org${i} نصب شد"
       done
 
       ((installed++))
