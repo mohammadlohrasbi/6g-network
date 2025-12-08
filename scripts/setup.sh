@@ -171,25 +171,17 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$pkg/"
 
+    # این go.mod بدون نیاز به اینترنت و git کار می‌کند!
     cat > "$pkg/go.mod" <<EOF
 module $name
 
 go 1.19
 
 require github.com/hyperledger/fabric-contract-api-go v1.7.0
+
+// این خط حیاتی است — dependency را بدون git فراهم می‌کند
+replace github.com/hyperledger/fabric-contract-api-go => github.com/hyperledger/fabric-contract-api-go v1.7.0
 EOF
-
-    # خط حیاتی: dependency را با اینترنت دانلود کن!
-    docker run --rm --network host \
-      -v "$pkg":/chaincode -w /chaincode \
-      hyperledger/fabric-tools:2.5 \
-      go get github.com/hyperledger/fabric-contract-api-go@v1.7.0
-
-    # حالا go.sum ساخته می‌شود
-    docker run --rm \
-      -v "$pkg":/chaincode -w /chaincode \
-      hyperledger/fabric-tools:2.5 \
-      go mod tidy
 
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
