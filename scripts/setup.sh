@@ -159,18 +159,19 @@ package_and_install_chaincode() {
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
     pkg="/tmp/chaincode_pkg/$name"
+    output_tar="/tmp/${name}.tar.gz"
 
-    # پاکسازی و ساخت پوشه
-    rm -rf "$pkg"
+    # پاکسازی قبلی
+    rm -rf "$pkg" "$output_tar"
     mkdir -p "$pkg"
 
-    # چک فایل chaincode.go
+    # چک فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
 
-    # فایل‌ها در ریشه بسته (درست برای Fabric 2.5)
+    # فایل‌ها در ریشه بسته
     cp "$dir/chaincode.go" "$pkg/"
 
     cat > "$pkg/go.mod" <<EOF
@@ -179,52 +180,54 @@ module $name
 go 1.19
 EOF
 
-    # الزامی از Fabric 2.4 به بعد
+    # الزامی برای Fabric 2.5
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
-    # بسته‌بندی با fabric-tools
+    # بسته‌بندی — خروجی مستقیماً روی هاست ذخیره می‌شود!
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
+      -v /tmp:/output \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
       -e CORE_PEER_MSPCONFIGPATH=/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz \
+      peer lifecycle chaincode package /output/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0; then
 
       success "Chaincode $name بسته‌بندی شد"
 
-      # خط حیاتی: فایل از داخل کانتینر fabric-tools به هاست کپی شود!
-      docker cp $(docker ps -lq):/tmp/${name}.tar.gz /tmp/ 2>/dev/null || {
-        log "خطا در کپی فایل بسته‌بندی شده $name از کانتینر"
+      # فایل الان در /tmp/${name}.tar.gz روی هاست است!
+      if [ ! -f "$output_tar" ]; then
+        log "فایل بسته‌بندی شده $name ایجاد نشد!"
         continue
-      }
+      fi
 
       # نصب روی تمام ۸ Peer
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
 
         # کپی به Peer
-        if docker cp /tmp/${name}.tar.gz ${PEER}:/tmp/ 2>/dev/null; then
-          # چک اینکه قبلاً نصب شده یا نه
-          if docker exec "$PEER" peer lifecycle chaincode queryinstalled 2>/dev/null | grep -q "${name}_1.0"; then
-            log "Chaincode $name قبلاً روی Org${i} نصب شده — رد شد"
-            continue
-          fi
-
-          # نصب واقعی
-          if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                     "$PEER" \
-                     peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-            log "Chaincode $name روی Org${i} با موفقیت نصب شد"
-          else
-            log "خطا در نصب Chaincode $name روی Org${i}"
-          fi
-        else
+        if ! docker cp "$output_tar" "${PEER}:/tmp/" 2>/dev/null; then
           log "کپی Chaincode $name به $PEER ناموفق بود"
+          continue
+        fi
+
+        # چک نصب قبلی
+        if docker exec "$PEER" peer lifecycle chaincode queryinstalled 2>/dev/null | grep -q "${name}_1.0"; then
+          log "Chaincode $name قبلاً روی Org${i} نصب شده — رد شد"
+          continue
+        fi
+
+        # نصب واقعی
+        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                       "$PEER" \
+                       peer lifecycle chaincode install /tmp/${name}.tar.gz > /dev/null 2>&1; then
+          log "Chaincode $name روی Org${i} با موفقیت نصب شد"
+        else
+          log "خطا در نصب Chaincode $name روی Org${i}"
         fi
       done
 
@@ -235,11 +238,14 @@ EOF
     fi
 
     # پاکسازی
-    rm -rf "$pkg" /tmp/${name}.tar.gz 2>/dev/null || true
+    rm -rf "$pkg" "$output_tar" 2>/dev/null || true
   done
 
-  [ $installed -eq $total ] && success "تمام $total Chaincode با موفقیت نصب شدند" \
-                          || log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
+  if [ $installed -eq $total ]; then
+    success "تمام $total Chaincode با موفقیت بسته‌بندی و نصب شدند"
+  else
+    log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
+  fi
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
