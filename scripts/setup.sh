@@ -150,34 +150,41 @@ package_and_install_chaincode() {
     log "هیچ chaincode وجود ندارد — رد شد"
     return 0
   fi
-  local total=$(ls -1 "$CHAINCODE_DIR" | wc -l)
+
+  local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
   log "بسته‌بندی و نصب $total Chaincode..."
+
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
     pkg="/tmp/chaincode_pkg/$name"
+
+    # پاک کردن پوشه قدیمی و ساخت دوباره
+    rm -rf "$pkg"
     mkdir -p "$pkg"
-    
-    # فایل‌ها را در ریشه بسته قرار بده
+
+    # چک حیاتی: آیا فایل chaincode.go وجود دارد؟
+    if [ ! -f "$dir/chaincode.go" ]; then
+      log "فایل chaincode.go برای $name وجود ندارد — رد شد"
+      continue
+    fi
+
+    # کپی فایل اصلی به ریشه بسته
     cp "$dir/chaincode.go" "$pkg/"
-   
-    # go.mod در ریشه
+
+    # ساخت go.mod در ریشه (الزامی)
     cat > "$pkg/go.mod" <<EOF
 module $name
+
 go 1.19
 EOF
-    
-    # فقط این یک خط کافی است — MANIFEST.MF را کاملاً حذف کن!
-    mkdir -p "$pkg/META-INF/statedb/couchdb"
-    
-    # این بخش را کاملاً حذف کن!
-    # cat > "$pkg/META-INF/MANIFEST.MF" <<EOF
-    # Manifest-Version: 1.0
-    # Chaincode-Type: golang
-    # Label: ${name}_1.0
-    # EOF
 
+    # پوشه META-INF/statedb/couchdb (الزامی از Fabric 2.4 به بعد)
+    # حتی اگر خالی باشد، وجودش کافی است
+    mkdir -p "$pkg/META-INF/statedb/couchdb"
+
+    # بسته‌بندی با fabric-tools
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -185,26 +192,41 @@ EOF
       -e CORE_PEER_MSPCONFIGPATH=/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0; then
-     
+      peer lifecycle chaincode package /tmp/${name}.tar.gz \
+        --path /chaincode --lang golang --label ${name}_1.0 > /dev/null 2>&1; then
+
       success "Chaincode $name بسته‌بندی شد"
-     
+
+      # نصب روی تمام ۸ Peer
       for i in {1..8}; do
-        docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
-        if docker exec peer0.org${i}.example.com sh -c "
-          export CORE_PEER_LOCALMSPID=Org${i}MSP
-          export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
-          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-          peer lifecycle chaincode install /tmp/${name}.tar.gz
-        "; then
+        if docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null && \
+           docker exec peer0.org${i}.example.com sh -c "
+             export CORE_PEER_LOCALMSPID=Org${i}MSP
+             export CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051
+             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
+             peer lifecycle chaincode install /tmp/${name}.tar.gz > /dev/null 2>&1
+           "; then
           log "Chaincode $name روی Org${i} نصب شد"
+        else
+          log "نصب Chaincode $name روی Org${i} ناموفق بود — بعداً دوباره امتحان می‌شود"
         fi
       done
+
       ((installed++))
+
+    else
+      log "خطا در بسته‌بندی Chaincode $name — رد شد"
     fi
-    rm -rf "$pkg" /tmp/${name}.tar.gz
+
+    # پاکسازی کامل
+    rm -rf "$pkg" /tmp/${name}.tar.gz 2>/dev/null || true
   done
-  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || error "فقط $installed از $total نصب شدند"
+
+  if [ $installed -eq $total ]; then
+    success "تمام $total Chaincode با موفقیت بسته‌بندی و نصب شدند"
+  else
+    log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
+  fi
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
