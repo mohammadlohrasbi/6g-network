@@ -171,7 +171,6 @@ package_and_install_chaincode() {
       continue
     fi
 
-    # فایل‌ها در ریشه بسته
     cp "$dir/chaincode.go" "$pkg/"
 
     cat > "$pkg/go.mod" <<EOF
@@ -180,10 +179,10 @@ module $name
 go 1.19
 EOF
 
-    # الزامی برای Fabric 2.5
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
-    # بسته‌بندی — خروجی مستقیماً روی هاست ذخیره می‌شود!
+    # بسته‌بندی — خروجی مستقیماً روی هاست
+    log "در حال بسته‌بندی Chaincode $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -195,46 +194,43 @@ EOF
       peer lifecycle chaincode package /output/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0; then
 
-      success "Chaincode $name بسته‌بندی شد"
+      success "Chaincode $name با موفقیت بسته‌بندی شد"
 
-      # فایل الان در /tmp/${name}.tar.gz روی هاست است!
       if [ ! -f "$output_tar" ]; then
-        log "فایل بسته‌بندی شده $name ایجاد نشد!"
+        log "فایل $output_tar ایجاد نشد!"
         continue
       fi
 
-      # نصب روی تمام ۸ Peer
+      # نصب روی تمام Peerها با نمایش خطای واقعی
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
 
-        # کپی به Peer
         if ! docker cp "$output_tar" "${PEER}:/tmp/" 2>/dev/null; then
-          log "کپی Chaincode $name به $PEER ناموفق بود"
+          log "کپی فایل به $PEER ناموفق بود"
           continue
         fi
 
-        # چک نصب قبلی
-        if docker exec "$PEER" peer lifecycle chaincode queryinstalled 2>/dev/null | grep -q "${name}_1.0"; then
-          log "Chaincode $name قبلاً روی Org${i} نصب شده — رد شد"
-          continue
-        fi
+        # نمایش دقیق خطای واقعی (بدون سرکوب!)
+        log "در حال نصب Chaincode $name روی $PEER ..."
+        INSTALL_OUTPUT=$(docker exec \
+          -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+          -e CORE_PEER_ADDRESS=${PEER}:7051 \
+          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+          "$PEER" \
+          peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
 
-        # نصب واقعی
-        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                       "$PEER" \
-                       peer lifecycle chaincode install /tmp/${name}.tar.gz > /dev/null 2>&1; then
+        if [ $? -eq 0 ]; then
           log "Chaincode $name روی Org${i} با موفقیت نصب شد"
         else
-          log "خطا در نصب Chaincode $name روی Org${i}"
+          log "خطا در نصب Chaincode $name روی Org${i}:"
+          echo "$INSTALL_OUTPUT" | sed 's/^/    /'
         fi
       done
 
       ((installed++))
 
     else
-      log "خطا در بسته‌بندی Chaincode $name — رد شد"
+      log "خطا در بسته‌بندی Chaincode $name"
     fi
 
     # پاکسازی
@@ -242,7 +238,7 @@ EOF
   done
 
   if [ $installed -eq $total ]; then
-    success "تمام $total Chaincode با موفقیت بسته‌بندی و نصب شدند"
+    success "تمام $total Chaincode با موفقیت نصب شدند"
   else
     log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
   fi
