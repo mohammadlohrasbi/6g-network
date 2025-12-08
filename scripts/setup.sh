@@ -150,33 +150,33 @@ package_and_install_chaincode() {
     log "هیچ chaincode وجود ندارد — رد شد"
     return 0
   fi
-
   local total=$(ls -1 "$CHAINCODE_DIR" | wc -l)
   local installed=0
   log "بسته‌بندی و نصب $total Chaincode..."
-
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
     pkg="/tmp/chaincode_pkg/$name"
     mkdir -p "$pkg"
-
-    # فایل‌ها را در ریشه بسته قرار بده (نه در src!)
-    cp "$dir/chaincode.go" "$pkg/"
     
-    # go.mod هم در ریشه بسته
+    # فایل‌ها را در ریشه بسته قرار بده
+    cp "$dir/chaincode.go" "$pkg/"
+   
+    # go.mod در ریشه
     cat > "$pkg/go.mod" <<EOF
 module $name
-
 go 1.19
 EOF
-
+    
+    # فقط این یک خط کافی است — MANIFEST.MF را کاملاً حذف کن!
     mkdir -p "$pkg/META-INF/statedb/couchdb"
-    cat > "$pkg/META-INF/MANIFEST.MF" <<EOF
-Manifest-Version: 1.0
-Chaincode-Type: golang
-Label: ${name}_1.0
-EOF
+    
+    # این بخش را کاملاً حذف کن!
+    # cat > "$pkg/META-INF/MANIFEST.MF" <<EOF
+    # Manifest-Version: 1.0
+    # Chaincode-Type: golang
+    # Label: ${name}_1.0
+    # EOF
 
     if docker run --rm \
       -v "$pkg":/chaincode \
@@ -186,9 +186,9 @@ EOF
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0; then
-      
+     
       success "Chaincode $name بسته‌بندی شد"
-      
+     
       for i in {1..8}; do
         docker cp /tmp/${name}.tar.gz peer0.org${i}.example.com:/tmp/ 2>/dev/null || continue
         if docker exec peer0.org${i}.example.com sh -c "
@@ -204,7 +204,6 @@ EOF
     fi
     rm -rf "$pkg" /tmp/${name}.tar.gz
   done
-
   [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || error "فقط $installed از $total نصب شدند"
 }
 
