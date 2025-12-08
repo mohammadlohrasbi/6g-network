@@ -182,7 +182,7 @@ EOF
     # الزامی از Fabric 2.4 به بعد
     mkdir -p "$pkg/META-INF/statedb/couchdb"
 
-    # بسته‌بندی
+    # بسته‌بندی با fabric-tools
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -195,31 +195,36 @@ EOF
 
       success "Chaincode $name بسته‌بندی شد"
 
-      # نصب روی تمام Peerها
+      # خط حیاتی: فایل از داخل کانتینر fabric-tools به هاست کپی شود!
+      docker cp $(docker ps -lq):/tmp/${name}.tar.gz /tmp/ 2>/dev/null || {
+        log "خطا در کپی فایل بسته‌بندی شده $name از کانتینر"
+        continue
+      }
+
+      # نصب روی تمام ۸ Peer
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
 
-        # کپی فایل
-        if ! docker cp /tmp/${name}.tar.gz ${PEER}:/tmp/ 2>/dev/null; then
-          log "کپی Chaincode $name به $PEER ناموفق بود"
-          continue
-        fi
+        # کپی به Peer
+        if docker cp /tmp/${name}.tar.gz ${PEER}:/tmp/ 2>/dev/null; then
+          # چک اینکه قبلاً نصب شده یا نه
+          if docker exec "$PEER" peer lifecycle chaincode queryinstalled 2>/dev/null | grep -q "${name}_1.0"; then
+            log "Chaincode $name قبلاً روی Org${i} نصب شده — رد شد"
+            continue
+          fi
 
-        # چک اینکه قبلاً نصب شده یا نه
-        if docker exec "$PEER" peer lifecycle chaincode queryinstalled 2>/dev/null | grep -q "${name}_1.0"; then
-          log "Chaincode $name قبلاً روی Org${i} نصب شده — رد شد"
-          continue
-        fi
-
-        # نصب واقعی
-        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                       "$PEER" \
-                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-          log "Chaincode $name روی Org${i} با موفقیت نصب شد"
+          # نصب واقعی
+          if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     "$PEER" \
+                     peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+            log "Chaincode $name روی Org${i} با موفقیت نصب شد"
+          else
+            log "خطا در نصب Chaincode $name روی Org${i}"
+          fi
         else
-          log "خطا در نصب Chaincode $name روی Org${i}"
+          log "کپی Chaincode $name به $PEER ناموفق بود"
         fi
       done
 
@@ -233,11 +238,8 @@ EOF
     rm -rf "$pkg" /tmp/${name}.tar.gz 2>/dev/null || true
   done
 
-  if [ $installed -eq $total ]; then
-    success "تمام $total Chaincode با موفقیت بسته‌بندی و نصب شدند"
-  else
-    log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
-  fi
+  [ $installed -eq $total ] && success "تمام $total Chaincode با موفقیت نصب شدند" \
+                          || log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
