@@ -171,7 +171,7 @@ module $name
 go 1.19
 EOF
 
-    mkdir -p "$pkg/META-INF"
+    mkdir -p "$pkg/META-INF/statedb/couchdb"
     cat > "$pkg/META-INF/MANIFEST.MF" <<EOF
 Manifest-Version: 1.0
 Chaincode-Type: golang
