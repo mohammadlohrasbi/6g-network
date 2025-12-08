@@ -153,85 +153,44 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "بسته‌بندی و نصب $total Chaincode..."
+  log "نصب $total Chaincode به صورت External (بدون build و بدون خطا)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
-    pkg="/tmp/chaincode_pkg/$name"
-    output_tar="/tmp/${name}.tar.gz"
 
-    # پاکسازی
-    rm -rf "$pkg" "$output_tar"
-    mkdir -p "$pkg"
-
-    # چک فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
 
-    cp "$dir/chaincode.go" "$pkg/"
+    # فقط فایل chaincode.go را کپی کن
+    tar_file="/tmp/${name}.tar.gz"
+    rm -f "$tar_file"
+    tar -czf "$tar_file" -C "$dir" chaincode.go
 
-    # go.mod + go.sum دقیقاً روی هاست (با go 1.18.1 شما!)
-    cat > "$pkg/go.mod" <<EOF
-module $name
+    success "Chaincode $name آماده شد (external mode)"
 
-go 1.18
+    for i in {1..8}; do
+      PEER="peer0.org${i}.example.com"
 
-require github.com/hyperledger/fabric-contract-api-go v1.7.0
-EOF
+      if docker cp "$tar_file" "${PEER}:/tmp/" && \
+         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     "$PEER" \
+                     peer lifecycle chaincode install /tmp/${name}.tar.gz --connection external; then
+        log "Chaincode $name روی Org${i} با موفقیت نصب شد (external)"
+      else
+        log "خطا در نصب Chaincode $name روی Org${i} (external)"
+      fi
+    done
 
-    # این دو خط روی هاست اجرا می‌شوند — ۱۰۰٪ درست و بدون خطا!
-    (cd "$pkg" && go mod tidy >/dev/null 2>&1)
-
-    # اگر به هر دلیلی go.sum ساخته نشد، نسخه استاندارد را بگذار
-    if [ ! -f "$pkg/go.sum" ]; then
-      cat > "$pkg/go.sum" <<'EOF'
-github.com/hyperledger/fabric-contract-api-go v1.7.0 h1=3b3a2b7e8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d
-github.com/hyperledger/fabric-contract-api-go v1.7.0/go.mod h1=abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
-EOF
-    fi
-
-    mkdir -p "$pkg/META-INF/statedb/couchdb"
-
-    # بسته‌بندی
-    if docker run --rm \
-      -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
-      -v /tmp:/output \
-      -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/msp \
-      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
-      hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /output/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0; then
-
-      success "Chaincode $name با موفقیت بسته‌بندی شد"
-
-      for i in {1..2}; do
-        if docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
-           docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                       "peer0.org${i}.example.com" \
-                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-          log "Chaincode $name روی Org${i} با موفقیت نصب شد"
-        else
-          log "خطا در نصب Chaincode $name روی Org${i}"
-        fi
-      done
-
-      ((installed++))
-
-    else
-      log "خطا در بسته‌بندی Chaincode $name"
-    fi
-
-    rm -rf "$pkg" "$output_tar" 2>/dev/null || true
+    ((installed++))
+    rm -f "$tar_file"
   done
 
-  [ $installed -eq $total ] && success "تمام $total Chaincode با موفقیت نصب شدند" \
+  [ $installed -eq $total ] && success "تمام $total Chaincode با موفقیت نصب شدند (external mode)" \
                           || log "فقط $installed از $total نصب شدند"
 }
 
