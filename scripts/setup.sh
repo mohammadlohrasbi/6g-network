@@ -153,36 +153,51 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "نصب $total Chaincode با پکیج معتبر Fabric 2.5 (بدون build)..."
+  log "نصب $total Chaincode با پکیج رسمی Fabric 2.5..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
-    pkg_dir="/tmp/chaincode_pkg/$name"
+    pkg="/tmp/chaincode_pkg/$name"
     tar_file="/tmp/${name}.tar.gz"
 
-    rm -rf "$pkg_dir" "$tar_file"
-    mkdir -p "$pkg_dir/code" "$pkg_dir/META-INF/statedb/couchdb"
+    rm -rf "$pkg" "$tar_file"
+    mkdir -p "$pkg"
 
-    # ۱. فایل اصلی
+    # چک فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
-    cp "$dir/chaincode.go" "$pkg_dir/code/"
 
-    # ۲. فایل متادیتا (الزامی!)
-    cat > "$pkg_dir/META-INF/statedb/couchdb/index.json" <<EOF
-{"index":{"fields":["docType"]},"ddoc":"indexDocType","name":"indexDocType","type","type":"json"}
+    # ۱. metadata.json (الزامی!)
+    cat > "$pkg/metadata.json" <<EOF
+{
+  "type": "golang",
+  "label": "${name}_1.0"
+}
 EOF
 
-    # ۳. ساخت پکیج
-    (cd "$pkg_dir" && tar -czf "$tar_file" code META-INF)
+    # ۲. connection.json (الزامی!)
+    cat > "$pkg/connection.json" <<EOF
+{
+  "address": "chaincode_server:7052",
+  "dial_timeout": "10s",
+  "tls_required": false
+}
+EOF
+
+    # ۳. کد در src
+    mkdir -p "$pkg/src"
+    cp "$dir/chaincode.go" "$pkg/src/"
+
+    # ۴. ساخت پکیج
+    (cd "$pkg" && tar -czf "$tar_file" metadata.json connection.json src)
 
     success "Chaincode $name آماده شد"
 
     # نصب روی تمام Peerها
-    for i in {1..2}; do
+    for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       if docker cp "$tar_file" "${PEER}:/tmp/" && \
          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
@@ -197,7 +212,7 @@ EOF
     done
 
     ((installed++))
-    rm -rf "$pkg_dir" "$tar_file"
+    rm -rf "$pkg" "$tar_file"
   done
 
   [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || log "فقط $installed از $total نصب شدند"
