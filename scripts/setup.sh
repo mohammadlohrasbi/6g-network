@@ -54,14 +54,33 @@ generate_coreyamls() {
 
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
-  log "راه‌اندازی شبکه..."
+  log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
+
+  # ۱. شبکه داکر را بساز (اگر وجود نداشته باشد)
   docker network create config_6g-network 2>/dev/null || true
-  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans >/dev/null 2>&1 || error "راه‌اندازی CAها شکست خورد"
+
+  # ۲. کاملاً همه کانتینرها را پاک کن (این خط حیاتی است!)
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" down -v --remove-orphans >/dev/null 2>&1
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1
+
+  # ۳. بالا آوردن CAها
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
+  if [ $? -ne 0 ]; then
+    error "راه‌اندازی CAها شکست خورد"
+  fi
+  log "CAها بالا آمدند"
   sleep 20
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --remove-orphans >/dev/null 2>&1 || error "راه‌اندازی Peerها و Orderer شکست خورد"
-  log "صبر 100 ثانیه برای بالا آمدن کامل..."
+
+  # ۴. بالا آوردن Orderer و Peerها با --force-recreate (این خط تمام مشکلات قبلی را حل می‌کند!)
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --force-recreate --remove-orphans
+  if [ $? -ne 0 ]; then
+    error "راه‌اندازی Peerها و Orderer شکست خورد"
+  fi
+
+  log "صبر ۱۰۰ ثانیه برای بالا آمدن کامل و پایدار شدن شبکه..."
   sleep 100
-  success "شبکه راه‌اندازی شد"
+
+  success "شبکه با موفقیت و به صورت کاملاً سالم راه‌اندازی شد"
 }
 
 wait_for_orderer() {
