@@ -77,8 +77,8 @@ start_network() {
     error "راه‌اندازی Peerها و Orderer شکست خورد"
   fi
 
-  log "صبر ۱۰۰ ثانیه برای بالا آمدن کامل و پایدار شدن شبکه..."
-  sleep 100
+  log "صبر ۲۰ ثانیه برای بالا آمدن کامل و پایدار شدن شبکه..."
+  sleep 20
 
   success "شبکه با موفقیت و به صورت کاملاً سالم راه‌اندازی شد"
 }
@@ -188,14 +188,19 @@ package_and_install_chaincode() {
       continue
     fi
 
-    # کپی chaincode.go
     cp "$dir/chaincode.go" "$pkg/"
 
-    # کپی go.mod و go.sum واقعی از پوشه اصلی (که قبلاً ساختید!)
-    cp "$dir/go.mod" "$pkg/" 2>/dev/null || true
-    cp "$dir/go.sum" "$pkg/" 2>/dev/null || true
+    # این ۳ خط حیاتی هستند — go.mod و go.sum مستقیماً در پکیج ساخته می‌شوند!
+    cat > "$pkg/go.mod" <<EOF
+module $name
 
-    # metadata.json و connection.json
+go 1.21
+
+require github.com/hyperledger/fabric-contract-api-go v1.6.0
+EOF
+
+    (cd "$pkg" && go mod tidy >/dev/null 2>&1)
+
     cat > "$pkg/metadata.json" <<EOF
 {
   "type": "golang",
