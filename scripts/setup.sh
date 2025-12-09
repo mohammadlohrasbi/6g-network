@@ -215,16 +215,16 @@ EOF
 }
 EOF
 
-    # این تنها راهی که ۱۰۰٪ فایل را روی هاست می‌گذارد!
+    log "در حال بسته‌بندی Chaincode $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
-      -v "$output_tar:/output/${name}.tar.gz" \
+      -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
       -e CORE_PEER_MSPCONFIGPATH=/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /output/${name}.tar.gz \
+      peer lifecycle chaincode package /tmp/${name}.tar.gz \
         --path /chaincode/src --lang golang --label ${name}_1.0; then
 
       success "Chaincode $name بسته‌بندی شد"
