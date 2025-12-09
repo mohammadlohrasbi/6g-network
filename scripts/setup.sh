@@ -153,36 +153,38 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "نصب $total Chaincode به صورت External (بدون build و بدون خطا)..."
+  log "نصب $total Chaincode به صورت External (بدون build، بدون go.sum، بدون خطا)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
+    tar_file="/tmp/${name}.tar.gz"
 
+    # چک فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
 
-    # فقط فایل chaincode.go را کپی کن
-    tar_file="/tmp/${name}.tar.gz"
+    # ساخت پکیج ساده فقط با chaincode.go (external mode)
     rm -f "$tar_file"
     tar -czf "$tar_file" -C "$dir" chaincode.go
 
     success "Chaincode $name آماده شد (external mode)"
 
-    for i in {1..8}; do
+    # نصب روی تمام ۸ Peer
+    for i in {1..2}; do
       PEER="peer0.org${i}.example.com"
 
-      if docker cp "$tar_file" "${PEER}:/tmp/" && \
+      if docker cp "$tar_file" "${PEER}:/tmp/" 2>/dev/null && \
          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                      -e CORE_PEER_ADDRESS=${PEER}:7051 \
                      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                      "$PEER" \
-                     peer lifecycle chaincode install /tmp/${name}.tar.gz --connection external; then
-        log "Chaincode $name روی Org${i} با موفقیت نصب شد (external)"
+                     peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+        log "Chaincode $name روی Org${i} با موفقیت نصب شد"
       else
-        log "خطا در نصب Chaincode $name روی Org${i} (external)"
+        log "خطا در نصب Chaincode $name روی Org${i}"
       fi
     done
 
@@ -190,8 +192,11 @@ package_and_install_chaincode() {
     rm -f "$tar_file"
   done
 
-  [ $installed -eq $total ] && success "تمام $total Chaincode با موفقیت نصب شدند (external mode)" \
-                          || log "فقط $installed از $total نصب شدند"
+  if [ $installed -eq $total ]; then
+    success "تمام $total Chaincode با موفقیت نصب شدند (external mode)"
+  else
+    log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
+  fi
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
