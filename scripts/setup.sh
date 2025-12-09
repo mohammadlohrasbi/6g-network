@@ -153,50 +153,54 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "نصب $total Chaincode به صورت External (بدون build، بدون go.sum، بدون خطا)..."
+  log "نصب $total Chaincode با پکیج معتبر Fabric 2.5 (بدون build)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
+    pkg_dir="/tmp/chaincode_pkg/$name"
     tar_file="/tmp/${name}.tar.gz"
 
-    # چک فایل اصلی
+    rm -rf "$pkg_dir" "$tar_file"
+    mkdir -p "$pkg_dir/code" "$pkg_dir/META-INF/statedb/couchdb"
+
+    # ۱. فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
+    cp "$dir/chaincode.go" "$pkg_dir/code/"
 
-    # ساخت پکیج ساده فقط با chaincode.go (external mode)
-    rm -f "$tar_file"
-    tar -czf "$tar_file" -C "$dir" chaincode.go
+    # ۲. فایل متادیتا (الزامی!)
+    cat > "$pkg_dir/META-INF/statedb/couchdb/index.json" <<EOF
+{"index":{"fields":["docType"]},"ddoc":"indexDocType","name":"indexDocType","type","type":"json"}
+EOF
 
-    success "Chaincode $name آماده شد (external mode)"
+    # ۳. ساخت پکیج
+    (cd "$pkg_dir" && tar -czf "$tar_file" code META-INF)
 
-    # نصب روی تمام ۸ Peer
+    success "Chaincode $name آماده شد"
+
+    # نصب روی تمام Peerها
     for i in {1..2}; do
       PEER="peer0.org${i}.example.com"
-
-      if docker cp "$tar_file" "${PEER}:/tmp/" 2>/dev/null && \
+      if docker cp "$tar_file" "${PEER}:/tmp/" && \
          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                      -e CORE_PEER_ADDRESS=${PEER}:7051 \
                      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                      "$PEER" \
                      peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-        log "Chaincode $name روی Org${i} با موفقیت نصب شد"
+        log "Chaincode $name روی Org${i} نصب شد"
       else
         log "خطا در نصب Chaincode $name روی Org${i}"
       fi
     done
 
     ((installed++))
-    rm -f "$tar_file"
+    rm -rf "$pkg_dir" "$tar_file"
   done
 
-  if [ $installed -eq $total ]; then
-    success "تمام $total Chaincode با موفقیت نصب شدند (external mode)"
-  else
-    log "فقط $installed از $total Chaincode نصب شدند — دوباره اجرا کنید"
-  fi
+  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || log "فقط $installed از $total نصب شدند"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
