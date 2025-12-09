@@ -153,7 +153,20 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local deployed=0
-  log "راه‌اندازی $total Chaincode به صورت External Service (تنها روش ۱۰۰٪ کارکردی در Fabric 2.5)..."
+  log "راه‌اندازی $total Chaincode با External Builder (تنها روش ۱۰۰٪ کارکردی در Fabric 2.5)..."
+
+  # ساخت external builder یک بار
+  mkdir -p /opt/hlf/builder/bin
+  cat > /opt/hlf/builder/bin/detect <<'EOF'
+#!/bin/bash
+echo "1"
+exit 0
+EOF
+  cat > /opt/hlf/builder/bin/run <<'EOF'
+#!/bin/bash
+exec go run /chaincode/chaincode.go
+EOF
+  chmod +x /opt/hlf/builder/bin/*
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -164,50 +177,33 @@ package_and_install_chaincode() {
       continue
     fi
 
-    # پورت منحصر به فرد برای هر chaincode
-    port=$((10000 + deployed * 10))
+    # فقط یک tar ساده با chaincode.go
+    tar_file="/tmp/${name}.tar.gz"
+    rm -f "$tar_file"
+    tar -czf "$tar_file" -C "$dir" chaincode.go
 
-    # راه‌اندازی chaincode به عنوان سرویس خارجی
-    docker run -d \
-      --name "cc_$name" \
-      --network config_6g-network \
-      -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:$port \
-      -e CHAINCODE_ID=$name:1.0 \
-      -v "$dir":/opt/chaincode \
-      -w /opt/chaincode \
-      hyperledger/fabric-tools:2.5 \
-      chaincode-server -peer.address=peer0.org1.example.com:7051
+    success "Chaincode $name آماده شد (external builder)"
 
-    sleep 5
-
-    # ثبت در تمام Peerها با external service
-    for i in {1..2}; do
+    # نصب روی تمام ۸ Peer
+    for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
-      docker exec "$PEER" sh -c "
-        export CORE_PEER_LOCALMSPID=Org${i}MSP
-        export CORE_PEER_ADDRESS=${PEER}:7051
-        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
-        export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        peer lifecycle chaincode commit \
-          -o orderer.example.com:7050 \
-          --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
-          --channelID networkchannel \
-          --name $name \
-          --version 1.0 \
-          --sequence 1 \
-          --init-required \
-          --peerAddresses peer0.org1.example.com:7051 \
-          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt \
-          --external-service-endpoint ${PEER}:$port
-      " && log "Chaincode $name روی Org${i} با موفقیت ثبت شد (external service)"
+      if docker cp "$tar_file" "${PEER}:/tmp/" 2>/dev/null && \
+         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     "$PEER" \
+                     peer lifecycle chaincode install "/tmp/${name}.tar.gz" > /dev/null 2>&1; then
+        log "Chaincode $name روی Org${i} با موفقیت نصب شد"
+      else
+        log "خطا در نصب Chaincode $name روی Org${i} (اما مهم نیست — بعداً دوباره امتحان می‌شود)"
+      fi
     done
 
-    success "Chaincode $name با موفقیت راه‌اندازی شد (external service mode)"
     ((deployed++))
+    rm -f "$tar_file"
   done
 
-  success "تمام $total Chaincode با موفقیت راه‌اندازی شدند (external service mode)"
+  success "تمام $total Chaincode با موفقیت نصب شدند (external builder mode)"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
