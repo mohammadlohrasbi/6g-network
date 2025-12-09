@@ -164,10 +164,10 @@ package_and_install_chaincode() {
     rm -rf "$pkg" "$output_tar"
     mkdir -p "$pkg"
 
-    # کپی تمام فایل‌های اصلی (chaincode.go + go.mod + go.sum)
-    cp "$dir"/{chaincode.go,go.mod,go.sum} "$pkg/"
+    # کپی همه چیز از پوشه اصلی (که حالا go.mod و go.sum دارد!)
+    cp "$dir"/* "$pkg/"
 
-    # metadata.json و connection.json
+    # metadata.json و connection.json (الزامی!)
     cat > "$pkg/metadata.json" <<EOF
 {
   "type": "golang",
@@ -197,7 +197,7 @@ EOF
 
       success "Chaincode $name بسته‌بندی شد"
 
-      for i in {1..8}; do
+      for i in {1..2}; do
         docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                     -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
