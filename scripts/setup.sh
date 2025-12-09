@@ -153,66 +153,73 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "نصب $total Chaincode با پکیج رسمی Fabric 2.5..."
+  log "نصب $total Chaincode با پکیج رسمی Fabric 2.5 (با fabric-tools)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
     pkg="/tmp/chaincode_pkg/$name"
-    tar_file="/tmp/${name}.tar.gz"
+    output_tar="/tmp/${name}.tar.gz"
 
-    rm -rf "$pkg" "$tar_file"
-    mkdir -p "$pkg"
+    rm -rf "$pkg" "$output_tar"
+    mkdir -p "$pkg/code"
 
-    # چک فایل اصلی
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
 
-    # ۱. metadata.json (الزامی!)
+    cp "$dir/chaincode.go" "$pkg/code/"
+
+    # metadata.json و connection.json — بدون این‌ها Fabric قبول نمی‌کند
     cat > "$pkg/metadata.json" <<EOF
 {
+  "path": "",
   "type": "golang",
   "label": "${name}_1.0"
 }
 EOF
 
-    # ۲. connection.json (الزامی!)
     cat > "$pkg/connection.json" <<EOF
 {
-  "address": "chaincode_server:7052",
+  "address": "${name}:7052",
   "dial_timeout": "10s",
   "tls_required": false
 }
 EOF
 
-    # ۳. کد در src
-    mkdir -p "$pkg/src"
-    cp "$dir/chaincode.go" "$pkg/src/"
+    # این خط حیاتی است — فقط fabric-tools می‌تواند پکیج معتبر بسازد!
+    if docker run --rm \
+      -v "$pkg":/chaincode \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
+      -v /tmp:/output \
+      -e CORE_PEER_LOCALMSPID=Org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      hyperledger/fabric-tools:2.5 \
+      peer lifecycle chaincode package /output/${name}.tar.gz \
+        --path /chaincode/code --lang golang --label ${name}_1.0; then
 
-    # ۴. ساخت پکیج
-    (cd "$pkg" && tar -czf "$tar_file" metadata.json connection.json src)
+      success "Chaincode $name با موفقیت بسته‌بندی شد (رسمی)"
 
-    success "Chaincode $name آماده شد"
+      for i in {1..2}; do
+        if docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
+           docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                       -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
+                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                       "peer0.org${i}.example.com" \
+                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+          log "Chaincode $name روی Org${i} نصب شد"
+        fi
+      done
 
-    # نصب روی تمام Peerها
-    for i in {1..2}; do
-      PEER="peer0.org${i}.example.com"
-      if docker cp "$tar_file" "${PEER}:/tmp/" && \
-         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                     "$PEER" \
-                     peer lifecycle chaincode install /tmp/${name}.tar.gz; then
-        log "Chaincode $name روی Org${i} نصب شد"
-      else
-        log "خطا در نصب Chaincode $name روی Org${i}"
-      fi
-    done
+      ((installed++))
 
-    ((installed++))
-    rm -rf "$pkg" "$tar_file"
+    else
+      log "خطا در بسته‌بندی Chaincode $name"
+    fi
+
+    rm -rf "$pkg" "$output_tar"
   done
 
   [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" || log "فقط $installed از $total نصب شدند"
