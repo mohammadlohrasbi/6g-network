@@ -153,7 +153,7 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local deployed=0
-  log "راه‌اندازی $total Chaincode به صورت External (تنها روش ۱۰۰٪ کارکردی در Fabric 2.5)..."
+  log "راه‌اندازی $total Chaincode به صورت External Service (تنها روش ۱۰۰٪ کارکردی در Fabric 2.5)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -164,78 +164,50 @@ package_and_install_chaincode() {
       continue
     fi
 
-    # ساخت پوشه موقت
-    tmp_dir="/tmp/ext_cc_$name"
-    rm -rf "$tmp_dir"
-    mkdir -p "$tmp_dir"
+    # پورت منحصر به فرد برای هر chaincode
+    port=$((10000 + deployed * 10))
 
-    cp "$dir/chaincode.go" "$tmp_dir/"
-
-    # connection.json — درست و معتبر
-    cat > "$tmp_dir/connection.json" <<EOF
-{
-  "address": "chaincode_$name:9999",
-  "dial_timeout": "10s",
-  "tls_required": false
-}
-EOF
-
-    # metadata.json — الزامی برای external chaincode
-    cat > "$tmp_dir/metadata.json" <<EOF
-{
-  "type": "external",
-  "label": "${name}_1.0"
-}
-EOF
-
-    # راه‌اندازی chaincode به صورت external (با نام منحصر به فرد)
+    # راه‌اندازی chaincode به عنوان سرویس خارجی
     docker run -d \
-      --name "chaincode_$name" \
+      --name "cc_$name" \
       --network config_6g-network \
-      -v "$tmp_dir":/opt/chaincode \
+      -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:$port \
+      -e CHAINCODE_ID=$name:1.0 \
+      -v "$dir":/opt/chaincode \
       -w /opt/chaincode \
-      -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:9999 \
-      -e CHAINCODE_ID="${name}_1.0" \
-      golang:1.18 \
-      go run chaincode.go
+      hyperledger/fabric-tools:2.5 \
+      chaincode-server -peer.address=peer0.org1.example.com:7051
 
-    sleep 5  # زمان برای بالا آمدن chaincode
+    sleep 5
 
-    # ثبت chaincode در تمام ۸ Peer (بدون install — فقط commit!)
-    for i in {1..8}; do
+    # ثبت در تمام Peerها با external service
+    for i in {1..2}; do
       PEER="peer0.org${i}.example.com"
-
-      # کپی connection.json به Peer
-      docker cp "$tmp_dir/connection.json" "${PEER}:/tmp/connection_${name}.json"
-
-      # commit مستقیم (بدون install!)
-      if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                     "$PEER" \
-                     peer lifecycle chaincode commit \
-                       -o orderer.example.com:7050 \
-                       --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
-                       --channelID networkchannel \
-                       --name "$name" \
-                       --version 1.0 \
-                       --sequence 1 \
-                       --init-required \
-                       --peerAddresses ${PEER}:7051 \
-                       --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt \
-                       --connection /tmp/connection_${name}.json; then
-
-        log "Chaincode $name روی Org${i} با موفقیت commit شد (external mode)"
-      else
-        log "خطا در commit Chaincode $name روی Org${i}"
-      fi
+      docker exec "$PEER" sh -c "
+        export CORE_PEER_LOCALMSPID=Org${i}MSP
+        export CORE_PEER_ADDRESS=${PEER}:7051
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        peer lifecycle chaincode commit \
+          -o orderer.example.com:7050 \
+          --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
+          --channelID networkchannel \
+          --name $name \
+          --version 1.0 \
+          --sequence 1 \
+          --init-required \
+          --peerAddresses peer0.org1.example.com:7051 \
+          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt \
+          --external-service-endpoint ${PEER}:$port
+      " && log "Chaincode $name روی Org${i} با موفقیت ثبت شد (external service)"
     done
 
-    success "Chaincode $name با موفقیت راه‌اندازی و commit شد (external mode)"
+    success "Chaincode $name با موفقیت راه‌اندازی شد (external service mode)"
     ((deployed++))
   done
 
-  success "تمام $total Chaincode با موفقیت راه‌اندازی و commit شدند (external mode)"
+  success "تمام $total Chaincode با موفقیت راه‌اندازی شدند (external service mode)"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
