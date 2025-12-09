@@ -172,7 +172,7 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "بسته‌بندی و نصب $total Chaincode (این بار واقعاً تموم شد)..."
+  log "بسته‌بندی و نصب $total Chaincode (خطاها کاملاً نمایش داده می‌شوند)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -190,7 +190,7 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$pkg/src/"
 
-    # نسخه واقعی و موجود fabric-contract-api-go
+    # نسخه واقعی و موجود fabric-contract-api-go (v1.6.0)
     cat > "$pkg/src/go.mod" <<EOF
 module $name
 
@@ -200,7 +200,10 @@ require github.com/hyperledger/fabric-contract-api-go v1.6.0
 EOF
 
     # ساخت go.sum روی هاست (شما go دارید!)
-    (cd "$pkg/src" && go mod tidy >/dev/null 2>&1)
+    if ! (cd "$pkg/src" && go mod tidy >/dev/null 2>&1); then
+      log "خطا در اجرای go mod tidy برای $name"
+      continue
+    fi
 
     cat > "$pkg/metadata.json" <<EOF
 {
@@ -217,7 +220,7 @@ EOF
 }
 EOF
 
-    # ذخیره مستقیم در /tmp روی هاست (نه /output!)
+    log "در حال بسته‌بندی Chaincode $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -229,19 +232,24 @@ EOF
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
         --path /chaincode/src --lang golang --label ${name}_1.0; then
 
-      success "Chaincode $name بسته‌بندی شد"
+      success "Chaincode $name با موفقیت بسته‌بندی شد"
 
-      for i in {1..2}; do
-        if [ -f "$output_tar" ]; then
-          docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
-          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                      -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                      "peer0.org${i}.example.com" \
-                      peer lifecycle chaincode install /tmp/${name}.tar.gz && \
-          log "Chaincode $name روی Org${i} نصب شد"
+      for i in {1..8}; do
+        PEER="peer0.org${i}.example.com"
+        log "در حال نصب Chaincode $name روی $PEER ..."
+
+        INSTALL_OUTPUT=$(docker exec \
+          -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+          -e CORE_PEER_ADDRESS=${PEER}:7051 \
+          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+          "$PEER" \
+          peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+
+        if [ $? -eq 0 ]; then
+          log "Chaincode $name روی Org${i} با موفقیت نصب شد"
         else
-          log "فایل $output_tar پیدا نشد!"
+          log "خطا در نصب Chaincode $name روی Org${i}:"
+          echo "$INSTALL_OUTPUT" | sed 's/^/    /'
         fi
       done
 
@@ -254,7 +262,8 @@ EOF
     rm -rf "$pkg" "$output_tar"
   done
 
-  success "تمام $total Chaincode نصب شدند — واقعاً تموم شد!"
+  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند" \
+                          || log "فقط $installed از $total نصب شدند"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
