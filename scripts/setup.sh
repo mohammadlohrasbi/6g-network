@@ -171,15 +171,16 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$tmp_dir/"
 
-    # connection.json و metadata.json — الزامی!
+    # connection.json — درست و معتبر
     cat > "$tmp_dir/connection.json" <<EOF
 {
-  "address": "address": "0.0.0.0:9999",
+  "address": "chaincode_$name:9999",
   "dial_timeout": "10s",
   "tls_required": false
 }
 EOF
 
+    # metadata.json — الزامی برای external chaincode
     cat > "$tmp_dir/metadata.json" <<EOF
 {
   "type": "external",
@@ -187,35 +188,54 @@ EOF
 }
 EOF
 
-    # راه‌اندازی chaincode به صورت external
-    docker run -d --name "chaincode_$name" \
+    # راه‌اندازی chaincode به صورت external (با نام منحصر به فرد)
+    docker run -d \
+      --name "chaincode_$name" \
       --network config_6g-network \
       -v "$tmp_dir":/opt/chaincode \
       -w /opt/chaincode \
       -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:9999 \
+      -e CHAINCODE_ID="${name}_1.0" \
       golang:1.18 \
       go run chaincode.go
 
-    sleep 3
+    sleep 5  # زمان برای بالا آمدن chaincode
 
-    # ثبت chaincode در Peerها (بدون install!)
-    for i in {1..2}; do
-      docker exec "peer0.org${i}.example.com" \
-        peer lifecycle chaincode install \
-        --conn-external \
-        --name "$name" \
-        --version 1.0 \
-        --sequence 1 \
-        --package-id "${name}_1.0" \
-        --label "${name}_1.0" \
-        --connection-config /tmp/connection.json
+    # ثبت chaincode در تمام ۸ Peer (بدون install — فقط commit!)
+    for i in {1..8}; do
+      PEER="peer0.org${i}.example.com"
+
+      # کپی connection.json به Peer
+      docker cp "$tmp_dir/connection.json" "${PEER}:/tmp/connection_${name}.json"
+
+      # commit مستقیم (بدون install!)
+      if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     "$PEER" \
+                     peer lifecycle chaincode commit \
+                       -o orderer.example.com:7050 \
+                       --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
+                       --channelID networkchannel \
+                       --name "$name" \
+                       --version 1.0 \
+                       --sequence 1 \
+                       --init-required \
+                       --peerAddresses ${PEER}:7051 \
+                       --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt \
+                       --connection /tmp/connection_${name}.json; then
+
+        log "Chaincode $name روی Org${i} با موفقیت commit شد (external mode)"
+      else
+        log "خطا در commit Chaincode $name روی Org${i}"
+      fi
     done
 
-    success "Chaincode $name با موفقیت راه‌اندازی شد (external mode)"
+    success "Chaincode $name با موفقیت راه‌اندازی و commit شد (external mode)"
     ((deployed++))
   done
 
-  success "تمام $total Chaincode با موفقیت راه‌اندازی شدند (external mode)"
+  success "تمام $total Chaincode با موفقیت راه‌اندازی و commit شدند (external mode)"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
