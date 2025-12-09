@@ -197,7 +197,7 @@ EOF
     success "Chaincode $name آماده شد"
 
     # نصب روی تمام Peerها
-    for i in {1..8}; do
+    for i in {1..2}; do
       PEER="peer0.org${i}.example.com"
       if docker cp "$tar_file" "${PEER}:/tmp/" && \
          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
