@@ -165,8 +165,14 @@ create_and_join_channels() {
 
 # ------------------- بسته‌بندی و نصب Chaincode -------------------
 package_and_install_chaincode() {
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode وجود ندارد — رد شد"
+    return 0
+  fi
+
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
+  log "بسته‌بندی و نصب $total Chaincode (این بار واقعاً تموم شد)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -175,25 +181,43 @@ package_and_install_chaincode() {
     output_tar="/tmp/${name}.tar.gz"
 
     rm -rf "$pkg" "$output_tar"
-    mkdir -p "$pkg/src"
+    mkdir -p "$pkg"
 
-    # کپی همه چیز از پوشه اصلی (که حالا go.mod و go.sum دارد!)
-    cp "$dir"/{chaincode.go,go.mod,go.sum} "$pkg/src/" 2>/dev/null || true
+    if [ ! -f "$dir/chaincode.go" ]; then
+      log "فایل chaincode.go برای $name وجود ندارد — رد شد"
+      continue
+    fi
 
-    # اگر go.sum نبود، دستی می‌گذاریم (ولی با مرحله بالا دیگر لازم نیست)
-    [ ! -f "$pkg/src/go.sum" ] && cat > "$pkg/src/go.sum" <<'EOF'
-github.com/hyperledger/fabric-contract-api-go v1.6.0 h1=3b3a2b7e8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d
-github.com/hyperledger/fabric-contract-api-go v1.6.0/go.mod h1=abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
+    cp "$dir/chaincode.go" "$pkg/"
+
+    # go.mod و go.sum در ریشه پکیج (این تنها جایی است که Fabric می‌بیند!)
+    cat > "$pkg/go.mod" <<EOF
+module $name
+
+go 1.21
+
+require github.com/hyperledger/fabric-contract-api-go v1.6.0
 EOF
 
+    # ساخت go.sum روی هاست
+    (cd "$pkg" && go mod tidy >/dev/null 2>&1)
+
     cat > "$pkg/metadata.json" <<EOF
-{"type":"golang","label":"${name}_1.0"}
+{
+  "type": "golang",
+  "label": "${name}_1.0"
+}
 EOF
 
     cat > "$pkg/connection.json" <<EOF
-{"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
+{
+  "address": "${name}:7052",
+  "dial_timeout": "10s",
+  "tls_required": false
+}
 EOF
 
+    log "در حال بسته‌بندی Chaincode $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -203,11 +227,11 @@ EOF
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode/src --lang golang --label ${name}_1.0; then
+        --path /chaincode --lang golang --label ${name}_1.0; then
 
       success "Chaincode $name بسته‌بندی شد"
 
-      for i in {1..8}; do
+      for i in {1..2}; do
         docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                     -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
@@ -218,6 +242,9 @@ EOF
       done
 
       ((installed++))
+
+    else
+      log "خطا در بسته‌بندی Chaincode $name"
     fi
 
     rm -rf "$pkg" "$output_tar"
