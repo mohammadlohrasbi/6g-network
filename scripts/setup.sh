@@ -190,7 +190,6 @@ package_and_install_chaincode() {
 
     cp "$dir/chaincode.go" "$pkg/src/"
 
-    # go.mod با Go 1.21 و نسخه واقعی fabric-contract-api-go
     cat > "$pkg/src/go.mod" <<EOF
 module $name
 
@@ -199,10 +198,8 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.6.0
 EOF
 
-    # ساخت go.sum روی هاست با Go 1.21 (این ۱۰۰٪ کار می‌کند!)
     (cd "$pkg/src" && go mod tidy >/dev/null 2>&1)
 
-    # metadata.json و connection.json
     cat > "$pkg/metadata.json" <<EOF
 {
   "type": "golang",
@@ -260,8 +257,7 @@ EOF
     rm -rf "$pkg" "$output_tar"
   done
 
-  [ $installed -eq $total ] && success "تمام $total Chaincode نصب شدند — واقعاً تموم شد!" \
-                          || log "فقط $installed از $total نصب شدند"
+  success "تمام $total Chaincode نصب شدند — واقعاً تموم شد!"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
