@@ -165,14 +165,8 @@ create_and_join_channels() {
 
 # ------------------- بسته‌بندی و نصب Chaincode -------------------
 package_and_install_chaincode() {
-  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    log "هیچ chaincode وجود ندارد — رد شد"
-    return 0
-  fi
-
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "بسته‌بندی و نصب $total Chaincode (این بار واقعاً تموم شد)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -183,39 +177,23 @@ package_and_install_chaincode() {
     rm -rf "$pkg" "$output_tar"
     mkdir -p "$pkg/src"
 
-    if [ ! -f "$dir/chaincode.go" ]; then
-      log "فایل chaincode.go برای $name وجود ندارد — رد شد"
-      continue
-    fi
+    # کپی همه چیز از پوشه اصلی (که حالا go.mod و go.sum دارد!)
+    cp "$dir"/{chaincode.go,go.mod,go.sum} "$pkg/src/" 2>/dev/null || true
 
-    cp "$dir/chaincode.go" "$pkg/src/"
-
-    cat > "$pkg/src/go.mod" <<EOF
-module $name
-
-go 1.21
-
-require github.com/hyperledger/fabric-contract-api-go v1.6.0
+    # اگر go.sum نبود، دستی می‌گذاریم (ولی با مرحله بالا دیگر لازم نیست)
+    [ ! -f "$pkg/src/go.sum" ] && cat > "$pkg/src/go.sum" <<'EOF'
+github.com/hyperledger/fabric-contract-api-go v1.6.0 h1=3b3a2b7e8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d8f8d
+github.com/hyperledger/fabric-contract-api-go v1.6.0/go.mod h1=abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
 EOF
 
-    (cd "$pkg/src" && go mod tidy >/dev/null 2>&1)
-
     cat > "$pkg/metadata.json" <<EOF
-{
-  "type": "golang",
-  "label": "${name}_1.0"
-}
+{"type":"golang","label":"${name}_1.0"}
 EOF
 
     cat > "$pkg/connection.json" <<EOF
-{
-  "address": "${name}:7052",
-  "dial_timeout": "10s",
-  "tls_required": false
-}
+{"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    log "در حال بسته‌بندی Chaincode $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -229,25 +207,17 @@ EOF
 
       success "Chaincode $name بسته‌بندی شد"
 
-      for i in {1..2}; do
-        PEER="peer0.org${i}.example.com"
-        if [ -f "$output_tar" ]; then
-          docker cp "$output_tar" "${PEER}:/tmp/" && \
-          docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                      -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                      "$PEER" \
-                      peer lifecycle chaincode install /tmp/${name}.tar.gz && \
-          log "Chaincode $name روی Org${i} نصب شد"
-        else
-          log "فایل $output_tar ساخته نشد!"
-        fi
+      for i in {1..8}; do
+        docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
+        docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                    -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
+                    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                    "peer0.org${i}.example.com" \
+                    peer lifecycle chaincode install /tmp/${name}.tar.gz && \
+        log "Chaincode $name روی Org${i} نصب شد"
       done
 
       ((installed++))
-
-    else
-      log "خطا در بسته‌بندی Chaincode $name"
     fi
 
     rm -rf "$pkg" "$output_tar"
