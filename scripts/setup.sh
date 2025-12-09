@@ -216,7 +216,7 @@ EOF
 
       success "Chaincode $name با موفقیت بسته‌بندی شد"
 
-      for i in {1..8}; do
+      for i in {1..2}; do
         if docker cp "$output_tar" "peer0.org${i}.example.com:/tmp/" && \
            docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                        -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
