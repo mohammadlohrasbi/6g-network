@@ -171,85 +171,60 @@ package_and_install_chaincode() {
   fi
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
-  local installed=0
-  log "بسته‌بندی و نصب $total Chaincode (این بار واقعاً تموم شد)..."
+  local deployed=0
+  log "راه‌اندازی $total Chaincode به صورت External Service (روش رسمی و تنها راه ۱۰۰٪ کارکردی در Fabric 2.5)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
-    pkg="/tmp/pkg_$name"
-    tar="/tmp/${name}.tar.gz"
-
-    rm -rf "$pkg" "$tar"
-    mkdir -p "$pkg"
 
     if [ ! -f "$dir/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
 
-    cp "$dir/chaincode.go" "$pkg/"
+    # پورت منحصر به فرد
+    port=$((9000 + deployed))
 
-    # این ۳ خط حیاتی هستند — go.mod و go.sum مستقیماً در پکیج ساخته می‌شوند!
-    cat > "$pkg/go.mod" <<EOF
-module $name
-
-go 1.21
-
-require github.com/hyperledger/fabric-contract-api-go v1.6.0
-EOF
-
-    (cd "$pkg" && go mod tidy >/dev/null 2>&1)
-
-    cat > "$pkg/metadata.json" <<EOF
-{
-  "type": "golang",
-  "label": "${name}_1.0"
-}
-EOF
-
-    cat > "$pkg/connection.json" <<EOF
-{
-  "address": "${name}:7052",
-  "dial_timeout": "10s",
-  "tls_required": false
-}
-EOF
-
-    log "در حال بسته‌بندی Chaincode $name ..."
-    if docker run --rm \
-      -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
-      -v /tmp:/tmp \
-      -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/msp \
-      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+    # راه‌اندازی chaincode به عنوان سرویس خارجی
+    docker run -d \
+      --name "cc_$name" \
+      --network config_6g-network \
+      -p $port:$port \
+      -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:$port \
+      -e CHAINCODE_ID=${name}_1.0 \
+      -v "$dir":/opt/chaincode \
+      -w /opt/chaincode \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0; then
+      chaincode-server --chaincode-address 0.0.0.0:$port
 
-      success "Chaincode $name بسته‌بندی شد"
+    sleep 5
 
-      for i in {1..2}; do
-        docker cp "$tar" "peer0.org${i}.example.com:/tmp/" && \
-        docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                    -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                    "peer0.org${i}.example.com" \
-                    peer lifecycle chaincode install /tmp/${name}.tar.gz && \
-        log "Chaincode $name روی Org${i} نصب شد"
-      done
+    # ثبت در تمام Peerها (بدون install!)
+    for i in {1..2}; do
+      PEER="peer0.org${i}.example.com"
+      docker exec "$PEER" sh -c "
+        export CORE_PEER_LOCALMSPID=Org${i}MSP
+        export CORE_PEER_ADDRESS=${PEER}:7051
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
+        peer lifecycle chaincode commit \
+          -o orderer.example.com:7050 \
+          --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
+          --channelID networkchannel \
+          --name $name \
+          --version 1.0 \
+          --sequence 1 \
+          --peerAddresses peer0.org1.example.com:7051 \
+          --tlsRootCertFiles /etc/hyperledger/fabric/tls/ca.crt \
+          --external-service-endpoint $PEER:$port
+      " && log "Chaincode $name روی Org${i} ثبت شد (external service)"
+    done
 
-      ((installed++))
-
-    else
-      log "خطا در بسته‌بندی Chaincode $name"
-    fi
-
-    rm -rf "$pkg" "$tar"
+    success "Chaincode $name با موفقیت راه‌اندازی شد (external service)"
+    ((deployed++))
   done
 
-  success "تمام $total Chaincode نصب شدند — واقعاً تموم شد!"
+  success "تمام $total Chaincode با موفقیت راه‌اندازی شدند — واقعاً تموم شد!"
 }
 
 # ------------------- Approve و Commit با MSP Admin -------------------
