@@ -188,18 +188,16 @@ generate_chaincode_modules() {
     (
       cd "$d"
 
-      # ساخت go.mod
+      # ساخت go.mod با نسخه رسمی و موجود v1.2.2
       cat > go.mod <<EOF
 module $name
 
 go 1.21
 
-require github.com/hyperledger/fabric-contract-api-go v1.6.0
+require github.com/hyperledger/fabric-contract-api-go v1.2.2
 EOF
 
-      log "go.mod ساخته شد برای $name"
-
-      # اجرای go mod tidy — خطاها کاملاً نمایش داده می‌شوند!
+      # اجرای go mod tidy — خطاها کاملاً نمایش داده می‌شوند
       if go mod tidy; then
         log "go.sum با موفقیت ساخته شد برای $name"
       else
@@ -208,7 +206,7 @@ EOF
         return 1
       fi
 
-      # اجرای go mod vendor — خطاها کاملاً نمایش داده می‌شوند!
+      # اجرای go mod vendor — خطاها کاملاً نمایش داده می‌شوند
       if go mod vendor; then
         log "پوشه vendor با موفقیت ساخته شد برای $name"
       else
