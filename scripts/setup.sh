@@ -170,8 +170,9 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "ساخت go.mod + go.sum + vendor برای تمام chaincodeها (روش رسمی و ۱۰۰٪ کارکردی)..."
+  log "ساخت go.mod + go.sum + vendor برای تمام chaincodeها (خطاها کاملاً نمایش داده می‌شوند)..."
   local count=0
+  local failed=0
 
   for d in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$d" ] && continue
@@ -182,10 +183,12 @@ generate_chaincode_modules() {
       continue
     fi
 
+    log "در حال پردازش Chaincode: $name ..."
+
     (
       cd "$d"
 
-      # ۱. ساخت go.mod با اسم دقیق chaincode
+      # ساخت go.mod
       cat > go.mod <<EOF
 module $name
 
@@ -194,25 +197,23 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.6.0
 EOF
 
-# وابستگی‌های غیرمستقیم (الزامی برای برخی chaincodeها)
-require (
-	github.com/hyperledger/fabric-protos-go v0.3.2
-	google.golang.org/protobuf v1.31.0
-)
-EOF
+      log "go.mod ساخته شد برای $name"
 
-      # ۲. ساخت go.sum واقعی (حتماً این خط را اجرا کنید!)
+      # اجرای go mod tidy — خطاها کاملاً نمایش داده می‌شوند!
       if go mod tidy; then
         log "go.sum با موفقیت ساخته شد برای $name"
       else
-        log "خطا در go mod tidy برای $name — ادامه می‌دهیم..."
+        log "خطا در go mod tidy برای $name"
+        ((failed++))
+        return 1
       fi
 
-      # ۳. ساخت vendor (این دقیقاً همان چیزی است که Fabric 2.5 بدون خطا قبول می‌کند!)
+      # اجرای go mod vendor — خطاها کاملاً نمایش داده می‌شوند!
       if go mod vendor; then
         log "پوشه vendor با موفقیت ساخته شد برای $name"
       else
-        log "خطا در go mod vendor برای $name — ادامه می‌دهیم..."
+        log "خطا در go mod vendor برای $name"
+        ((failed++))
       fi
 
       success "Chaincode $name کاملاً آماده شد (go.mod + go.sum + vendor)"
@@ -221,7 +222,11 @@ EOF
     ((count++))
   done
 
-  success "تمام $count chaincode با موفقیت آماده شدند — دیگر هیچ خطای go.sum نمی‌بینید!"
+  if [ $failed -eq 0 ]; then
+    success "تمام $count chaincode با موفقیت آماده شدند — بدون هیچ خطایی!"
+  else
+    log "هشدار: $failed chaincode خطا داشتند — جزئیات بالا نمایش داده شده"
+  fi
 }
 
 # ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
