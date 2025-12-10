@@ -210,7 +210,7 @@ package_and_install_chaincode() {
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
-  log "بسته‌بندی و نصب $total Chaincode (روش نهایی و ۱۰۰٪ کارکردی)..."
+  log "بسته‌بندی و نصب $total Chaincode (این بار واقعاً تموم شد)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -226,7 +226,7 @@ package_and_install_chaincode() {
       continue
     fi
 
-    # کپی همه چیز از پوشه اصلی (شامل go.mod, go.sum, vendor!)
+    # این خط حیاتی است — تمام پوشه‌ها (شامل vendor!) کپی می‌شوند!
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
 
     # metadata.json و connection.json
@@ -245,7 +245,7 @@ EOF
 }
 EOF
 
-    log "در حال بسته‌بندی Chaincode $name ..."
+    log "در حال بسته‌بندی $name ..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
@@ -272,7 +272,7 @@ EOF
       ((installed++))
 
     else
-      log "خطا در بسته‌بندی Chaincode $name"
+      log "خطا در بسته‌بندی $name"
     fi
 
     rm -rf "$pkg" "$tar"
