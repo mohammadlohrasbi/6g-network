@@ -2,6 +2,7 @@
 # /root/6g-network/scripts/setup.sh
 # نسخه نهایی — ۱۰۰٪ بدون خطا
 
+set -e
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -208,8 +209,6 @@ EOF
 
 # ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
 package_and_install_chaincode() {
-  set -e
-  
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local installed=0
 
