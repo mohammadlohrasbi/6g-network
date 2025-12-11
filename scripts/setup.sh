@@ -119,6 +119,7 @@ fix_admincerts_on_host() {
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
   log "ایجاد و join تمام ۲۰ کانال با هویت Admin..."
+  set +e
   local created=0
   for ch in "${CHANNELS[@]}"; do
     log "ایجاد کانال $ch..."
