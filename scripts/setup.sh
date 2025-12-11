@@ -210,8 +210,17 @@ EOF
 
 # ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
 package_and_install_chaincode() {
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode وجود ندارد — این مرحله رد شد"
+    return 0
+  fi
+
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
-  local installed=0
+  local packaged=0
+  local installed_count=0
+  local failed_count=0
+
+  log "شروع بسته‌بندی و نصب $total Chaincode (نتیجه چک کامل نمایش داده می‌شود)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -222,17 +231,30 @@ package_and_install_chaincode() {
     rm -rf "$pkg" "$tar"
     mkdir -p "$pkg"
 
-    # کپی همه چیز از ریشه پوشه chaincode (شامل go.mod, go.sum, vendor!)
-    cp -r "$dir"/* "$pkg/" 2>/dev/null || true
+    log "=== چک Chaincode: $name ==="
 
+    if [ ! -f "$dir/chaincode.go" ]; then
+      log "خطا: فایل chaincode.go وجود ندارد"
+      ((failed_count++))
+      continue
+    fi
+    log "چک: chaincode.go وجود دارد — OK"
+
+    # کپی همه چیز (شامل go.mod, go.sum, vendor)
+    cp -r "$dir"/* "$pkg/" 2>/dev/null || true
+    log "چک: فایل‌ها کپی شدند — OK"
+
+    # metadata.json و connection.json
     cat > "$pkg/metadata.json" <<EOF
 {"type":"golang","label":"${name}_1.0"}
 EOF
     cat > "$pkg/connection.json" <<EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
+    log "چک: metadata.json و connection.json ساخته شدند — OK"
 
-    docker run --rm \
+    log "در حال بسته‌بندی $name ..."
+    if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
       -v /tmp:/tmp \
@@ -241,24 +263,55 @@ EOF
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0 && \
-      success "Chaincode $name بسته‌بندی شد"
+        --path /chaincode --lang golang --label ${name}_1.0; then
 
-    for i in {1..2}; do
-      docker cp "$tar" "peer0.org${i}.example.com:/tmp/" && \
-      docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                  -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                  "peer0.org${i}.example.com" \
-                  peer lifecycle chaincode install /tmp/${name}.tar.gz && \
-      log "Chaincode $name روی Org${i} نصب شد"
-    done
+      log "چک: بسته‌بندی $name موفق — OK"
+      ((packaged++))
 
-    ((installed++))
+      local install_success=0
+      local install_failed=0
+
+      for i in {1..2}; do
+        PEER="peer0.org${i}.example.com"
+        log "در حال نصب $name روی $PEER ..."
+
+        if docker cp "$tar" "${PEER}:/tmp/" 2>/dev/null && \
+           docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                       "$PEER" \
+                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+          log "چک: نصب روی Org${i} موفق — OK"
+          ((install_success++))
+        else
+          log "خطا: نصب روی Org${i} شکست خورد"
+          ((install_failed++))
+        fi
+      done
+
+      log "چک نصب $name: موفق $install_success — شکست $install_failed"
+      ((installed_count += install_success))
+      ((failed_count += install_failed))
+
+    else
+      log "خطا: بسته‌بندی $name شکست خورد"
+      ((failed_count++))
+    fi
+
     rm -rf "$pkg" "$tar"
   done
 
-  success "تمام $total Chaincode نصب شدند — واقعاً تموم شد!"
+  log "=== نتیجه نهایی چک بسته‌بندی و نصب ==="
+  log "تعداد Chaincode: $total"
+  log "بسته‌بندی موفق: $packaged"
+  log "نصب موفق: $installed_count"
+  log "نصب شکست‌خورده: $failed_count"
+
+  if [ $failed_count -eq 0 ] && [ $packaged -eq $total ]; then
+    success "تمام $total Chaincode با موفقیت بسته‌بندی و نصب شدند — واقعاً تموم شد!"
+  else
+    log "هشدار: $failed_count مشکل داشتند — جزئیات بالا را ببینید"
+  fi
 }
 
 
