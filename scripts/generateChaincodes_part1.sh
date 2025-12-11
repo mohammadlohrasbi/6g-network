@@ -1,10 +1,8 @@
 #!/bin/bash
 # generateChaincodes_part1.sh — نسخه نهایی، کامل، بدون حذف هیچ تابع، ۱۰۰٪ کارکردی
-# تمام ۹ قرارداد شما با تمام توابع اصلی (AssignAntenna, UpdateBandwidth, QueryAsset, ValidateDistance, calculateDistance و ...) دقیقاً حفظ شده‌اند
-# + رفع خطای simulation timeout با استفاده از (0,0) در صورت عدم وجود antenna
-# + ساخت خودکار go.mod + go.sum + vendor با نسخه رسمی v1.2.2
+# تمام ۹ قرارداد شما با تمام توابع اصلی (بدون تغییر در ماهیت) + رفع خطای simulation timeout
 
-# set -e
+set -e
 
 CHAINCODE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/chaincode"
 mkdir -p "$CHAINCODE_DIR"
@@ -55,13 +53,14 @@ func (s *SmartContract) Init(ctx contractapi.TransactionContextInterface) error 
 	return nil
 }
 
-// Record — تابع اصلی برای همه قراردادها
+// Record — تابع اصلی (برای همه قراردادها)
 func (s *SmartContract) Record(ctx contractapi.TransactionContextInterface, entityID, antennaID, value, x, y string) error {
 	// رفع خطای simulation: اگر antenna وجود نداشت، از مرکز (0,0) استفاده می‌کنیم
 	x2, y2 := "0", "0"
 	if antennaID != "" {
 		if antenna, err := s.QueryAsset(ctx, antennaID); err == nil && antenna != nil {
-			x2, y2 = antenna.X, antenna.Y
+			x2 = antenna.X
+			y2 = antenna.Y
 		}
 		// اگر antenna وجود نداشت، از (0,0) استفاده می‌کنیم — خطای timeout نمی‌دهد
 	}
