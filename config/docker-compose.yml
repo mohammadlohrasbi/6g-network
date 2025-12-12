@@ -53,7 +53,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -63,6 +63,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "7051:7051"
       - "9443:9443"
@@ -84,7 +85,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -94,6 +95,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org2.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "8051:7051"
       - "9444:9443"
@@ -115,7 +117,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -125,6 +127,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org3.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "9051:7051"
       - "9445:9443"
@@ -146,7 +149,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -156,6 +159,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org4.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "10051:7051"
       - "9446:9443"
@@ -177,7 +181,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -187,6 +191,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org5.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "11051:7051"
       - "9447:9443"
@@ -208,7 +213,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -218,6 +223,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org6.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "12051:7051"
       - "9448:9443"
@@ -239,7 +245,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -249,6 +255,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org7.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "13051:7051"
       - "9449:9443"
@@ -270,7 +277,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt,/etc/hyperledger/fabric/shared-ca/*.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -280,6 +287,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org8.example.com:/var/hyperledger/production
+      - ./shared-ca:/etc/hyperledger/fabric/shared-ca
     ports:
       - "14051:7051"
       - "9450:9443"
