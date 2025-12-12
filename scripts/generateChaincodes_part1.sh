@@ -1,7 +1,6 @@
 #!/bin/bash
 # generateChaincodes_part1.sh — نسخه نهایی، کامل، بدون حذف هیچ تابع
-# تمام ۹ قرارداد شما با تمام توابع اصلی (AssignAntenna, UpdateBandwidth, QueryAsset, ValidateDistance, calculateDistance و ...) دقیقاً حفظ شده‌اند
-# + رفع خطای simulation timeout با اصلاح QueryAsset (اگر داده وجود نداشت، خطا ندهد)
+# تمام ۹ قرارداد شما با تمام توابع اصلی (بدون تغییر در ماهیت) + رفع خطای simulation timeout
 
 set -e
 
