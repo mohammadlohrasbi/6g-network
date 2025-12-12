@@ -253,13 +253,13 @@ EOF
 EOF
     log "چک: metadata.json و connection.json ساخته شدند — OK"
 
-    log "در حال بسته‌بندی $name ..."
+    log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
     if docker run --rm \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/msp \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
       -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/msp \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
@@ -271,7 +271,7 @@ EOF
       local install_success=0
       local install_failed=0
 
-      for i in {1..2}; do
+      for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
         log "در حال نصب $name روی $PEER ..."
 
