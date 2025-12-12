@@ -253,7 +253,7 @@ EOF
 EOF
     log "چک: metadata.json و connection.json ساخته شدند — OK"
 
-    log "در حال بسته‌بندی $name (با MSP استاندارد org1 و بدون شبیه‌سازی)..."
+    log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
@@ -263,8 +263,7 @@ EOF
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0 \
-        --skip-simulation; then  # ← این خط شبیه‌سازی را غیرفعال می‌کند — خطای timeout برای همیشه ناپدید می‌شود!
+        --path /chaincode --lang golang --label ${name}_1.0; then  # ← --skip-simulation حذف شد (در package وجود ندارد!)
 
       log "چک: بسته‌بندی $name موفق — OK"
       ((packaged++))
@@ -272,16 +271,16 @@ EOF
       local install_success=0
       local install_failed=0
 
-      for i in {1..8}; do
+      for i in {1..2}; do
         PEER="peer0.org${i}.example.com"
-        log "در حال نصب $name روی $PEER ..."
+        log "در حال نصب $name روی $PEER (با --skip-simulation)..."
 
         if docker cp "$tar" "${PEER}:/tmp/" 2>/dev/null && \
            docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                        -e CORE_PEER_ADDRESS=${PEER}:7051 \
                        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                        "$PEER" \
-                       peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+                       peer lifecycle chaincode install /tmp/${name}.tar.gz --skip-simulation; then  # ← فقط در install استفاده می‌شود!
           log "چک: نصب روی Org${i} موفق — OK"
           ((install_success++))
         else
