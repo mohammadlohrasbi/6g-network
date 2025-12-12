@@ -216,7 +216,8 @@ package_and_install_chaincode() {
   fi
 
   # پاک‌سازی کامل /tmp از فایل‌های قدیمی
-  rm -f /tmp/*.tar.gz /tmp/pkg_* -r
+  rm -f /tmp/*.tar.gz
+  rm -rf /tmp/pkg_*
   log "پاک‌سازی /tmp از فایل‌های قدیمی .tar.gz و pkg انجام شد"
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
@@ -244,11 +245,9 @@ package_and_install_chaincode() {
     fi
     log "چک: chaincode.go وجود دارد — OK"
 
-    # کپی تمام فایل‌ها
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
     log "چک: فایل‌ها کپی شدند — OK"
 
-    # metadata.json و connection.json
     cat > "$pkg/metadata.json" <<EOF
 {"type":"golang","label":"${name}_1.0"}
 EOF
@@ -296,14 +295,22 @@ EOF
 
     for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
-      log "در حال نصب $name روی $PEER ..."
+      log "در حال کپی فایل $tar به داخل $PEER:/tmp/ ..."
 
-      if docker cp "$tar" "${PEER}:/tmp/" 2>/dev/null && \
-         docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                     -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                     "$PEER" \
-                     peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+      if docker cp "$tar" "${PEER}:/tmp/"; then
+        log "چک: فایل $tar با موفقیت به داخل $PEER کپی شد — OK"
+      else
+        log "خطا: کپی فایل $tar به داخل $PEER شکست خورد"
+        ((install_failed++))
+        continue
+      fi
+
+      log "در حال نصب $name روی $PEER ..."
+      if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                  -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                  "$PEER" \
+                  peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
         ((install_success++))
       else
