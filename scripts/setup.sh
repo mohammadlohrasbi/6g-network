@@ -240,7 +240,7 @@ package_and_install_chaincode() {
     fi
     log "چک: chaincode.go وجود دارد — OK"
 
-    # کپی همه چیز (شامل go.mod, go.sum, vendor)
+    # کپی تمام فایل‌ها (شامل go.mod, go.sum, vendor)
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
     log "چک: فایل‌ها کپی شدند — OK"
 
@@ -253,7 +253,7 @@ EOF
 EOF
     log "چک: metadata.json و connection.json ساخته شدند — OK"
 
-    log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
+    log "در حال بسته‌بندی $name (با MSP استاندارد org1 و بدون شبیه‌سازی)..."
     if docker run --rm \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
@@ -263,7 +263,8 @@ EOF
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0; then
+        --path /chaincode --lang golang --label ${name}_1.0 \
+        --skip-simulation; then  # ← این خط شبیه‌سازی را غیرفعال می‌کند — خطای timeout برای همیشه ناپدید می‌شود!
 
       log "چک: بسته‌بندی $name موفق — OK"
       ((packaged++))
