@@ -215,6 +215,9 @@ package_and_install_chaincode() {
     return 0
   fi
 
+  rm -f /tmp/*.tar.gz
+  log "پاک‌سازی /tmp از فایل‌های قدیمی .tar.gz"
+
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
   local packaged=0
   local installed_count=0
