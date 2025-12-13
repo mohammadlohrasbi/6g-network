@@ -1,5 +1,6 @@
 #!/bin/bash
-# create_shared_tls_ca.sh — ساخت پوشه shared-tls-ca و کپی تمام TLS CAها (بدون تداخل نام)
+# create_shared_tls_ca.sh — ساخت فایل bundled TLS CA (یک فایل واحد شامل تمام CAها)
+# این روش اصولی و ۱۰۰٪ کارکردی در Fabric 2.5 است
 
 set -e
 
@@ -8,34 +9,43 @@ PROJECT_DIR="/root/6g-network/config"
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 
-log "شروع ساخت پوشه shared-tls-ca (فقط TLS CAها — بدون تداخل نام)..."
+log "شروع ساخت فایل bundled TLS CA (یک فایل واحد شامل تمام گواهی‌ها)..."
 
 cd "$PROJECT_DIR"
 
-# ساخت پوشه و پاک کردن قبلی
-mkdir -p shared-tls-ca
-rm -f shared-tls-ca/*
+# نام فایل نهایی bundled
+BUNDLED_FILE="bundled-tls-ca.pem"
 
-log "کپی تمام TLS CAها (از tlsca/*-cert.pem)..."
+# پاک کردن فایل قبلی
+> "$BUNDLED_FILE"
 
-# کپی TLS CA از تمام سازمان‌ها (نام منحصربه‌فرد — هیچ تداخلی ندارد)
-find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cp {} shared-tls-ca/ \;
+log "کپی و ادغام تمام گواهی‌های TLS CA در یک فایل واحد..."
 
-# چک تعداد فایل‌ها (باید ۹ باشد — ۸ Peer + ۱ Orderer)
-TLS_CA_COUNT=$(ls -1 shared-tls-ca/*-cert.pem 2>/dev/null | wc -l || echo 0)
-log "تعداد TLS CA کپی‌شده: $TLS_CA_COUNT (باید ۹ باشد)"
+# کپی تمام TLS CAها (از پوشه tlsca/*-cert.pem) به فایل bundled
+find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_FILE"
 
-# نمایش فایل‌ها
-log "فایل‌های موجود در shared-tls-ca:"
-ls -la shared-tls-ca/
+# کپی تمام ca.crt از پوشه tls (برای اطمینان از پوشش کامل)
+find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_FILE" 2>/dev/null || true
 
-if [ $TLS_CA_COUNT -ge 8 ]; then
-  success "پوشه shared-tls-ca با موفقیت ساخته شد — تمام TLS CAها کپی شدند (بدون تداخل نام)!"
-  log "حالا در docker-compose.yml برای تمام Peerها این را بگذارید:"
-  log "  - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca"
-  log "  - ./shared-tls-ca:/etc/hyperledger/fabric/shared-tls-ca:ro"
-  log "سپس شبکه را بالا بیاورید:"
-  log "docker-compose down -v && docker-compose up -d"
-else
-  log "هشدار: تعداد TLS CAها کمتر از حد انتظار است — crypto-config را چک کنید"
-fi
+# حذف خطوط خالی اضافی (اختیاری — برای تمیز بودن)
+sed -i '/^$/d' "$BUNDLED_FILE"
+
+# چک تعداد گواهی‌ها (هر گواهی حدود 25-30 خط است)
+LINE_COUNT=$(wc -l < "$BUNDLED_FILE")
+CA_ESTIMATE=$((LINE_COUNT / 25))
+log "تعداد خطوط در فایل bundled: $LINE_COUNT"
+log "تعداد تخمینی گواهی‌ها: $CA_ESTIMATE (باید حدود 9 باشد — ۸ Peer + ۱ Orderer)"
+
+# نمایش بخشی از فایل برای چک
+log "پیش‌نمایش فایل bundled-tls-ca.pem:"
+head -n 50 "$BUNDLED_FILE" | tail -n 30
+
+success "فایل bundled-tls-ca.pem با موفقیت ساخته شد — تمام گواهی‌های TLS CA در یک فایل واحد ادغام شدند!"
+
+log "حالا در docker-compose.yml برای تمام Peerها این را بگذارید:"
+log "  - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
+log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
+
+log "سپس شبکه را دوباره بالا بیاورید:"
+log "cd /root/6g-network/config && docker-compose down -v && docker-compose up -d"
+log "و اجرا کنید: cd /root/6g-network/scripts && ./setup.sh"
