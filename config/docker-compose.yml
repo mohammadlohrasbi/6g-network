@@ -54,7 +54,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -86,7 +86,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -118,7 +118,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -150,7 +150,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -182,7 +182,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -214,7 +214,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -246,7 +246,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
@@ -278,7 +278,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org1.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org2.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org3.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org4.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org5.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org6.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org7.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-org8.crt,/etc/hyperledger/fabric/shared-tls-ca/tls-ca-orderer.crt
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users
     volumes:
       - /var/run/:/host/var/run/
