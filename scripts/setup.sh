@@ -215,7 +215,7 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (بدون vendor — روش رسمی Fabric 2.5)..."
+  log "شروع ساخت go.mod + go.sum + vendor برای تمام chaincodeها (روش رسمی Fabric 2.5)..."
 
   local count=0
   for d in "$CHAINCODE_DIR"/*/; do
@@ -227,12 +227,14 @@ generate_chaincode_modules() {
       continue
     fi
 
-    log "در حال آماده‌سازی Chaincode $name..."
+    log "در حال آماده‌سازی Chaincode $name (go.mod + tidy + vendor)..."
 
     (
       cd "$d"
 
+      # پاک کردن قبلی برای جلوگیری از تداخل
       rm -f go.mod go.sum
+      rm -rf vendor
 
       cat > go.mod <<EOF
 module $name
@@ -244,7 +246,10 @@ EOF
 
       go mod tidy
 
-      success "Chaincode $name آماده شد"
+      log "در حال ساخت vendor برای $name (این مرحله ممکن است چند ثانیه طول بکشد)..."
+      go mod vendor
+
+      success "Chaincode $name آماده شد (go.mod + go.sum + vendor در ریشه)"
     )
 
     ((count++))
