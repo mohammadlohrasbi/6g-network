@@ -82,6 +82,7 @@ start_network() {
   sleep 20
 
   success "شبکه با موفقیت و به صورت کاملاً سالم راه‌اندازی شد"
+  docker ps
 }
 
 wait_for_orderer() {
