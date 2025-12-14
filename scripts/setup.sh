@@ -120,7 +120,7 @@ fix_admincerts_on_host() {
 create_and_join_channels() {
   log "ایجاد و join تمام ۲۰ کانال با هویت Admin..."
 
-  set +e
+  # set +e
   local created=0
 
   for ch in "${CHANNELS[@]}"; do
@@ -199,7 +199,7 @@ create_and_join_channels() {
     fi
   done
 
-  set -e
+  # set -e
 
   if [ $created -eq 20 ]; then
     success "تمام ۲۰ کانال با موفقیت ساخته شدند!"
