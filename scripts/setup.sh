@@ -215,7 +215,10 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (بدون vendor — روش رسمی و سریع Fabric 2.5)..."
+  log "پاک کردن کش go برای جلوگیری از خطا..."
+  go clean -modcache
+
+  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (بدون vendor — روش رسمی Fabric 2.5)..."
 
   local count=0
   for d in "$CHAINCODE_DIR"/*/; do
@@ -244,7 +247,7 @@ EOF
 
       go mod tidy
 
-      success "Chaincode $name آماده شد (go.mod + go.sum ساخته شد)"
+      success "Chaincode $name آماده شد"
     )
 
     ((count++))
