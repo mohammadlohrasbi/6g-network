@@ -210,24 +210,36 @@ create_and_join_channels() {
 
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
 generate_chaincode_modules() {
-  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    log "هیچ chaincode وجود ندارد — این مرحله رد شد"
+  if [ ! -d "$CHAINCODE_DIR" ]; then
+    log "پوشه CHAINCODE_DIR وجود ندارد: $CHAINCODE_DIR — این مرحله رد شد"
     return 0
   fi
 
-  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (با چاپ خروجی go برای دیباگ)..."
+  if [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "پوشه CHAINCODE_DIR خالی است — این مرحله رد شد"
+    return 0
+  fi
+
+  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها..."
+  log "مسیر CHAINCODE_DIR: $CHAINCODE_DIR"
+  log "لیست تمام پوشه‌های chaincode در این مسیر:"
+
+  ls -la "$CHAINCODE_DIR"/
 
   local count=0
   for d in "$CHAINCODE_DIR"/*/; do
-    [ ! -d "$d" ] && continue
+    if [ ! -d "$d" ]; then
+      log "پوشه $d معتبر نیست — رد شد"
+      continue
+    fi
+
     name=$(basename "$d")
+    log "شروع پردازش chaincode شماره $((count+1)): $name (مسیر: $d)"
 
     if [ ! -f "$d/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
-
-    log "در حال آماده‌سازی Chaincode $name (خروجی go نشان داده می‌شود)..."
 
     (
       cd "$d"
@@ -242,11 +254,10 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.2.2
 EOF
 
-      log "اجرای go mod tidy برای $name..."
-      go mod tidy 2>&1 | sed "s/^/  [go] /"  # چاپ تمام خروجی (stdout و stderr)
+      go mod tidy
 
       success "Chaincode $name آماده شد"
-    ) || log "خطا در پردازش $name — ادامه با بعدی"
+    )
 
     ((count++))
   done
