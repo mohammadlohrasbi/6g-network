@@ -215,9 +215,6 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "پاک کردن کش go برای جلوگیری از خطا..."
-  go clean -modcache
-
   log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (بدون vendor — روش رسمی Fabric 2.5)..."
 
   local count=0
