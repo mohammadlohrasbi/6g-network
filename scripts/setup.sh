@@ -215,7 +215,7 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (با چاپ خطاها برای دیباگ)..."
+  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (با چاپ خروجی go برای دیباگ)..."
 
   local count=0
   for d in "$CHAINCODE_DIR"/*/; do
@@ -227,7 +227,7 @@ generate_chaincode_modules() {
       continue
     fi
 
-    log "در حال آماده‌سازی Chaincode $name..."
+    log "در حال آماده‌سازی Chaincode $name (خروجی go نشان داده می‌شود)..."
 
     (
       cd "$d"
@@ -242,11 +242,11 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.2.2
 EOF
 
-      log "اجرای go mod tidy برای $name (خروجی خطا اگر باشد نشان داده می‌شود)..."
-      go mod tidy || log "go mod tidy برای $name خطا داد — اما ادامه می‌دهیم (خروجی بالا را ببینید)"
+      log "اجرای go mod tidy برای $name..."
+      go mod tidy 2>&1 | sed "s/^/  [go] /"  # چاپ تمام خروجی (stdout و stderr)
 
       success "Chaincode $name آماده شد"
-    )
+    ) || log "خطا در پردازش $name — ادامه با بعدی"
 
     ((count++))
   done
