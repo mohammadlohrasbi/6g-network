@@ -28,7 +28,7 @@ for i in {1..8}; do
 
   mkdir -p "$MSP_DIR/admincerts"
 
-  # پیدا کردن گواهی Admin
+  # پیدا کردن گواهی Admin (اول فایل دقیق، سپس هر pem)
   CERT_SOURCE="$MSP_DIR/signcerts/Admin@org${i}.example.com-cert.pem"
   if [ ! -f "$CERT_SOURCE" ]; then
     CERT_SOURCE=$(find "$MSP_DIR/signcerts" -name "*.pem" | head -1)
@@ -45,27 +45,27 @@ done
 success "تمام admincerts با موفقیت در هاست اصلاح شد!"
 
 # ------------------------------
-# ۲. ساخت فایل bundled TLS CA (یک فایل واحد شامل تمام گواهی‌ها)
+# ۲. ساخت فایل bundled TLS CA (شامل تمام Peerها و Orderer)
 # ------------------------------
 BUNDLED_TLS_FILE="bundled-tls-ca.pem"
 
-log "ساخت فایل bundled TLS CA ($BUNDLED_TLS_FILE)..."
+log "ساخت فایل bundled TLS CA ($BUNDLED_TLS_FILE) شامل تمام Peerها و Orderer..."
 
 > "$BUNDLED_TLS_FILE"
 
-# کپی تمام TLS CAها (اول tlsca/*-cert.pem — اولویت بالاتر)
+# TLS CA از tlsca (اولویت بالاتر)
 find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
 
-# کپی تمام ca.crt از پوشه tls (برای پوشش کامل)
+# ca.crt از پوشه tls (برای پوشش کامل)
 find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
 
-# حذف خطوط خالی و فضای اضافی
+# حذف خطوط خالی
 sed -i '/^$/d' "$BUNDLED_TLS_FILE"
 
 TLS_LINE_COUNT=$(wc -l < "$BUNDLED_TLS_FILE")
 TLS_ESTIMATE=$((TLS_LINE_COUNT / 25))
 log "تعداد خطوط در bundled-tls-ca.pem: $TLS_LINE_COUNT"
-log "تعداد تخمینی TLS CAها: $TLS_ESTIMATE (باید حدود 9 باشد)"
+log "تعداد تخمینی TLS CAها: $TLS_ESTIMATE (باید حدود 9 باشد — ۸ Peer + ۱ Orderer)"
 
 success "فایل bundled-tls-ca.pem با موفقیت ساخته شد!"
 
@@ -99,16 +99,16 @@ success "پوشه shared-msp با موفقیت ساخته شد!"
 # ------------------------------
 log "محتویات نهایی:"
 log "bundled-tls-ca.pem (تعداد خطوط: $TLS_LINE_COUNT):"
-head -n 10 bundled-tls-ca.pem
+head -n 20 bundled-tls-ca.pem | tail -n 10
 
 log "پوشه shared-msp:"
 ls -la shared-msp/
 
 success "تمام پوشه‌های مشترک (bundled-tls-ca.pem و shared-msp) با اصلاح admincerts ساخته شدند!"
 
-log "حالا در docker-compose.yml برای Peer org$i این تنظیمات را اعمال کنید:"
+log "حالا در docker-compose.yml برای هر Peer این تنظیمات را اعمال کنید:"
 log "  - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org${i}MSP"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP  # X = شماره سازمان (مثلاً Org1MSP)"
 log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro"
 
