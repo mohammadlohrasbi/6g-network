@@ -221,25 +221,19 @@ generate_chaincode_modules() {
   fi
 
   log "شروع ساخت go.mod + go.sum برای تمام chaincodeها..."
-  log "مسیر CHAINCODE_DIR: $CHAINCODE_DIR"
-  log "لیست تمام پوشه‌های chaincode در این مسیر:"
-
-  ls -la "$CHAINCODE_DIR"/
 
   local count=0
-  for d in "$CHAINCODE_DIR"/*/; do
-    if [ ! -d "$d" ]; then
-      log "پوشه $d معتبر نیست — رد شد"
-      continue
-    fi
 
+  # استفاده از find به جای globbing — ۱۰۰٪ مطمئن
+  find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do
     name=$(basename "$d")
-    log "شروع پردازش chaincode شماره $((count+1)): $name (مسیر: $d)"
 
     if [ ! -f "$d/chaincode.go" ]; then
       log "فایل chaincode.go برای $name وجود ندارد — رد شد"
       continue
     fi
+
+    log "در حال آماده‌سازی Chaincode $name (مسیر: $d)..."
 
     (
       cd "$d"
