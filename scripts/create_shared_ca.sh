@@ -97,7 +97,7 @@ ls -la shared-msp/
 success "تمام تنظیمات آماده است!"
 
 log "تغییرات لازم در docker-compose.yml:"
-log "  - CORE_PEER_MSPCONFIGPATH را حذف کنید (Peerها از MSP محلی با admincerts کامل استفاده کنند)"
+log "  - CORE_PEER_MSPCONFIGPATH را حذف کنید یا کامنت کنید (Peerها از MSP محلی با admincerts کامل استفاده کنند)"
 log "  - volume ./shared-msp:/etc/hyperledger/fabric/shared-msp را نگه دارید (برای CLI لازم است)"
 log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log ""
