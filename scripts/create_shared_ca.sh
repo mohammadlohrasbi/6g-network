@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA و اصلاح admincerts + shared-msp با MSP Admin (حالت پایدار و کارکردی)
+# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + shared-msp با MSP Admin
 
 set -e
 
@@ -14,9 +14,9 @@ log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp
 cd "$PROJECT_DIR"
 
 # ------------------------------
-# ۱. اصلاح admincerts در MSP محلی Peerها (کلید اصلی gossip)
+# ۱. اصلاح admincerts در MSP محلی Peerها (کلید اصلی فعال شدن gossip)
 # ------------------------------
-log "اصلاح admincerts در MSP محلی Peerها (برای gossip صحیح)..."
+log "کپی admincerts تمام Adminها در MSP محلی Peerها (برای gossip کامل)..."
 
 for i in {1..8}; do
   PEER_MSP="./crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
@@ -60,9 +60,9 @@ log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT
 success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp با MSP Admin (حالت قبلی که بدون مشکل کار می‌کرد)
+# ۳. ساخت shared-msp با MSP Admin (حالت قبلی که بدون crash کار می‌کرد)
 # ------------------------------
-log "ساخت shared-msp با MSP Admin (برای CORE_PEER_MSPCONFIGPATH)..."
+log "ساخت shared-msp با MSP Admin (برای استفاده با CORE_PEER_MSPCONFIGPATH)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -97,8 +97,9 @@ ls -la shared-msp/
 success "تمام تنظیمات آماده است — دقیقاً مثل حالت قبلی که کار می‌کرد!"
 
 log "در docker-compose.yml مطمئن شوید:"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP (برای هر Peer)"
 log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp (بدون :ro توصیه می‌شود)"
+log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log "سپس اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
 log "cd /root/6g-network/scripts && ./setup.sh"
