@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت پوشه‌های مشترک MSP (کامل سازمان) و bundled TLS CA (با Orderer)
+# create_shared_ca.sh — ساخت bundled TLS CA و اصلاح admincerts + shared-msp با MSP Admin (حالت کارکردی قبلی)
 
 set -e
 
@@ -9,90 +9,96 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت پوشه‌های مشترک MSP و bundled TLS CA..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp (با MSP Admin)..."
 
 cd "$PROJECT_DIR"
 
 # ------------------------------
-# ۱. اصلاح admincerts در MSP Admin (برای gossip)
+# ۱. اصلاح admincerts در MSP محلی Peerها (برای gossip صحیح)
 # ------------------------------
-log "اصلاح admincerts در MSP Adminها..."
+log "اصلاح admincerts در MSP محلی Peerها..."
 
 for i in {1..8}; do
-  ADMIN_MSP="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-  if [ ! -d "$ADMIN_MSP" ]; then
-    error "MSP Admin برای Org${i} پیدا نشد: $ADMIN_MSP"
+  PEER_MSP="./crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+  if [ ! -d "$PEER_MSP" ]; then
+    error "MSP Peer برای Org${i} پیدا نشد: $PEER_MSP"
   fi
-  mkdir -p "$ADMIN_MSP/admincerts"
-  CERT=$(find "$ADMIN_MSP/signcerts" -name "*.pem" | head -1)
-  if [ -f "$CERT" ]; then
-    cp "$CERT" "$ADMIN_MSP/admincerts/Admin@org${i}.example.com-cert.pem"
-    log "admincerts برای Org${i} اصلاح شد"
-  else
-    error "گواهی Admin برای Org${i} پیدا نشد"
-  fi
+  mkdir -p "$PEER_MSP/admincerts"
+
+  for j in {1..8}; do
+    ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+    if [ -f "$ADMIN_CERT" ]; then
+      cp "$ADMIN_CERT" "$PEER_MSP/admincerts/Admin@org${j}.example.com-cert.pem"
+    fi
+  done
+
+  log "admincerts برای Peer org${i} اصلاح شد (۸ Admin کپی شد)"
 done
 
-success "تمام admincerts اصلاح شد!"
+success "تمام admincerts در MSP محلی Peerها اصلاح شد!"
 
 # ------------------------------
 # ۲. ساخت bundled TLS CA (شامل تمام Peer و Orderer)
 # ------------------------------
 BUNDLED_TLS_FILE="bundled-tls-ca.pem"
+
 log "ساخت bundled-tls-ca.pem شامل تمام TLS CAها (Peer + Orderer)..."
 
 > "$BUNDLED_TLS_FILE"
 
-# تمام tlsca/*-cert.pem (Peer و Orderer)
+# تمام tlsca/*-cert.pem
 find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
 
-# تمام tls/ca.crt (Peer و Orderer)
+# تمام tls/ca.crt
 find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
 
 sed -i '/^$/d' "$BUNDLED_TLS_FILE"
 
 TLS_LINE_COUNT=$(wc -l < "$BUNDLED_TLS_FILE")
-log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT (باید حدود 225-250 باشد)"
+log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT"
 
-success "bundled-tls-ca.pem کامل ساخته شد!"
+success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp با MSP کامل سازمان (نه فقط Admin)
+# ۳. ساخت shared-msp با MSP Admin (حالت قبلی که کار می‌کرد)
 # ------------------------------
-log "ساخت shared-msp با MSP کامل سازمان‌ها (برای gossip صحیح)..."
+log "ساخت shared-msp با MSP Admin (برای CORE_PEER_MSPCONFIGPATH)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
 
 for i in {1..8}; do
-  ORG_MSP="./crypto-config/peerOrganizations/org${i}.example.com/msp"  # مسیر MSP کامل سازمان
+  SRC="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
   DST="shared-msp/Org${i}MSP"
 
-  if [ -d "$ORG_MSP" ]; then
-    cp -r "$ORG_MSP" "$DST"
-    log "MSP کامل Org${i}MSP کپی شد"
+  if [ -d "$SRC" ]; then
+    cp -r "$SRC" "$DST"
+    log "MSP Admin Org${i}MSP کپی شد"
   else
-    error "MSP سازمان Org${i} پیدا نشد: $ORG_MSP"
+    error "MSP Admin برای Org${i} پیدا نشد!"
   fi
 done
 
-log "تعداد MSP کپی‌شده: $(ls -1 shared-msp | wc -l)"
+MSP_COUNT=$(ls -1 shared-msp | wc -l)
+log "تعداد MSP کپی‌شده در shared-msp: $MSP_COUNT (باید 8 باشد)"
 
-success "shared-msp با MSP کامل ساخته شد!"
+success "shared-msp با MSP Admin ساخته شد!"
 
 # ------------------------------
-# نمایش نهایی
+# نمایش نتیجه نهایی
 # ------------------------------
 log "محتویات نهایی:"
 log "bundled-tls-ca.pem (نمونه):"
-head -n 20 bundled-tls-ca.pem | tail -n 10
+head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
 
 log "پوشه shared-msp:"
 ls -la shared-msp/
 
-success "تمام تنظیمات آماده است — شبکه را از نو بالا بیاورید!"
+success "تمام تنظیمات آماده است — دقیقاً مثل حالت قبلی که کار می‌کرد!"
 
-log "اجرای دستورات:"
-log "docker-compose down -v"
-log "docker-compose up -d"
+log "حالا در docker-compose.yml مطمئن شوید:"
+log " - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP"
+log " - ./shared-msp:/etc/hyperledger/fabric/shared-msp (بدون :ro بهتر است)"
+log "سپس اجرا کنید:"
+log "docker-compose down -v && docker-compose up -d"
 log "cd /root/6g-network/scripts && ./setup.sh"
