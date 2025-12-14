@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + shared-msp با MSP Admin
+# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + (اختیاری) shared-msp با MSP Admin
 
 set -e
 
@@ -9,7 +9,7 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp (با MSP Admin)..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts..."
 
 cd "$PROJECT_DIR"
 
@@ -60,9 +60,9 @@ log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT
 success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp با MSP Admin (حالت قبلی که بدون crash کار می‌کرد)
+# ۳. (اختیاری) ساخت shared-msp با MSP Admin
 # ------------------------------
-log "ساخت shared-msp با MSP Admin (برای استفاده با CORE_PEER_MSPCONFIGPATH)..."
+log "ساخت shared-msp با MSP Admin (اگر می‌خواهید از CORE_PEER_MSPCONFIGPATH استفاده کنید)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -82,7 +82,7 @@ done
 MSP_COUNT=$(ls -1 shared-msp | wc -l)
 log "تعداد MSP کپی‌شده در shared-msp: $MSP_COUNT (باید 8 باشد)"
 
-success "shared-msp با MSP Admin ساخته شد!"
+success "shared-msp با MSP Admin ساخته شد (اختیاری)"
 
 # ------------------------------
 # نمایش نتیجه نهایی
@@ -94,12 +94,18 @@ head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
 log "پوشه shared-msp:"
 ls -la shared-msp/
 
-success "تمام تنظیمات آماده است — دقیقاً مثل حالت قبلی که کار می‌کرد!"
+success "تمام تنظیمات آماده است!"
 
-log "در docker-compose.yml مطمئن شوید:"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP (برای هر Peer)"
+log "دو حالت برای docker-compose.yml:"
+log "حالت ۱ (توصیه‌شده — ساده‌تر و پایدارتر):"
+log "  - CORE_PEER_MSPCONFIGPATH را حذف کنید"
+log "  - volume shared-msp را حذف کنید"
+log "  - فقط MSP محلی Peer و bundled-tls-ca.pem را نگه دارید"
+log ""
+log "حالت ۲ (اگر می‌خواهید از shared-msp استفاده کنید):"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP"
 log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp (بدون :ro توصیه می‌شود)"
-log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
+log ""
 log "سپس اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
 log "cd /root/6g-network/scripts && ./setup.sh"
