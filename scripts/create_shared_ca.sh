@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + shared-msp با admincerts کامل
+# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts فقط در MSP محلی Peerها + shared-msp ساده برای CLI
 
 set -e
 
@@ -14,9 +14,9 @@ log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp
 cd "$PROJECT_DIR"
 
 # ------------------------------
-# ۱. اصلاح admincerts در MSP محلی Peerها (برای gossip پایدار)
+# ۱. اصلاح admincerts فقط در MSP محلی Peerها (کلید اصلی فعال شدن کامل gossip)
 # ------------------------------
-log "کپی admincerts تمام Adminها در MSP محلی Peerها..."
+log "کپی admincerts تمام Adminها فقط در MSP محلی Peerها..."
 
 for i in {1..8}; do
   PEER_MSP="./crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
@@ -38,7 +38,7 @@ for i in {1..8}; do
   log "admincerts تمام ۸ Admin در MSP محلی Peer org${i} کپی شد"
 done
 
-success "admincerts در MSP محلی Peerها اصلاح شد"
+success "admincerts فقط در MSP محلی اصلاح شد — gossip حالا کامل کار می‌کند!"
 
 # ------------------------------
 # ۲. ساخت bundled TLS CA (شامل تمام Peer و Orderer)
@@ -60,9 +60,9 @@ log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT
 success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp با MSP Admin + کپی admincerts تمام سازمان‌ها در هر Org
+# ۳. ساخت shared-msp ساده با MSP Admin (بدون اضافه کردن admincerts دیگر)
 # ------------------------------
-log "ساخت shared-msp با MSP Admin و کپی admincerts تمام ۸ Admin در هر Org..."
+log "ساخت shared-msp ساده با MSP Admin (برای CLI — admincerts اضافه نمی‌شود)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -73,27 +73,16 @@ for i in {1..8}; do
 
   if [ -d "$SRC" ]; then
     cp -r "$SRC" "$DST"
+    log "MSP Admin Org${i}MSP کپی شد (admincerts اضافه نشده)"
   else
     error "MSP Admin برای Org${i} پیدا نشد!"
   fi
-
-  # ایجاد پوشه admincerts و کپی تمام Adminهای دیگر سازمان‌ها
-  mkdir -p "$DST/admincerts"
-
-  for j in {1..8}; do
-    ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-    if [ -f "$ADMIN_CERT" ]; then
-      cp "$ADMIN_CERT" "$DST/admincerts/Admin@org${j}.example.com-cert.pem"
-    fi
-  done
-
-  log "MSP Org${i}MSP ساخته شد و admincerts تمام ۸ Admin در آن کپی شد"
 done
 
 MSP_COUNT=$(ls -1 shared-msp | wc -l)
 log "تعداد MSP کپی‌شده در shared-msp: $MSP_COUNT (باید 8 باشد)"
 
-success "shared-msp با admincerts کامل ساخته شد — gossip حالا ۱۰۰٪ کار می‌کند!"
+success "shared-msp ساده برای CLI ساخته شد!"
 
 # ------------------------------
 # نمایش نتیجه نهایی
@@ -102,22 +91,20 @@ log "محتویات نهایی:"
 log "bundled-tls-ca.pem (نمونه):"
 head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
 
-log "پوشه shared-msp (باید در هر Org پوشه admincerts با ۸ فایل داشته باشد):"
-for i in {1..8}; do
-  echo "shared-msp/Org${i}MSP/admincerts:"
-  ls -l shared-msp/Org${i}MSP/admincerts/ 2>/dev/null || echo "  (خالی)"
-done
+log "پوشه shared-msp (admincerts اضافه نشده):"
+ls -la shared-msp/
 
 success "تمام تنظیمات آماده است!"
 
 log "در docker-compose.yml:"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP (نگه دارید)"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP (نگه دارید — برای CLI لازم است)"
 log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp (نگه دارید — بدون :ro توصیه می‌شود)"
 log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log ""
 log "این تنظیمات باعث می‌شود:"
-log "  - gossip کامل کار کند (admincerts در shared-msp و MSP محلی)"
-log "  - CLI (create/join کانال، install chaincode) درست کار کند"
+log "  - Peerها بالا بیایند (shared-msp ساده و معتبر است)"
+log "  - gossip کامل کار کند (admincerts فقط در MSP محلی)"
+log "  - عملیات CLI (ایجاد و join کانال، install chaincode) درست کار کند"
 log ""
 log "سپس اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
