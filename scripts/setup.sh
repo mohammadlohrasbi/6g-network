@@ -119,50 +119,93 @@ fix_admincerts_on_host() {
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
   log "ایجاد و join تمام ۲۰ کانال با هویت Admin..."
+
   set +e
   local created=0
+
   for ch in "${CHANNELS[@]}"; do
     log "ایجاد کانال $ch..."
 
-    # قبل از ساخت کانال جدید، فایل قدیمی را از Peer1 پاک کن
+    # پاک کردن بلوک قدیمی از peer0.org1
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
-    if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users peer0.org1.example.com peer channel create \
-      -o orderer.example.com:7050 -c "$ch" -f "/etc/hyperledger/configtx/${ch}.tx" \
-      --tls --cafile /var/hyperledger/orderer/tls/ca.crt \
+    # ایجاد کانال با MSP Org1MSP و TLS bundled
+    if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
+                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org1MSP \
+                   -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+                   -e CORE_PEER_TLS_ENABLED=true \
+                   -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+                   peer0.org1.example.com peer channel create \
+      -o orderer.example.com:7050 \
+      -c "$ch" \
+      -f "/etc/hyperledger/configtx/${ch}.tx" \
+      --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem \
       --outputBlock "/tmp/${ch}.block"; then
-      
-      success "کانال $ch ساخته شد"
-      
+
+      success "کانال $ch با موفقیت ساخته شد"
+
+      # کپی بلوک از peer0.org1 به هاست
+      if docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/${ch}.block; then
+        log "بلوک کانال $ch به هاست کپی شد"
+      else
+        log "خطا: کپی بلوک از peer0.org1 شکست خورد — رد شد"
+        continue
+      fi
+
+      local joined=0
       for i in {1..8}; do
         PEER="peer0.org${i}.example.com"
-        
+
+        # چک کنیم Peer بالا آمده باشد
+        if ! docker ps --filter "name=$PEER" --filter "status=running" | grep -q "$PEER"; then
+          log "Peer org${i} هنوز بالا نیامده — رد شد"
+          continue
+        fi
+
         # کپی بلوک به Peer
-        docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/ 2>/dev/null || true
-        docker cp /tmp/${ch}.block ${PEER}:/tmp/ 2>/dev/null || { log "Peer org${i} هنوز بالا نیامده — رد شد"; continue; }
-        
-        # Join کردن
-        if docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users "$PEER" sh -c "
-          export CORE_PEER_LOCALMSPID=Org${i}MSP
-          export CORE_PEER_ADDRESS=${PEER}:7051
-          peer channel join -b /tmp/${ch}.block
-        "; then
-          log "Peer org${i} به کانال $ch join شد"
+        if docker cp /tmp/${ch}.block ${PEER}:/tmp/${ch}.block; then
+          log "بلوک به $PEER کپی شد"
+        else
+          log "خطا: کپی بلوک به $PEER شکست خورد — رد شد"
+          continue
+        fi
+
+        # Join کردن با MSP سازمان خودش و TLS bundled
+        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org${i}MSP \
+                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                       -e CORE_PEER_TLS_ENABLED=true \
+                       -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+                       "$PEER" peer channel join -b /tmp/${ch}.block; then
+          success "Peer org${i} به کانال $ch join شد"
+          ((joined++))
         else
           log "Peer org${i} هنوز آماده نیست — در اجرای بعدی join می‌شود"
         fi
-        
-        rm -f /tmp/${ch}.block 2>/dev/null || true
+
+        # پاک کردن بلوک موقت از Peer
+        docker exec "$PEER" rm -f /tmp/${ch}.block 2>/dev/null || true
       done
-      
+
+      log "کانال $ch: join شده توسط $joined از ۸ Peer"
+
+      # پاک کردن بلوک از هاست
+      rm -f /tmp/${ch}.block
+
       ((created++))
     else
-      error "ایجاد کانال $ch شکست خورد"
-      break
+      log "خطا: ایجاد کانال $ch شکست خورد — ادامه با کانال بعدی"
+      # ادامه می‌دهیم (نه break) تا بقیه کانال‌ها ساخته شوند
     fi
   done
-  
-  [ $created -eq 20 ] && success "تمام ۲۰ کانال ساخته و join شدند" || log "فقط $created کانال ساخته شد — دوباره اجرا کنید"
+
+  set -e
+
+  if [ $created -eq 20 ]; then
+    success "تمام ۲۰ کانال با موفقیت ساخته شدند!"
+  else
+    log "فقط $created از ۲۰ کانال ساخته شد — دوباره اجرا کنید"
+  fi
 }
 
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
