@@ -224,8 +224,8 @@ generate_chaincode_modules() {
 
   local count=0
 
-  # استفاده از process substitution به جای pipe — این روش subshell ایجاد نمی‌کند
-  while IFS= read -r -d '' d; do
+  # process substitution — while در محیط اصلی اجرا می‌شود
+  while IFS= read -r d; do
     name=$(basename "$d")
 
     if [ ! -f "$d/chaincode.go" ]; then
@@ -254,7 +254,7 @@ EOF
     )
 
     ((count++))
-  done < <(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+  done < <(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
 
   success "تمام $count chaincode آماده شدند — واقعاً تموم شد!"
 }
