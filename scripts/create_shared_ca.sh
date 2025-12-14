@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + (اختیاری) shared-msp با MSP Admin
+# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts در MSP محلی Peerها + shared-msp با MSP Admin (حالت مورد نیاز شما)
 
 set -e
 
@@ -9,12 +9,12 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp..."
 
 cd "$PROJECT_DIR"
 
 # ------------------------------
-# ۱. اصلاح admincerts در MSP محلی Peerها (کلید اصلی فعال شدن gossip)
+# ۱. اصلاح admincerts در MSP محلی Peerها (برای فعال شدن کامل gossip)
 # ------------------------------
 log "کپی admincerts تمام Adminها در MSP محلی Peerها (برای gossip کامل)..."
 
@@ -60,9 +60,9 @@ log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT
 success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. (اختیاری) ساخت shared-msp با MSP Admin
+# ۳. ساخت shared-msp با MSP Admin (ضروری برای عملیات CLI مثل create/join کانال)
 # ------------------------------
-log "ساخت shared-msp با MSP Admin (اگر می‌خواهید از CORE_PEER_MSPCONFIGPATH استفاده کنید)..."
+log "ساخت shared-msp با MSP Admin (برای CORE_PEER_MSPCONFIGPATH در CLI)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -82,7 +82,7 @@ done
 MSP_COUNT=$(ls -1 shared-msp | wc -l)
 log "تعداد MSP کپی‌شده در shared-msp: $MSP_COUNT (باید 8 باشد)"
 
-success "shared-msp با MSP Admin ساخته شد (اختیاری)"
+success "shared-msp با MSP Admin ساخته شد — برای CLI آماده است!"
 
 # ------------------------------
 # نمایش نتیجه نهایی
@@ -96,15 +96,14 @@ ls -la shared-msp/
 
 success "تمام تنظیمات آماده است!"
 
-log "دو حالت برای docker-compose.yml:"
-log "حالت ۱ (توصیه‌شده — ساده‌تر و پایدارتر):"
-log "  - CORE_PEER_MSPCONFIGPATH را حذف کنید"
-log "  - volume shared-msp را حذف کنید"
-log "  - فقط MSP محلی Peer و bundled-tls-ca.pem را نگه دارید"
+log "در docker-compose.yml:"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP (نگه دارید — برای CLI لازم است)"
+log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp (نگه دارید — بدون :ro توصیه می‌شود)"
+log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log ""
-log "حالت ۲ (اگر می‌خواهید از shared-msp استفاده کنید):"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP"
-log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp (بدون :ro توصیه می‌شود)"
+log "این تنظیمات باعث می‌شود:"
+log "  - gossip کامل کار کند (به خاطر admincerts در MSP محلی)"
+log "  - عملیات CLI (ایجاد و join کانال، install chaincode) درست کار کند (به خاطر shared-msp)"
 log ""
 log "سپس اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
