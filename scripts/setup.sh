@@ -215,7 +215,7 @@ generate_chaincode_modules() {
     return 0
   fi
 
-  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (بدون vendor — روش رسمی Fabric 2.5)..."
+  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (با چاپ خطاها برای دیباگ)..."
 
   local count=0
   for d in "$CHAINCODE_DIR"/*/; do
@@ -242,9 +242,8 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.2.2
 EOF
 
-      # اضافه کردن GOFLAGS برای جلوگیری از خطای کش
-      export GOFLAGS="-mod=mod"
-      go mod tidy
+      log "اجرای go mod tidy برای $name (خروجی خطا اگر باشد نشان داده می‌شود)..."
+      go mod tidy || log "go mod tidy برای $name خطا داد — اما ادامه می‌دهیم (خروجی بالا را ببینید)"
 
       success "Chaincode $name آماده شد"
     )
