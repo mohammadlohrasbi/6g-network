@@ -216,8 +216,8 @@ generate_chaincode_modules() {
   fi
 
   log "ساخت go.mod + go.sum + vendor برای تمام chaincodeها (روش رسمی Fabric 2.5)..."
-  local count=0
 
+  local count=0
   for d in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$d" ] && continue
     name=$(basename "$d")
@@ -227,10 +227,16 @@ generate_chaincode_modules() {
       continue
     fi
 
+    log "در حال آماده‌سازی Chaincode $name..."
+
     (
       cd "$d"
 
-      # go.mod و go.sum در ریشه پوشه chaincode (این تنها جایی است که Fabric می‌بیند!)
+      # پاک کردن go.mod و go.sum و vendor قبلی (برای جلوگیری از تداخل)
+      rm -f go.mod go.sum
+      rm -rf vendor
+
+      # ساخت go.mod جدید
       cat > go.mod <<EOF
 module $name
 
@@ -239,8 +245,9 @@ go 1.21
 require github.com/hyperledger/fabric-contract-api-go v1.2.2
 EOF
 
-      go mod tidy
-      go mod vendor
+      # tidy و vendor
+      go mod tidy || log "go mod tidy برای $name خطا داد — اما ادامه می‌دهیم"
+      go mod vendor || log "go mod vendor برای $name خطا داد — اما ادامه می‌دهیم"
 
       success "Chaincode $name آماده شد (go.mod + go.sum + vendor در ریشه)"
     )
