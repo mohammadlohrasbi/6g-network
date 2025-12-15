@@ -10,6 +10,7 @@ CRYPTO_DIR="$CONFIG_DIR/crypto-config"
 CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 CHAINCODE_DIR="$SCRIPTS_DIR/chaincode"
+PROJECT_DIR="$CONFIG_DIR"
 export FABRIC_CFG_PATH="$CONFIG_DIR"
 
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
@@ -64,8 +65,8 @@ prepare_shared_msp_single_admin() {
   BUNDLED_TLS_FILE="bundled-tls-ca.pem"
   log "ساخت bundled-tls-ca.pem شامل تمام TLS CAها..."
   > "$BUNDLED_TLS_FILE"
-  find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
-  find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
+  find "$PROJECT_DIR/crypto-config" -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
+  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
   sed -i '/^$/d' "$BUNDLED_TLS_FILE"
   success "bundled-tls-ca.pem ساخته شد"
 
@@ -75,7 +76,7 @@ prepare_shared_msp_single_admin() {
   rm -rf shared-msp/*
 
   for i in {1..8}; do
-    SRC="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    SRC="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
     DST="shared-msp/Org${i}MSP"
 
     if [ ! -d "$SRC" ]; then
@@ -88,7 +89,11 @@ prepare_shared_msp_single_admin() {
     rm -rf "$DST/admincerts"
     mkdir "$DST/admincerts"
     SELF_ADMIN="$SRC/signcerts/Admin@org${i}.example.com-cert.pem"
-    cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
+    if [ -f "$SELF_ADMIN" ]; then
+      cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
+    else
+      error "فایل گواهی Admin@org${i}.example.com-cert.pem پیدا نشد!"
+    fi
 
     log "MSP Org${i}MSP ساخته شد — admincerts فقط شامل Admin خودش"
   done
@@ -252,6 +257,35 @@ create_and_join_channels() {
   fi
 }
 
+# =============================================
+# تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین)
+# =============================================
+upgrade_shared_msp_full_admins() {
+  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts..."
+
+  cd "$PROJECT_DIR"
+
+  for i in {1..8}; do
+    MSP_PATH="shared-msp/Org${i}MSP/admincerts"
+
+    for j in {1..8}; do
+      ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      cp "$ADMIN_CERT" "$MSP_PATH/Admin@org${j}.example.com-cert.pem"
+    done
+
+    log "admincerts کامل (۸ ادمین) برای Org${i}MSP اضافه شد"
+  done
+
+  # ری‌استارت Peerها برای لود MSP جدید
+  log "ری‌استارت Peerها برای اعمال تغییرات MSP..."
+  for i in {1..8}; do
+    docker restart peer0.org${i}.example.com 2>/dev/null || true
+  done
+
+  sleep 20  # صبر برای پایداری دوباره
+
+  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند!"
+}
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
 generate_chaincode_modules() {
   if [ ! -d "$CHAINCODE_DIR" ]; then
@@ -435,35 +469,6 @@ EOF
   fi
 }
 
-# =============================================
-# تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین)
-# =============================================
-upgrade_shared_msp_full_admins() {
-  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts..."
-
-  cd "$PROJECT_DIR"
-
-  for i in {1..8}; do
-    MSP_PATH="shared-msp/Org${i}MSP/admincerts"
-
-    for j in {1..8}; do
-      ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      cp "$ADMIN_CERT" "$MSP_PATH/Admin@org${j}.example.com-cert.pem"
-    done
-
-    log "admincerts کامل (۸ ادمین) برای Org${i}MSP اضافه شد"
-  done
-
-  # ری‌استارت Peerها برای لود MSP جدید
-  log "ری‌استارت Peerها برای اعمال تغییرات MSP..."
-  for i in {1..8}; do
-    docker restart peer0.org${i}.example.com 2>/dev/null || true
-  done
-
-  sleep 20  # صبر برای پایداری دوباره
-
-  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند!"
-}
 # ------------------- Approve و Commit با MSP Admin -------------------
 approve_and_commit_chaincode() {
   log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
