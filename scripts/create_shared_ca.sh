@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — راه‌حل نهایی: gossip کامل + Peer بالا می‌آید
+# create_shared_ca.sh — راه‌حل نهایی: همه Adminها در admincerts shared-msp
 
 set -e
 
@@ -9,40 +9,11 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح shared-msp..."
 
 cd "$PROJECT_DIR"
 
-# ------------------------------
-# ۱. اصلاح admincerts فقط در MSP محلی Peerها (برای gossip کامل)
-# ------------------------------
-log "کپی admincerts تمام Adminها فقط در MSP محلی Peerها..."
-
-for i in {1..8}; do
-  PEER_MSP="./crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
-  if [ ! -d "$PEER_MSP" ]; then
-    error "MSP محلی Peer برای Org${i} پیدا نشد: $PEER_MSP"
-  fi
-
-  mkdir -p "$PEER_MSP/admincerts"
-
-  for j in {1..8}; do
-    ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-    if [ -f "$ADMIN_CERT" ]; then
-      cp "$ADMIN_CERT" "$PEER_MSP/admincerts/Admin@org${j}.example.com-cert.pem"
-    else
-      error "گواهی Admin@org${j} پیدا نشد!"
-    fi
-  done
-
-  log "admincerts تمام ۸ Admin در MSP محلی Peer org${i} کپی شد"
-done
-
-success "admincerts فقط در MSP محلی اصلاح شد — gossip حالا کامل کار می‌کند!"
-
-# ------------------------------
-# ۲. ساخت bundled TLS CA
-# ------------------------------
+# ۱. ساخت bundled TLS CA
 BUNDLED_TLS_FILE="bundled-tls-ca.pem"
 
 log "ساخت bundled-tls-ca.pem..."
@@ -54,14 +25,10 @@ find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE"
 
 sed -i '/^$/d' "$BUNDLED_TLS_FILE"
 
-log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $(wc -l < "$BUNDLED_TLS_FILE")"
+success "bundled-tls-ca.pem ساخته شد"
 
-success "bundled-tls-ca.pem کامل ساخته شد!"
-
-# ------------------------------
-# ۳. ساخت shared-msp با admincerts فقط خودش (مانند cryptogen اصلی)
-# ------------------------------
-log "ساخت shared-msp با admincerts فقط خودش (برای بالا آمدن Peer و CLI)..."
+# ۲. ساخت shared-msp با admincerts کامل (همه ۸ Admin)
+log "ساخت shared-msp با admincerts کامل..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -72,21 +39,23 @@ for i in {1..8}; do
 
   cp -r "$SRC" "$DST"
 
-  # فقط گواهی Admin خودش را در admincerts نگه می‌داریم
-  mkdir -p "$DST/admincerts"
-  SELF_ADMIN="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem"
-  cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
+  # admincerts را با همه ۸ Admin پر می‌کنیم
+  rm -rf "$DST/admincerts"
+  mkdir "$DST/admincerts"
 
-  log "MSP Org${i}MSP ساخته شد — admincerts فقط شامل Admin خودش"
+  for j in {1..8}; do
+    ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+    cp "$ADMIN_CERT" "$DST/admincerts/Admin@org${j}.example.com-cert.pem"
+  done
+
+  log "MSP Org${i}MSP ساخته شد — admincerts شامل همه ۸ Admin"
 done
 
-success "shared-msp آماده است!"
+success "shared-msp با admincerts کامل آماده است!"
 
-# ------------------------------
-# نمایش نتیجه نهایی
-# ------------------------------
+# نمایش نتیجه
 log "نمونه admincerts در shared-msp/Org1MSP:"
-ls -l shared-msp/Org1MSP/admincerts/
+ls -l shared-msp/Org1MSP/admincerts/ | wc -l  # باید ۸ فایل باشد
 
 success "تمام تنظیمات آماده است!"
 
