@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts فقط در MSP محلی Peerها + shared-msp ساده (admincerts خالی)
+# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts فقط در MSP محلی Peerها + shared-msp با admincerts خالی برای Peer
 
 set -e
 
@@ -73,9 +73,11 @@ for i in {1..8}; do
 
   if [ -d "$SRC" ]; then
     cp -r "$SRC" "$DST"
+
     # اطمینان از خالی بودن پوشه admincerts
     rm -rf "$DST/admincerts"
     mkdir "$DST/admincerts"
+
     log "MSP Admin Org${i}MSP کپی شد — admincerts خالی"
   else
     error "MSP Admin برای Org${i} پیدا نشد!"
@@ -95,7 +97,7 @@ log "bundled-tls-ca.pem (نمونه):"
 head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
 
 log "پوشه shared-msp (admincerts خالی):"
-ls -la shared-msp/
+ls -la shared-msp/Org*MSP/admincerts/ | wc -l  # باید 8 پوشه خالی باشد
 
 success "تمام تنظیمات آماده است!"
 
@@ -105,8 +107,8 @@ log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp را نگه دارید"
 log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log ""
 log "این تنظیمات باعث می‌شود:"
-log "  - Peerها بالا بیایند (shared-msp با admincerts خالی و keystore دارد)"
-log "  - gossip کامل کار کند (admincerts تمام Adminها در MSP محلی)"
+log "  - Peerها بالا بیایند (shared-msp با keystore دارد و admincerts خالی است)"
+log "  - gossip کامل کار کند (admincerts تمام Adminها در MSP محلی کپی شده)"
 log "  - عملیات CLI و install chaincode روی همه Orgها موفق شود"
 log ""
 log "سپس اجرا کنید:"
