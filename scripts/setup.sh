@@ -522,7 +522,6 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  # fix_admincerts_on_host
   prepare_shared_msp_single_admin
   start_network
   wait_for_orderer
