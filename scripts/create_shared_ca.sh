@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — راه‌حل نهایی: gossip کامل + Peerها بالا می‌آیند (روش استاندارد Fabric)
+# create_shared_ca.sh — راه‌حل نهایی: gossip کامل + Peer بالا می‌آید
 
 set -e
 
@@ -9,12 +9,12 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp..."
 
 cd "$PROJECT_DIR"
 
 # ------------------------------
-# ۱. اصلاح admincerts فقط در MSP محلی Peerها (کلید اصلی فعال شدن کامل gossip)
+# ۱. اصلاح admincerts فقط در MSP محلی Peerها (برای gossip کامل)
 # ------------------------------
 log "کپی admincerts تمام Adminها فقط در MSP محلی Peerها..."
 
@@ -41,11 +41,11 @@ done
 success "admincerts فقط در MSP محلی اصلاح شد — gossip حالا کامل کار می‌کند!"
 
 # ------------------------------
-# ۲. ساخت bundled TLS CA (شامل تمام Peer و Orderer)
+# ۲. ساخت bundled TLS CA
 # ------------------------------
 BUNDLED_TLS_FILE="bundled-tls-ca.pem"
 
-log "ساخت bundled-tls-ca.pem شامل تمام TLS CAها (Peer + Orderer)..."
+log "ساخت bundled-tls-ca.pem..."
 
 > "$BUNDLED_TLS_FILE"
 
@@ -54,15 +54,14 @@ find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE"
 
 sed -i '/^$/d' "$BUNDLED_TLS_FILE"
 
-TLS_LINE_COUNT=$(wc -l < "$BUNDLED_TLS_FILE")
-log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT"
+log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $(wc -l < "$BUNDLED_TLS_FILE")"
 
-success "فایل bundled-tls-ca.pem کامل ساخته شد!"
+success "bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp ساده برای CLI (اختیاری، اما نگه دارید)
+# ۳. ساخت shared-msp با admincerts فقط خودش (مانند cryptogen اصلی)
 # ------------------------------
-log "ساخت shared-msp ساده برای CLI..."
+log "ساخت shared-msp با admincerts فقط خودش (برای بالا آمدن Peer و CLI)..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -71,35 +70,30 @@ for i in {1..8}; do
   SRC="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
   DST="shared-msp/Org${i}MSP"
 
-  if [ -d "$SRC" ]; then
-    cp -r "$SRC" "$DST"
-    log "MSP Admin Org${i}MSP برای CLI کپی شد"
-  else
-    error "MSP Admin برای Org${i} پیدا نشد!"
-  fi
+  cp -r "$SRC" "$DST"
+
+  # فقط گواهی Admin خودش را در admincerts نگه می‌داریم
+  mkdir -p "$DST/admincerts"
+  SELF_ADMIN="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem"
+  cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
+
+  log "MSP Org${i}MSP ساخته شد — admincerts فقط شامل Admin خودش"
 done
 
-success "shared-msp برای CLI آماده است!"
+success "shared-msp آماده است!"
 
 # ------------------------------
 # نمایش نتیجه نهایی
 # ------------------------------
-log "محتویات نهایی:"
-log "bundled-tls-ca.pem (نمونه):"
-head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
+log "نمونه admincerts در shared-msp/Org1MSP:"
+ls -l shared-msp/Org1MSP/admincerts/
 
 success "تمام تنظیمات آماده است!"
 
 log "در docker-compose.yml:"
-log "  - تمام CORE_PEER_MSPCONFIGPATH را کامنت کنید یا حذف کنید (Peerها از MSP محلی استفاده کنند)"
-log "  - volume ./shared-msp را نگه دارید (برای CLI لازم است)"
-log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
+log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP را فعال کنید"
+log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp را نگه دارید"
 log ""
-log "این تنظیمات باعث می‌شود:"
-log "  - Peerها بالا بیایند (MSP محلی بدون keystore مشکلی ندارد)"
-log "  - gossip کامل کار کند (admincerts تمام Adminها در MSP محلی)"
-log "  - عملیات CLI درست کار کند (با تنظیم دستی CORE_PEER_MSPCONFIGPATH در docker exec)"
-log ""
-log "سپس اجرا کنید:"
+log "اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
-log "cd /root/6g-network/scripts && ./setup.sh"
+log "./setup.sh"
