@@ -323,6 +323,7 @@ create_and_join_channels() {
 
     # ایجاد کانال با MSP محلی Org1
     if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
+                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                    -e CORE_PEER_TLS_ENABLED=true \
                    -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
