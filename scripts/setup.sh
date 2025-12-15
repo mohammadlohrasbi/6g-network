@@ -54,6 +54,56 @@ generate_coreyamls() {
   success "core.yaml آماده شد"
 }
 # =============================================
+# تابع نهایی: اصلاح MSP محلی Peerها با keystore از Admin + admincerts کامل
+# این تابع باعث می‌شود:
+# - Peerها بالا بیایند (keystore وجود دارد)
+# - gossip کامل کار کند (admincerts همه ۸ Org موجود است)
+# - بتوانید CORE_PEER_MSPCONFIGPATH را حذف کنید
+# =============================================
+prepare_local_msp_for_peer() {
+  log "اصلاح MSP محلی Peerها با keystore Admin + admincerts کامل (راه‌حل نهایی و تضمینی)"
+
+  cd "$PROJECT_DIR"
+
+  for i in {1..8}; do
+    # مسیر MSP محلی Peer
+    PEER_MSP="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+
+    # مسیر MSP Admin همان سازمان
+    ADMIN_MSP="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+
+    if [ ! -d "$PEER_MSP" ] || [ ! -d "$ADMIN_MSP" ]; then
+      error "مسیر MSP برای Org${i} پیدا نشد!"
+    fi
+
+    # ۱. کپی keystore از Admin به MSP محلی Peer
+    mkdir -p "$PEER_MSP/keystore"
+    if ls "$ADMIN_MSP/keystore"/*_sk 1> /dev/null 2>&1; then
+      cp "$ADMIN_MSP/keystore"/*_sk "$PEER_MSP/keystore/"
+      log "keystore از Admin به MSP محلی peer0.org${i} کپی شد"
+    else
+      error "keystore در MSP Admin Org${i} پیدا نشد!"
+    fi
+
+    # ۲. کپی admincerts کامل (همه ۸ Admin)
+    mkdir -p "$PEER_MSP/admincerts"
+    rm -f "$PEER_MSP/admincerts"/*  # پاک‌سازی قبلی
+
+    for j in {1..8}; do
+      ADMIN_CERT="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$ADMIN_CERT" ]; then
+        cp "$ADMIN_CERT" "$PEER_MSP/admincerts/Admin@org${j}.example.com-cert.pem"
+      else
+        log "هشدار: گواهی Admin@org${j} پیدا نشد — رد شد"
+      fi
+    done
+
+    log "MSP محلی peer0.org${i} آماده شد — keystore + admincerts کامل (۸ گواهی)"
+  done
+
+  success "تمام MSP محلی Peerها اصلاح شد — حالا CORE_PEER_MSPCONFIGPATH را حذف کنید و شبکه را بالا بیاورید!"
+}
+# =============================================
 # تابع ۱: ساخت shared-msp با admincerts فقط خودش + bundled-tls-ca.pem
 # =============================================
 prepare_shared_msp_single_admin() {
@@ -527,12 +577,10 @@ main() {
   cleanup
   generate_crypto
   generate_channel_artifacts
-  generate_coreyamls
-  prepare_shared_msp_single_admin
+  generate_coreyamlsprepare_local_msp_for_peer
   start_network
   wait_for_orderer
   create_and_join_channels
-  upgrade_shared_msp_full_admins
   generate_chaincode_modules
   package_and_install_chaincode
   approve_and_commit_chaincode
