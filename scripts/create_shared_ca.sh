@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_shared_ca.sh — ساخت bundled TLS CA + اصلاح admincerts فقط در MSP محلی Peerها + shared-msp با admincerts خالی برای Peer
+# create_shared_ca.sh — راه‌حل نهایی: gossip کامل + Peerها بالا می‌آیند (روش استاندارد Fabric)
 
 set -e
 
@@ -9,7 +9,7 @@ log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 success() { log "موفق: $*"; }
 error() { log "خطا: $*"; exit 1; }
 
-log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts و shared-msp..."
+log "شروع ساخت bundled-tls-ca.pem و اصلاح admincerts..."
 
 cd "$PROJECT_DIR"
 
@@ -60,9 +60,9 @@ log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $TLS_LINE_COUNT
 success "فایل bundled-tls-ca.pem کامل ساخته شد!"
 
 # ------------------------------
-# ۳. ساخت shared-msp ساده با MSP Admin (admincerts خالی — برای Peer و CLI)
+# ۳. ساخت shared-msp ساده برای CLI (اختیاری، اما نگه دارید)
 # ------------------------------
-log "ساخت shared-msp ساده با MSP Admin (admincerts خالی — Peerها بالا می‌آیند)..."
+log "ساخت shared-msp ساده برای CLI..."
 
 mkdir -p shared-msp
 rm -rf shared-msp/*
@@ -73,21 +73,13 @@ for i in {1..8}; do
 
   if [ -d "$SRC" ]; then
     cp -r "$SRC" "$DST"
-
-    # اطمینان از خالی بودن پوشه admincerts
-    rm -rf "$DST/admincerts"
-    mkdir "$DST/admincerts"
-
-    log "MSP Admin Org${i}MSP کپی شد — admincerts خالی"
+    log "MSP Admin Org${i}MSP برای CLI کپی شد"
   else
     error "MSP Admin برای Org${i} پیدا نشد!"
   fi
 done
 
-MSP_COUNT=$(ls -1 shared-msp | wc -l)
-log "تعداد MSP کپی‌شده در shared-msp: $MSP_COUNT (باید 8 باشد)"
-
-success "shared-msp با admincerts خالی ساخته شد!"
+success "shared-msp برای CLI آماده است!"
 
 # ------------------------------
 # نمایش نتیجه نهایی
@@ -96,20 +88,17 @@ log "محتویات نهایی:"
 log "bundled-tls-ca.pem (نمونه):"
 head -n 20 "$BUNDLED_TLS_FILE" | tail -n 10
 
-log "پوشه shared-msp (admincerts خالی):"
-ls -la shared-msp/Org*MSP/admincerts/ | wc -l  # باید 8 پوشه خالی باشد
-
 success "تمام تنظیمات آماده است!"
 
 log "در docker-compose.yml:"
-log "  - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/OrgXMSP را فعال کنید (کامنت را بردارید)"
-log "  - ./shared-msp:/etc/hyperledger/fabric/shared-msp را نگه دارید"
+log "  - تمام CORE_PEER_MSPCONFIGPATH را کامنت کنید یا حذف کنید (Peerها از MSP محلی استفاده کنند)"
+log "  - volume ./shared-msp را نگه دارید (برای CLI لازم است)"
 log "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
 log ""
 log "این تنظیمات باعث می‌شود:"
-log "  - Peerها بالا بیایند (shared-msp با keystore دارد و admincerts خالی است)"
-log "  - gossip کامل کار کند (admincerts تمام Adminها در MSP محلی کپی شده)"
-log "  - عملیات CLI و install chaincode روی همه Orgها موفق شود"
+log "  - Peerها بالا بیایند (MSP محلی بدون keystore مشکلی ندارد)"
+log "  - gossip کامل کار کند (admincerts تمام Adminها در MSP محلی)"
+log "  - عملیات CLI درست کار کند (با تنظیم دستی CORE_PEER_MSPCONFIGPATH در docker exec)"
 log ""
 log "سپس اجرا کنید:"
 log "docker-compose down -v && docker-compose up -d"
