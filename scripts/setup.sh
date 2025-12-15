@@ -216,7 +216,7 @@ fix_admincerts_on_host() {
 }
 
 # ------------------- ایجاد و join کانال‌ها -------------------
-create_and_join_channels() {
+create_and_join_channelss() {
   log "ایجاد و join تمام ۲۰ کانال با هویت Admin..."
 
   # set +e
@@ -309,6 +309,90 @@ create_and_join_channels() {
   docker ps
 }
 
+create_and_join_channels() {
+  log "ایجاد و join تمام کانال‌ها با هویت Admin (با MSP محلی — بدون shared-msp)..."
+
+  local created=0
+  local channel_count="${#CHANNELS[@]}"
+
+  for ch in "${CHANNELS[@]}"; do
+    log "ایجاد کانال $ch..."
+
+    # پاک کردن بلوک قدیمی از peer0.org1
+    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+
+    # ایجاد کانال با MSP محلی Org1
+    if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
+                   -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+                   -e CORE_PEER_TLS_ENABLED=true \
+                   -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+                   peer0.org1.example.com peer channel create \
+      -o orderer.example.com:7050 \
+      -c "$ch" \
+      -f "/etc/hyperledger/configtx/${ch}.tx" \
+      --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem \
+      --outputBlock "/tmp/${ch}.block"; then
+
+      success "کانال $ch با موفقیت ساخته شد"
+
+      # کپی بلوک از peer0.org1 به هاست
+      if docker cp peer0.org1.example.com:/tmp/${ch}.block /tmp/${ch}.block; then
+        log "بلوک کانال $ch به هاست کپی شد"
+      else
+        log "خطا: کپی بلوک از peer0.org1 شکست خورد — ادامه با کانال بعدی"
+        rm -f /tmp/${ch}.block
+        continue
+      fi
+
+      local joined=0
+      for i in {1..8}; do
+        PEER="peer0.org${i}.example.com"
+
+        # چک بالا بودن Peer
+        if ! docker ps --filter "name=$PEER" --filter "status=running" | grep -q "$PEER"; then
+          log "Peer $PEER هنوز بالا نیامده — رد شد"
+          continue
+        fi
+
+        # کپی بلوک به Peer
+        if ! docker cp /tmp/${ch}.block "${PEER}:/tmp/${ch}.block"; then
+          log "خطا: کپی بلوک به $PEER شکست خورد — رد شد"
+          continue
+        fi
+
+        # Join کردن با MSP محلی
+        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+                       -e CORE_PEER_ADDRESS=${PEER}:7051 \
+                       -e CORE_PEER_TLS_ENABLED=true \
+                       -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+                       "$PEER" peer channel join -b /tmp/${ch}.block; then
+          success "Peer org${i} به کانال $ch join شد"
+          ((joined++))
+        else
+          log "Peer org${i} به کانال $ch join نشد — در اجرای بعدی امتحان می‌شود"
+        fi
+
+        # پاک کردن بلوک موقت
+        docker exec "$PEER" rm -f /tmp/${ch}.block 2>/dev/null || true
+      done
+
+      log "کانال $ch: join شده توسط $joined از ۸ Peer"
+      rm -f /tmp/${ch}.block
+      ((created++))
+
+    else
+      log "خطا: ایجاد کانال $ch شکست خورد — ادامه با کانال بعدی"
+    fi
+  done
+
+  if [ $created -eq $channel_count ]; then
+    success "تمام $channel_count کانال با موفقیت ساخته و join شدند!"
+  else
+    log "فقط $created از $channel_count کانال ساخته شد — اسکریپت را دوباره اجرا کنید"
+  fi
+
+  docker ps
+}
 # =============================================
 # تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین) — بدون ری‌استارت Peer
 # =============================================
