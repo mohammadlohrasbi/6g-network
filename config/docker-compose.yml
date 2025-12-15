@@ -65,7 +65,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "7051:7051"
       - "9443:9443"
@@ -98,7 +98,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org2.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "8051:7051"
       - "9444:9443"
@@ -131,7 +131,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org3.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "9051:7051"
       - "9445:9443"
@@ -164,7 +164,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org4.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "10051:7051"
       - "9446:9443"
@@ -197,7 +197,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org5.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "11051:7051"
       - "9447:9443"
@@ -230,7 +230,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org6.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "12051:7051"
       - "9448:9443"
@@ -263,7 +263,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org7.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "13051:7051"
       - "9449:9443"
@@ -296,7 +296,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org8.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      - ./shared-msp:/etc/hyperledger/fabric/shared-msp:ro
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "14051:7051"
       - "9450:9443"
