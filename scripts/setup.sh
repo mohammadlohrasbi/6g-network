@@ -673,6 +673,7 @@ main() {
   # prepare_local_msp_for_peer
   start_network
   wait_for_orderer
+  fix_admincerts_on_host
   create_and_join_channels
   generate_chaincode_modules
   package_and_install_chaincode
