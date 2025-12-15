@@ -255,6 +255,8 @@ create_and_join_channels() {
   else
     log "فقط $created از ۲۰ کانال ساخته شد — دوباره اجرا کنید"
   fi
+
+  docker ps
 }
 
 # =============================================
@@ -285,6 +287,7 @@ upgrade_shared_msp_full_admins() {
   sleep 20  # صبر برای پایداری دوباره
 
   success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند!"
+  docker ps
 }
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
 generate_chaincode_modules() {
@@ -525,8 +528,8 @@ main() {
   prepare_shared_msp_single_admin
   start_network
   wait_for_orderer
-  upgrade_shared_msp_full_admins
   create_and_join_channels
+  upgrade_shared_msp_full_admins
   generate_chaincode_modules
   package_and_install_chaincode
   approve_and_commit_chaincode
