@@ -52,6 +52,49 @@ generate_coreyamls() {
   cp "$CONFIG_DIR/core-org1.yaml" "$CONFIG_DIR/core.yaml" 2>/dev/null || error "کپی core.yaml شکست خورد"
   success "core.yaml آماده شد"
 }
+# =============================================
+# تابع ۱: ساخت shared-msp با admincerts فقط خودش + bundled-tls-ca.pem
+# =============================================
+prepare_shared_msp_single_admin() {
+  log "ساخت shared-msp با admincerts فقط خودش و bundled-tls-ca.pem (برای بالا آمدن امن Peerها)..."
+
+  cd "$PROJECT_DIR"
+
+  # ۱. ساخت bundled-tls-ca.pem
+  BUNDLED_TLS_FILE="bundled-tls-ca.pem"
+  log "ساخت bundled-tls-ca.pem شامل تمام TLS CAها..."
+  > "$BUNDLED_TLS_FILE"
+  find ./crypto-config -path "*/tlsca/*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
+  find ./crypto-config -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
+  sed -i '/^$/d' "$BUNDLED_TLS_FILE"
+  success "bundled-tls-ca.pem ساخته شد"
+
+  # ۲. ساخت shared-msp با admincerts فقط خودش (MSP معتبر)
+  log "ساخت shared-msp با admincerts فقط Admin خودش..."
+  mkdir -p shared-msp
+  rm -rf shared-msp/*
+
+  for i in {1..8}; do
+    SRC="./crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+    DST="shared-msp/Org${i}MSP"
+
+    if [ ! -d "$SRC" ]; then
+      error "MSP Admin برای Org${i} پیدا نشد!"
+    fi
+
+    cp -r "$SRC" "$DST"
+
+    # admincerts فقط شامل Admin خودش
+    rm -rf "$DST/admincerts"
+    mkdir "$DST/admincerts"
+    SELF_ADMIN="$SRC/signcerts/Admin@org${i}.example.com-cert.pem"
+    cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
+
+    log "MSP Org${i}MSP ساخته شد — admincerts فقط شامل Admin خودش"
+  done
+
+  success "shared-msp با حالت تک ادمین آماده است — Peerها بدون مشکل بالا می‌آیند!"
+}
 
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
@@ -392,7 +435,35 @@ EOF
   fi
 }
 
+# =============================================
+# تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین)
+# =============================================
+upgrade_shared_msp_full_admins() {
+  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts..."
 
+  cd "$PROJECT_DIR"
+
+  for i in {1..8}; do
+    MSP_PATH="shared-msp/Org${i}MSP/admincerts"
+
+    for j in {1..8}; do
+      ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      cp "$ADMIN_CERT" "$MSP_PATH/Admin@org${j}.example.com-cert.pem"
+    done
+
+    log "admincerts کامل (۸ ادمین) برای Org${i}MSP اضافه شد"
+  done
+
+  # ری‌استارت Peerها برای لود MSP جدید
+  log "ری‌استارت Peerها برای اعمال تغییرات MSP..."
+  for i in {1..8}; do
+    docker restart peer0.org${i}.example.com 2>/dev/null || true
+  done
+
+  sleep 20  # صبر برای پایداری دوباره
+
+  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند!"
+}
 # ------------------- Approve و Commit با MSP Admin -------------------
 approve_and_commit_chaincode() {
   log "Approve و Commit تمام Chaincodeها روی ۲۰ کانال..."
@@ -446,9 +517,11 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  fix_admincerts_on_host
+  # fix_admincerts_on_host
+  prepare_shared_msp_single_admin
   start_network
   wait_for_orderer
+  upgrade_shared_msp_full_admins
   create_and_join_channels
   generate_chaincode_modules
   package_and_install_chaincode
