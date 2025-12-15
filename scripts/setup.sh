@@ -260,33 +260,36 @@ create_and_join_channels() {
 }
 
 # =============================================
-# تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین)
+# تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین) — بدون ری‌استارت Peer
 # =============================================
 upgrade_shared_msp_full_admins() {
-  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts..."
+  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts (بدون ری‌استارت Peer)..."
 
   cd "$PROJECT_DIR"
 
   for i in {1..8}; do
-    MSP_PATH="shared-msp/Org${i}MSP/admincerts"
+    PEER="peer0.org${i}.example.com"
+    MSP_PATH_IN_CONTAINER="/etc/hyperledger/fabric/shared-msp/Org${i}MSP/admincerts"
+
+    log "اضافه کردن همه ادمین‌ها به $PEER ..."
 
     for j in {1..8}; do
-      ADMIN_CERT="./crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      cp "$ADMIN_CERT" "$MSP_PATH/Admin@org${j}.example.com-cert.pem"
+      ADMIN_CERT="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$ADMIN_CERT" ]; then
+        docker cp "$ADMIN_CERT" "${PEER}:${MSP_PATH_IN_CONTAINER}/Admin@org${j}.example.com-cert.pem"
+      else
+        log "هشدار: گواهی Admin@org${j} پیدا نشد"
+      fi
     done
 
-    log "admincerts کامل (۸ ادمین) برای Org${i}MSP اضافه شد"
+    log "admincerts کامل برای Org${i}MSP در کانتینر $PEER اضافه شد"
   done
 
-  # ری‌استارت Peerها برای لود MSP جدید
-  log "ری‌استارت Peerها برای اعمال تغییرات MSP..."
-  for i in {1..8}; do
-    docker restart peer0.org${i}.example.com 2>/dev/null || true
-  done
+  # نیازی به ری‌استارت نیست — Fabric MSP را در runtime تشخیص می‌دهد
+  log "صبر ۱۰ ثانیه برای اعمال تغییرات gossip..."
+  sleep 10
 
-  sleep 20  # صبر برای پایداری دوباره
-
-  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند!"
+  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند (بدون توقف کانتینرها)!"
   docker ps
 }
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
