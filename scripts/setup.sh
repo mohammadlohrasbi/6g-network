@@ -662,7 +662,8 @@ main() {
   cleanup
   generate_crypto
   generate_channel_artifacts
-  generate_coreyamlsprepare_local_msp_for_peer
+  generate_coreyamls
+  prepare_local_msp_for_peer
   start_network
   wait_for_orderer
   create_and_join_channels
