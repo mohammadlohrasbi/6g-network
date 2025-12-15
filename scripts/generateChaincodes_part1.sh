@@ -8,9 +8,7 @@ CHAINCODE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/chaincode"
 mkdir -p "$CHAINCODE_DIR"
 
 contracts=(
-    "LocationBasedAssignment" "LocationBasedBandwidth" "LocationBasedConnection" "LocationBasedQoS"
-    "LocationBasedPriority" "LocationBasedStatus" "LocationBasedFault" "LocationBasedTraffic"
-    "LocationBasedLatency"
+    "LocationBasedAssignment" "LocationBasedBandwidth"
 )
 
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
