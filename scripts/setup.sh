@@ -562,7 +562,7 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..8}; do
+    for i in {1..2}; do
       PEER="peer0.org${i}.example.com"
       log "در حال کپی فایل $tar به داخل $PEER:/tmp/ ..."
 
