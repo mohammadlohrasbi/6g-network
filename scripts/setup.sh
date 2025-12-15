@@ -60,6 +60,13 @@ generate_coreyamls() {
 # - gossip کامل کار کند (admincerts همه ۸ Org موجود است)
 # - بتوانید CORE_PEER_MSPCONFIGPATH را حذف کنید
 # =============================================
+# =============================================
+# تابع نهایی: اصلاح MSP محلی Peerها با keystore از Admin + admincerts کامل
+# این تابع باعث می‌شود:
+# - Peerها بالا بیایند (keystore وجود دارد)
+# - gossip کامل کار کند (admincerts همه ۸ Org موجود است)
+# - بتوانید CORE_PEER_MSPCONFIGPATH را حذف کنید
+# =============================================
 prepare_local_msp_for_peer() {
   log "اصلاح MSP محلی Peerها با keystore Admin + admincerts کامل (راه‌حل نهایی و تضمینی)"
 
@@ -663,7 +670,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  prepare_local_msp_for_peer
+  # prepare_local_msp_for_peer
   start_network
   wait_for_orderer
   create_and_join_channels
