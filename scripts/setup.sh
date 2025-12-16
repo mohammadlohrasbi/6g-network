@@ -405,34 +405,22 @@ create_and_join_channels() {
 # تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین) — بدون ری‌استارت Peer
 # =============================================
 upgrade_shared_msp_full_admins() {
-  log "ارتقا shared-msp به حالت کامل — اضافه کردن همه ۸ ادمین به admincerts (بدون ری‌استارت Peer)..."
-
-  cd "$PROJECT_DIR"
+  log "اضافه کردن admincerts کامل مستقیم داخل کانتینرها (gossip کامل — بدون ری‌استارت)"
 
   for i in {1..8}; do
     PEER="peer0.org${i}.example.com"
-    MSP_PATH_IN_CONTAINER="/etc/hyperledger/fabric/shared-msp/Org${i}MSP/admincerts"
-
-    log "اضافه کردن همه ادمین‌ها به $PEER ..."
+    MSP_PATH="/etc/hyperledger/fabric/shared-msp/Org${i}MSP/admincerts"
 
     for j in {1..8}; do
       ADMIN_CERT="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      if [ -f "$ADMIN_CERT" ]; then
-        docker cp "$ADMIN_CERT" "${PEER}:${MSP_PATH_IN_CONTAINER}/Admin@org${j}.example.com-cert.pem"
-      else
-        log "هشدار: گواهی Admin@org${j} پیدا نشد"
-      fi
+      docker cp "$ADMIN_CERT" "$PEER:$MSP_PATH/Admin@org${j}.example.com-cert.pem" 2>/dev/null || true
     done
 
-    log "admincerts کامل برای Org${i}MSP در کانتینر $PEER اضافه شد"
+    log "admincerts کامل برای Org${i} در کانتینر اضافه شد"
   done
 
-  # نیازی به ری‌استارت نیست — Fabric MSP را در runtime تشخیص می‌دهد
-  log "صبر ۱۰ ثانیه برای اعمال تغییرات gossip..."
-  sleep 10
-
-  success "shared-msp به حالت کامل ارتقا یافت — gossip کامل کار می‌کند (بدون توقف کانتینرها)!"
-  docker ps
+  sleep 15
+  success "gossip کامل کار می‌کند — بدون توقف کانتینرها!"
 }
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
 generate_chaincode_modules() {
@@ -670,11 +658,12 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  # prepare_local_msp_for_peer
+  prepare_local_msp_for_peer
   start_network
   wait_for_orderer
   fix_admincerts_on_host
   create_and_join_channels
+  upgrade_shared_msp_full_admins
   generate_chaincode_modules
   package_and_install_chaincode
   approve_and_commit_chaincode
