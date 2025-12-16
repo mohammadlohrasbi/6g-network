@@ -126,36 +126,6 @@ prepare_shared_msp_single_admin() {
   find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null || true
   sed -i '/^$/d' "$BUNDLED_TLS_FILE"
   success "bundled-tls-ca.pem ساخته شد"
-
-  # ۲. ساخت shared-msp با admincerts فقط خودش (MSP معتبر)
-  log "ساخت shared-msp با admincerts فقط Admin خودش..."
-  mkdir -p shared-msp
-  rm -rf shared-msp/*
-
-  for i in {1..8}; do
-    SRC="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
-    DST="shared-msp/Org${i}MSP"
-
-    if [ ! -d "$SRC" ]; then
-      error "MSP Admin برای Org${i} پیدا نشد!"
-    fi
-
-    cp -r "$SRC" "$DST"
-
-    # admincerts فقط شامل Admin خودش
-    rm -rf "$DST/admincerts"
-    mkdir "$DST/admincerts"
-    SELF_ADMIN="$SRC/signcerts/Admin@org${i}.example.com-cert.pem"
-    if [ -f "$SELF_ADMIN" ]; then
-      cp "$SELF_ADMIN" "$DST/admincerts/Admin@org${i}.example.com-cert.pem"
-    else
-      error "فایل گواهی Admin@org${i}.example.com-cert.pem پیدا نشد!"
-    fi
-
-    log "MSP Org${i}MSP ساخته شد — admincerts فقط شامل Admin خودش"
-  done
-
-  success "shared-msp با حالت تک ادمین آماده است — Peerها بدون مشکل بالا می‌آیند!"
 }
 
 # ------------------- راه‌اندازی شبکه -------------------
