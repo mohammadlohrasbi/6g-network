@@ -55,7 +55,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org1MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
@@ -65,7 +65,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org1.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "7051:7051"
       - "9443:9443"
@@ -88,7 +88,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org2MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
@@ -98,7 +98,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org2.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "8051:7051"
       - "9444:9443"
@@ -121,7 +121,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org3MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org3MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
@@ -131,7 +131,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org3.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "9051:7051"
       - "9445:9443"
@@ -154,7 +154,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org4MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org4MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
@@ -164,7 +164,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org4.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "10051:7051"
       - "9446:9443"
@@ -187,7 +187,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org5MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org5MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
@@ -197,7 +197,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org5.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "11051:7051"
       - "9447:9443"
@@ -220,7 +220,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org6MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org6MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
@@ -230,7 +230,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org6.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "12051:7051"
       - "9448:9443"
@@ -253,7 +253,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org7MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org7MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
@@ -263,7 +263,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org7.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "13051:7051"
       - "9449:9443"
@@ -286,7 +286,7 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-      # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org8MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org8MSP
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
@@ -296,7 +296,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - peer0.org8.example.com:/var/hyperledger/production
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
-      # - ./shared-msp:/etc/hyperledger/fabric/shared-msp
+      - ./shared-msp:/etc/hyperledger/fabric/shared-msp
     ports:
       - "14051:7051"
       - "9450:9443"
