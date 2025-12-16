@@ -711,7 +711,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  # prepare_local_msp_for_peer
+  prepare_local_msp_for_peer
   start_network
   wait_for_orderer
   # upgrade_shared_msp_full_admins
