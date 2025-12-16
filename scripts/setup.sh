@@ -693,12 +693,12 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  prepare_local_msp_for_peer
+  # prepare_local_msp_for_peer
   start_network
   wait_for_orderer
-  upgrade_shared_msp_full_admins
+  # upgrade_shared_msp_full_admins
   create_and_join_channels
-  upgrade_shared_msp_full_admins
+  # upgrade_shared_msp_full_admins
   generate_chaincode_modules
   package_and_install_chaincode
   approve_and_commit_chaincode
