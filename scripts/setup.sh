@@ -404,23 +404,58 @@ create_and_join_channels() {
 # =============================================
 # تابع ۲: ارتقا shared-msp به حالت کامل (۸ ادمین) — بدون ری‌استارت Peer
 # =============================================
+# =============================================
+# تابع نهایی: اضافه کردن admincerts کامل مستقیم داخل کانتینرها (بدون ری‌استارت)
+# =============================================
 upgrade_shared_msp_full_admins() {
-  log "اضافه کردن admincerts کامل مستقیم داخل کانتینرها (gossip کامل — بدون ری‌استارت)"
+  log "شروع ارتقا shared-msp به حالت کامل — اضافه کردن admincerts همه ۸ سازمان مستقیم داخل کانتینرها"
+
+  local success_count=0
+  local total_peers=8
 
   for i in {1..8}; do
     PEER="peer0.org${i}.example.com"
-    MSP_PATH="/etc/hyperledger/fabric/shared-msp/Org${i}MSP/admincerts"
+    MSP_PATH_IN_CONTAINER="/etc/hyperledger/fabric/shared-msp/Org${i}MSP/admincerts"
 
+    # چک بالا بودن Peer
+    if ! docker ps --filter "name=^/${PEER}$" --filter "status=running" | grep -q "$PEER"; then
+      log "هشدار: $PEER هنوز بالا نیامده یا در حال ری‌استارت است — رد شد"
+      continue
+    fi
+
+    log "در حال اضافه کردن admincerts کامل به $PEER ..."
+
+    local copied=0
     for j in {1..8}; do
       ADMIN_CERT="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      docker cp "$ADMIN_CERT" "$PEER:$MSP_PATH/Admin@org${j}.example.com-cert.pem" 2>/dev/null || true
+
+      if [ -f "$ADMIN_CERT" ]; then
+        if docker cp "$ADMIN_CERT" "${PEER}:${MSP_PATH_IN_CONTAINER}/Admin@org${j}.example.com-cert.pem" >/dev/null 2>&1; then
+          ((copied++))
+        else
+          log "هشدار: کپی گواهی Admin@org${j} به $PEER شکست خورد"
+        fi
+      else
+        log "هشدار: فایل گواهی Admin@org${j} در هاست پیدا نشد"
+      fi
     done
 
-    log "admincerts کامل برای Org${i} در کانتینر اضافه شد"
+    if [ $copied -eq 8 ]; then
+      log "موفق: همه ۸ گواهی admin به $PEER کپی شد"
+      ((success_count++))
+    else
+      log "ناتمام: فقط $copied از ۸ گواهی به $PEER کپی شد"
+    fi
   done
 
+  log "صبر ۱۵ ثانیه برای اعمال تغییرات در gossip..."
   sleep 15
-  success "gossip کامل کار می‌کند — بدون توقف کانتینرها!"
+
+  if [ $success_count -eq $total_peers ]; then
+    success "admincerts کامل در همه $total_peers Peer اضافه شد — gossip کامل کار می‌کند (بدون توقف هیچ کانتینری!)"
+  else
+    log "هشدار: فقط $success_count از $total_peers Peer کامل ارتقا یافت — اسکریپت را دوباره اجرا کنید"
+  fi
 }
 # ------------------- ساخت خودکار go.mod + go.sum + vendor برای تمام chaincodeها -------------------
 generate_chaincode_modules() {
