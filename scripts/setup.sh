@@ -60,13 +60,7 @@ generate_coreyamls() {
 # - gossip کامل کار کند (admincerts همه ۸ Org موجود است)
 # - بتوانید CORE_PEER_MSPCONFIGPATH را حذف کنید
 # =============================================
-# =============================================
-# تابع نهایی: اصلاح MSP محلی Peerها با keystore از Admin + admincerts کامل
-# این تابع باعث می‌شود:
-# - Peerها بالا بیایند (keystore وجود دارد)
-# - gossip کامل کار کند (admincerts همه ۸ Org موجود است)
-# - بتوانید CORE_PEER_MSPCONFIGPATH را حذف کنید
-# =============================================
+
 prepare_local_msp_for_peer() {
   log "اصلاح MSP محلی Peerها با keystore Admin + admincerts کامل (راه‌حل نهایی و تضمینی)"
 
@@ -129,26 +123,31 @@ prepare_shared_msp_single_admin() {
 }
 
 prepare_bundled_tls_ca() {
-  log "ساخت bundled-tls-ca.pem (تنها بخش لازم برای TLS درست)"
+  log "ساخت bundled-tls-ca.pem — نسخه تضمینی"
 
   cd "$PROJECT_DIR"
 
-  BUNDLED_TLS_FILE="$PROJECT_DIR/bundled-tls-ca.pem"
+  local bundled="$PROJECT_DIR/bundled-tls-ca.pem"
 
-  : > "$BUNDLED_TLS_FILE"
+  : > "$bundled"
 
-  find "$PROJECT_DIR/crypto-config" -name "tlsca.*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null
+  # تمام tlsca گواهی‌ها (اصلی)
+  find "$PROJECT_DIR/crypto-config" -name "tlsca.*-cert.pem" -exec cat {} \; >> "$bundled"
 
-  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null
+  # تمام ca.crt از فولدر tls (اگر وجود داشته باشد)
+  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$bundled"
 
-  sed -i '/^$/d' "$BUNDLED_TLS_FILE"
+  # گواهی TLS Orderer
+  cat "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem" >> "$bundled" 2>/dev/null || true
 
-  if [ ! -s "$BUNDLED_TLS_FILE" ]; then
+  sed -i '/^$/d' "$bundled"
+
+  if [ ! -s "$bundled" ]; then
     error "bundled-tls-ca.pem خالی است — cryptogen را دوباره اجرا کنید"
   fi
 
-  log "bundled-tls-ca.pem ساخته شد — حجم: $(du -h "$BUNDLED_TLS_FILE" | cut -f1)"
-  success "TLS CAها آماده است — Peerها بدون مشکل بالا می‌آیند"
+  log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $(wc -l < "$bundled")"
+  success "TLS CAها آماده است"
 }
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
