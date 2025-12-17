@@ -128,6 +128,28 @@ prepare_shared_msp_single_admin() {
   success "bundled-tls-ca.pem ساخته شد"
 }
 
+prepare_bundled_tls_ca() {
+  log "ساخت bundled-tls-ca.pem (تنها بخش لازم برای TLS درست)"
+
+  cd "$PROJECT_DIR"
+
+  BUNDLED_TLS_FILE="$PROJECT_DIR/bundled-tls-ca.pem"
+
+  : > "$BUNDLED_TLS_FILE"
+
+  find "$PROJECT_DIR/crypto-config" -name "tlsca.*-cert.pem" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null
+
+  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$BUNDLED_TLS_FILE" 2>/dev/null
+
+  sed -i '/^$/d' "$BUNDLED_TLS_FILE"
+
+  if [ ! -s "$BUNDLED_TLS_FILE" ]; then
+    error "bundled-tls-ca.pem خالی است — cryptogen را دوباره اجرا کنید"
+  fi
+
+  log "bundled-tls-ca.pem ساخته شد — حجم: $(du -h "$BUNDLED_TLS_FILE" | cut -f1)"
+  success "TLS CAها آماده است — Peerها بدون مشکل بالا می‌آیند"
+}
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
   log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
@@ -711,7 +733,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  # prepare_local_msp_for_peer
+  prepare_bundled_tls_ca
   start_network
   wait_for_orderer
   # upgrade_shared_msp_full_admins
