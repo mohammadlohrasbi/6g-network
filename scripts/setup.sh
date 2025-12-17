@@ -62,47 +62,71 @@ generate_coreyamls() {
 # =============================================
 
 prepare_local_msp_for_peer() {
-  log "اصلاح MSP محلی Peerها با keystore Admin + admincerts کامل (راه‌حل نهایی و تضمینی)"
+  log "اجرای نسخه نهایی prepare_local_msp_for_peer — keystore + admincerts کامل برای همه Peerها"
 
   cd "$PROJECT_DIR"
 
-  for i in {1..8}; do
-    # مسیر MSP محلی Peer
-    PEER_MSP="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+  local total_orgs=8
+  local success_count=0
 
-    # مسیر MSP Admin همان سازمان
-    ADMIN_MSP="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+  for i in $(seq 1 $total_orgs); do
+    local org="org${i}"
+    local peer_msp="$PROJECT_DIR/crypto-config/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
+    local admin_msp="$PROJECT_DIR/crypto-config/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
-    if [ ! -d "$PEER_MSP" ] || [ ! -d "$ADMIN_MSP" ]; then
-      error "مسیر MSP برای Org${i} پیدا نشد!"
+    log "پردازش Org${i} — peer0.${org}.example.com"
+
+    # چک وجود فولدرهای اصلی
+    if [ ! -d "$peer_msp" ]; then
+      log "هشدار: MSP محلی Peer برای Org${i} وجود ندارد — رد شد"
+      continue
+    fi
+    if [ ! -d "$admin_msp" ]; then
+      log "هشدار: MSP Admin برای Org${i} وجود ندارد — رد شد"
+      continue
     fi
 
-    # ۱. کپی keystore از Admin به MSP محلی Peer
-    mkdir -p "$PEER_MSP/keystore"
-    if ls "$ADMIN_MSP/keystore"/*_sk 1> /dev/null 2>&1; then
-      cp "$ADMIN_MSP/keystore"/*_sk "$PEER_MSP/keystore/"
-      log "keystore از Admin به MSP محلی peer0.org${i} کپی شد"
+    # ۱. کپی keystore از Admin همان سازمان
+    if [ -d "$admin_msp/keystore" ] && ls "$admin_msp/keystore"/*_sk >/dev/null 2>&1; then
+      mkdir -p "$peer_msp/keystore"
+      cp "$admin_msp/keystore"/*_sk "$peer_msp/keystore/" 2>/dev/null
+      log "keystore از Admin@org${i} به MSP محلی Peer کپی شد"
     else
-      error "keystore در MSP Admin Org${i} پیدا نشد!"
+      log "هشدار: keystore در Admin Org${i} پیدا نشد — رد شد"
+      continue
     fi
 
-    # ۲. کپی admincerts کامل (همه ۸ Admin)
-    mkdir -p "$PEER_MSP/admincerts"
-    rm -f "$PEER_MSP/admincerts"/*  # پاک‌سازی قبلی
+    # ۲. کپی admincerts کامل — همه ۸ سازمان
+    mkdir -p "$peer_msp/admincerts"
+    rm -f "$peer_msp/admincerts"/*  # پاک‌سازی قبلی
 
-    for j in {1..8}; do
-      ADMIN_CERT="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      if [ -f "$ADMIN_CERT" ]; then
-        cp "$ADMIN_CERT" "$PEER_MSP/admincerts/Admin@org${j}.example.com-cert.pem"
+    local admin_copied=0
+    for j in $(seq 1 $total_orgs); do
+      local admin_cert="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$admin_cert" ]; then
+        cp "$admin_cert" "$peer_msp/admincerts/Admin@org${j}.example.com-cert.pem"
+        ((admin_copied++))
       else
-        log "هشدار: گواهی Admin@org${j} پیدا نشد — رد شد"
+        log "هشدار: گواهی Admin@org${j} پیدا نشد"
       fi
     done
 
-    log "MSP محلی peer0.org${i} آماده شد — keystore + admincerts کامل (۸ گواهی)"
+    if [ $admin_copied -eq $total_orgs ]; then
+      log "موفق: همه $total_orgs گواهی admin به MSP محلی peer0.${org} کپی شد"
+      ((success_count++))
+    else
+      log "ناتمام: فقط $admin_copied از $total_orgs گواهی admin کپی شد"
+    fi
   done
 
-  success "تمام MSP محلی Peerها اصلاح شد — حالا CORE_PEER_MSPCONFIGPATH را حذف کنید و شبکه را بالا بیاورید!"
+  log "صبر ۵ ثانیه برای اطمینان از اعمال تغییرات در فایل‌سیستم..."
+  sleep 5
+
+  if [ $success_count -eq $total_orgs ]; then
+    success "تمام $total_orgs MSP محلی Peer با keystore + admincerts کامل آماده شد — gossip کامل کار می‌کند!"
+  else
+    error "فقط $success_count از $total_orgs سازمان کامل شد — crypto-config را چک کنید"
+  fi
 }
 # =============================================
 # تابع ۱: ساخت shared-msp با admincerts فقط خودش + bundled-tls-ca.pem
@@ -123,31 +147,23 @@ prepare_shared_msp_single_admin() {
 }
 
 prepare_bundled_tls_ca() {
-  log "ساخت bundled-tls-ca.pem — نسخه تضمینی"
+  log "ساخت bundled-tls-ca.pem"
 
   cd "$PROJECT_DIR"
 
   local bundled="$PROJECT_DIR/bundled-tls-ca.pem"
-
   : > "$bundled"
 
-  # تمام tlsca گواهی‌ها (اصلی)
-  find "$PROJECT_DIR/crypto-config" -name "tlsca.*-cert.pem" -exec cat {} \; >> "$bundled"
-
-  # تمام ca.crt از فولدر tls (اگر وجود داشته باشد)
-  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$bundled"
-
-  # گواهی TLS Orderer
-  cat "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem" >> "$bundled" 2>/dev/null || true
+  find "$PROJECT_DIR/crypto-config" -name "tlsca.*-cert.pem" -exec cat {} \; >> "$bundled" 2>/dev/null
+  find "$PROJECT_DIR/crypto-config" -path "*/tls/ca.crt" -exec cat {} \; >> "$bundled" 2>/dev/null
 
   sed -i '/^$/d' "$bundled"
 
   if [ ! -s "$bundled" ]; then
-    error "bundled-tls-ca.pem خالی است — cryptogen را دوباره اجرا کنید"
+    error "bundled-tls-ca.pem خالی است"
   fi
 
-  log "bundled-tls-ca.pem ساخته شد — تعداد خطوط: $(wc -l < "$bundled")"
-  success "TLS CAها آماده است"
+  success "bundled-tls-ca.pem آماده شد"
 }
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
@@ -732,6 +748,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
+  prepare_local_msp_for_peer
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
