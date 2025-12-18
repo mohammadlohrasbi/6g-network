@@ -673,7 +673,7 @@ EOF
     log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
     PACKAGE_OUTPUT=$(docker run --rm \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
       -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
@@ -776,7 +776,7 @@ approve_and_commit_chaincode() {
       name=$(basename "$dir")
 
       # گرفتن package_id از Org1 با MSP Admin
-      package_id=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+      package_id=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
                                   -e CORE_PEER_LOCALMSPID=Org1MSP \
                                   peer0.org1.example.com \
         peer lifecycle chaincode queryinstalled 2>/dev/null | \
@@ -793,7 +793,7 @@ approve_and_commit_chaincode() {
       local approve_success=0
       for i in {1..8}; do
         if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
                        -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
                        peer0.org${i}.example.com sh -c "\
           peer lifecycle chaincode approveformyorg \
@@ -817,7 +817,7 @@ approve_and_commit_chaincode() {
 
       # Commit فقط از Org1 (کافی است یک سازمان commit کند)
       if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
                      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                      peer0.org1.example.com sh -c "\
         peer lifecycle chaincode commit \
