@@ -179,6 +179,69 @@ prepare_admin_msp_full_admincerts() {
   fi
 }
 
+prepare_msp_for_network() {
+  log "آماده‌سازی MSP — نسخه نهایی برای حالت یک ادمینی (keystore + admincerts کامل فقط در MSP محلی Peerها)"
+
+  cd "$PROJECT_DIR"
+
+  local total_orgs=8
+  local success_count=0
+
+  for i in $(seq 1 $total_orgs); do
+    local org="org${i}"
+    local peer_msp="$PROJECT_DIR/crypto-config/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
+    local admin_msp="$PROJECT_DIR/crypto-config/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
+
+    log "پردازش Org${i} — peer0.${org}.example.com"
+
+    if [ ! -d "$peer_msp" ] || [ ! -d "$admin_msp" ]; then
+      log "هشدار: مسیر MSP برای Org${i} پیدا نشد — رد شد"
+      continue
+    fi
+
+    # ۱. کپی keystore از Admin همان سازمان به MSP محلی Peer
+    if ls "$admin_msp/keystore"/*_sk >/dev/null 2>&1; then
+      mkdir -p "$peer_msp/keystore"
+      cp "$admin_msp/keystore"/*_sk "$peer_msp/keystore/" 2>/dev/null
+      log "keystore از Admin@org${i} به MSP محلی Peer کپی شد"
+    else
+      log "هشدار: keystore در Admin Org${i} پیدا نشد"
+      continue
+    fi
+
+    # ۲. کپی admincerts کامل (همه ۸ سازمان) فقط در MSP محلی Peer
+    mkdir -p "$peer_msp/admincerts"
+    rm -f "$peer_msp/admincerts"/*
+
+    local admin_copied=0
+    for j in $(seq 1 $total_orgs); do
+      local admin_cert="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$admin_cert" ]; then
+        cp "$admin_cert" "$peer_msp/admincerts/Admin@org${j}.example.com-cert.pem"
+        ((admin_copied++))
+      else
+        log "هشدار: گواهی Admin@org${j} پیدا نشد"
+      fi
+    done
+
+    if [ $admin_copied -eq $total_orgs ]; then
+      log "موفق: admincerts کامل (۸ سازمان) در MSP محلی Peer Org${i} کپی شد — gossip سالم"
+      ((success_count++))
+    else
+      log "ناتمام: فقط $admin_copied admincert در Org${i} کپی شد"
+    fi
+  done
+
+  sleep 5
+
+  if [ $success_count -eq $total_orgs ]; then
+    success "تمام MSP محلی Peerها با keystore + admincerts کامل آماده شد — gossip و Peerها سالم هستند"
+    success "MSP Admin@org1 دست‌نخورده ماند (فقط گواهی خودش) — CLI معتبر است"
+  else
+    error "فقط $success_count از $total_orgs Peer کامل شد — crypto-config را چک کنید"
+  fi
+}
+
 prepare_bundled_tls_ca() {
   log "ساخت bundled-tls-ca.pem"
 
@@ -773,8 +836,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  prepare_local_msp_for_peer
-  prepare_admin_msp_full_admincerts
+  prepare_msp_for_network
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
