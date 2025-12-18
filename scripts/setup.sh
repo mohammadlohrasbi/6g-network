@@ -179,7 +179,7 @@ prepare_admin_msp_full_admincerts() {
   fi
 }
 prepare_msp_for_network() {
-  log "آماده‌سازی MSP — نسخه نهایی (keystore + admincerts کامل در MSP محلی Peerها — برای gossip و CLI بدون خطا)"
+  log "آماده‌سازی MSP — نسخه نهایی برای مونت MSP محلی (keystore + admincerts کامل)"
 
   cd "$PROJECT_DIR"
 
@@ -198,13 +198,13 @@ prepare_msp_for_network() {
       continue
     fi
 
-    # کپی keystore
-    if ls "$admin_msp/keystore"/*_sk >/dev/null 2>&1; then
+    # کپی keystore — همه فایل‌ها (نه فقط *_sk)
+    if [ "$(ls -A "$admin_msp/keystore" 2>/dev/null)" ]; then
       mkdir -p "$peer_msp/keystore"
-      cp "$admin_msp/keystore"/*_sk "$peer_msp/keystore/" 2>/dev/null
-      log "keystore کپی شد برای Org${i}"
+      cp "$admin_msp/keystore"/* "$peer_msp/keystore/" 2>/dev/null
+      log "keystore کامل از Admin@org${i} به MSP محلی Peer کپی شد"
     else
-      log "هشدار: keystore پیدا نشد برای Org${i}"
+      log "هشدار: keystore در Admin Org${i} خالی است"
       continue
     fi
 
@@ -214,9 +214,9 @@ prepare_msp_for_network() {
 
     local copied=0
     for j in $(seq 1 $total_orgs); do
-      local cert_path="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
-      if [ -f "$cert_path" ]; then
-        cp "$cert_path" "$peer_msp/admincerts/Admin@org${j}.example.com-cert.pem"
+      local admin_cert="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$admin_cert" ]; then
+        cp "$admin_cert" "$peer_msp/admincerts/Admin@org${j}.example.com-cert.pem"
         ((copied++))
       fi
     done
@@ -225,16 +225,16 @@ prepare_msp_for_network() {
       log "موفق: ۸ admincert در MSP محلی Peer Org${i} کپی شد"
       ((success_count++))
     else
-      log "خطا: فقط $copied admincert کپی شد برای Org${i}"
+      log "ناتمام: فقط $copied admincert کپی شد در Org${i}"
     fi
   done
 
   sleep 5
 
   if [ $success_count -eq $total_orgs ]; then
-    success "تمام MSP محلی Peerها با keystore + admincerts کامل آماده شد — gossip و شبکه بدون خطا کار می‌کند"
+    success "تمام MSP محلی Peerها با keystore + admincerts کامل آماده شد — Peerها بالا می‌مانند و gossip کار می‌کند"
   else
-    error "فقط $success_count از $total_orgs Peer کامل شد — cryptogen را چک کنید"
+    error "فقط $success_count از $total_orgs Peer کامل شد"
   fi
 }
 
