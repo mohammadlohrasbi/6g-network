@@ -146,6 +146,39 @@ prepare_shared_msp_single_admin() {
   success "bundled-tls-ca.pem ساخته شد"
 }
 
+prepare_admin_msp_full_admincerts() {
+  log "کپی admincerts کامل در MSP Admin@org1 (برای حل creator malformed — یک بار کافی است)"
+
+  local admin_msp="$PROJECT_DIR/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
+
+  if [ ! -d "$admin_msp" ]; then
+    error "MSP Admin@org1 پیدا نشد — مسیر را چک کنید"
+  fi
+
+  mkdir -p "$admin_msp/admincerts"
+  rm -f "$admin_msp/admincerts"/*  # پاک‌سازی قبلی
+
+  local copied=0
+  for i in {1..8}; do
+    local admin_cert="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/signcerts/Admin@org${i}.example.com-cert.pem"
+    if [ -f "$admin_cert" ]; then
+      cp "$admin_cert" "$admin_msp/admincerts/Admin@org${i}.example.com-cert.pem"
+      ((copied++))
+    else
+      log "هشدار: گواهی Admin@org${i} پیدا نشد"
+    fi
+  done
+
+  log "صبر ۵ ثانیه برای اعمال تغییرات..."
+  sleep 5
+
+  if [ $copied -eq 8 ]; then
+    success "admincerts کامل (۸ سازمان) در MSP Admin@org1 کپی شد — creator معتبر است"
+  else
+    error "فقط $copied از ۸ admincert کپی شد — cryptogen را چک کنید"
+  fi
+}
+
 prepare_bundled_tls_ca() {
   log "ساخت bundled-tls-ca.pem"
 
@@ -741,6 +774,7 @@ main() {
   generate_channel_artifacts
   generate_coreyamls
   prepare_local_msp_for_peer
+  prepare_admin_msp_full_admincerts
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
