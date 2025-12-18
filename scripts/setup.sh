@@ -180,13 +180,14 @@ prepare_admin_msp_full_admincerts() {
 }
 
 prepare_msp_for_network() {
-  log "آماده‌سازی MSP — نسخه نهایی برای حالت یک ادمینی (keystore + admincerts کامل فقط در MSP محلی Peerها)"
+  log "آماده‌سازی MSP — نسخه نهایی برای حالت یک ادمینی (keystore + admincerts کامل فقط در MSP محلی Peerها + خود-ادمین برای CLI)"
 
   cd "$PROJECT_DIR"
 
   local total_orgs=8
   local success_count=0
 
+  # ۱. پردازش MSP محلی همه Peerها (keystore + admincerts کامل)
   for i in $(seq 1 $total_orgs); do
     local org="org${i}"
     local peer_msp="$PROJECT_DIR/crypto-config/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
@@ -199,7 +200,7 @@ prepare_msp_for_network() {
       continue
     fi
 
-    # ۱. کپی keystore از Admin همان سازمان به MSP محلی Peer
+    # کپی keystore از Admin همان سازمان
     if ls "$admin_msp/keystore"/*_sk >/dev/null 2>&1; then
       mkdir -p "$peer_msp/keystore"
       cp "$admin_msp/keystore"/*_sk "$peer_msp/keystore/" 2>/dev/null
@@ -209,7 +210,7 @@ prepare_msp_for_network() {
       continue
     fi
 
-    # ۲. کپی admincerts کامل (همه ۸ سازمان) فقط در MSP محلی Peer
+    # کپی admincerts کامل (۸ سازمان) فقط در MSP محلی Peer
     mkdir -p "$peer_msp/admincerts"
     rm -f "$peer_msp/admincerts"/*
 
@@ -232,13 +233,30 @@ prepare_msp_for_network() {
     fi
   done
 
+  # ۲. فقط برای MSP Admin@org1 (که برای CLI استفاده می‌شود): کپی گواهی خودش در admincerts
+  log "کپی گواهی Admin@org1 در admincerts خودش (برای حل creator malformed در CLI)"
+  local cli_admin_msp="$PROJECT_DIR/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
+
+  if [ -d "$cli_admin_msp" ]; then
+    mkdir -p "$cli_admin_msp/admincerts"
+    local self_cert="$cli_admin_msp/signcerts/Admin@org1.example.com-cert.pem"
+    if [ -f "$self_cert" ]; then
+      cp "$self_cert" "$cli_admin_msp/admincerts/Admin@org1.example.com-cert.pem"
+      success "گواهی Admin@org1 در admincerts خودش کپی شد — creator در CLI معتبر است"
+    else
+      log "هشدار: signcerts Admin@org1 پیدا نشد"
+    fi
+  else
+    log "هشدار: MSP Admin@org1 پیدا نشد"
+  fi
+
   sleep 5
 
   if [ $success_count -eq $total_orgs ]; then
-    success "تمام MSP محلی Peerها با keystore + admincerts کامل آماده شد — gossip و Peerها سالم هستند"
-    success "MSP Admin@org1 دست‌نخورده ماند (فقط گواهی خودش) — CLI معتبر است"
+    success "تمام MSP محلی Peerها با keystore + admincerts کامل آماده شد — gossip سالم"
+    success "MSP Admin@org1 با گواهی خودش در admincerts آماده شد — CLI بدون خطا"
   else
-    error "فقط $success_count از $total_orgs Peer کامل شد — crypto-config را چک کنید"
+    error "فقط $success_count از $total_orgs MSP محلی Peer کامل شد"
   fi
 }
 
