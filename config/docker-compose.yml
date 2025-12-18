@@ -58,7 +58,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org1MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -91,7 +91,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org2MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
       #- ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -124,7 +124,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org3MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -157,7 +157,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org4MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -190,7 +190,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org5MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -223,7 +223,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org6MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -256,7 +256,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org7MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
@@ -289,7 +289,7 @@ services:
       # - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/shared-msp/Org8MSP
     volumes:
       - /var/run/:/host/var/run/
-      # - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp
+      - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp:ro
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/tls:/etc/hyperledger/fabric/tls
       # - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/msp-users
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
