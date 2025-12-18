@@ -201,7 +201,7 @@ prepare_msp_for_network() {
     # کپی keystore — همه فایل‌ها (نه فقط *_sk)
     if [ "$(ls -A "$admin_msp/keystore" 2>/dev/null)" ]; then
       mkdir -p "$peer_msp/keystore"
-      cp "$admin_msp/keystore"/* "$peer_msp/keystore/" 2>/dev/null
+      cp "$admin_msp/keystore"/* "$peer_msp/keystore/"
       log "keystore کامل از Admin@org${i} به MSP محلی Peer کپی شد"
     else
       log "هشدار: keystore در Admin Org${i} خالی است"
