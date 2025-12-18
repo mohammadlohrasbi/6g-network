@@ -265,6 +265,55 @@ prepare_msp_for_network() {
   fi
 }
 
+prepare_gossip_msp_full_admincerts() {
+  log "کپی admincerts کامل (۸ سازمان) در MSP محلی همه Peerها — برای gossip بدون خطا"
+
+  cd "$PROJECT_DIR"
+
+  local total_orgs=8
+  local success_count=0
+
+  for i in $(seq 1 $total_orgs); do
+    local peer_msp="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+
+    log "کپی admincerts در MSP محلی Peer Org${i}"
+
+    if [ ! -d "$peer_msp" ]; then
+      log "هشدار: MSP محلی Peer Org${i} پیدا نشد"
+      continue
+    fi
+
+    mkdir -p "$peer_msp/admincerts"
+    rm -f "$peer_msp/admincerts"/*
+
+    local copied=0
+    for j in $(seq 1 $total_orgs); do
+      local admin_cert="$PROJECT_DIR/crypto-config/peerOrganizations/org${j}.example.com/users/Admin@org${j}.example.com/msp/signcerts/Admin@org${j}.example.com-cert.pem"
+      if [ -f "$admin_cert" ]; then
+        cp "$admin_cert" "$peer_msp/admincerts/Admin@org${j}.example.com-cert.pem"
+        ((copied++))
+      else
+        log "هشدار: گواهی Admin@org${j} پیدا نشد"
+      fi
+    done
+
+    if [ $copied -eq $total_orgs ]; then
+      log "موفق: ۸ admincert در MSP محلی Peer Org${i} کپی شد"
+      ((success_count++))
+    else
+      log "ناتمام: فقط $copied admincert کپی شد در Org${i}"
+    fi
+  done
+
+  sleep 5
+
+  if [ $success_count -eq $total_orgs ]; then
+    success "gossip آماده است — هیچ خطای authentication نمی‌بینی"
+  else
+    error "فقط $success_count Peer کامل شد"
+  fi
+}
+
 prepare_bundled_tls_ca() {
   log "ساخت bundled-tls-ca.pem"
 
@@ -860,6 +909,7 @@ main() {
   generate_channel_artifacts
   generate_coreyamls
   prepare_msp_for_network
+  prepare_gossip_msp_full_admincerts
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
