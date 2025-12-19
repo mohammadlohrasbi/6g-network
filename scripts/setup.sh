@@ -288,14 +288,14 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "اصلاح MSP محلی Orderer با کپی CAهای ۸ سازمان + اصلاح admincerts"
+  log "اصلاح نهایی MSP محلی Orderer — cacerts کامل + admincerts خالی"
 
   cd "$PROJECT_DIR"
 
   local orderer_local_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
   if [ ! -d "$orderer_local_msp" ]; then
-    error "MSP محلی Orderer پیدا نشد: $orderer_local_msp"
+    error "MSP محلی Orderer پیدا نشد"
     return 1
   fi
 
@@ -320,22 +320,15 @@ prepare_orderer_msp_full_cacerts() {
     ((copied++))
   fi
 
-  # --- admincerts: فقط Admin@example.com (حذف هر چیز دیگری مثل CA) ---
+  # --- admincerts: کاملاً خالی (استاندارد Fabric برای Orderer) ---
   mkdir -p "$orderer_local_msp/admincerts"
   rm -f "$orderer_local_msp/admincerts"/*
-
-  local admin_cert_path="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
-  if [ -f "$admin_cert_path" ]; then
-    cp "$admin_cert_path" "$orderer_local_msp/admincerts/Admin@example.com-cert.pem"
-    log "admincerts MSP محلی Orderer فقط با Admin@example.com تنظیم شد"
-  else
-    log "هشدار: Admin@example.com-cert.pem پیدا نشد"
-  fi
+  log "admincerts MSP محلی Orderer خالی شد — هیچ گواهی admin نیاز نیست"
 
   if [ $copied -ge 9 ]; then
-    success "MSP محلی Orderer کامل شد — آماده راه‌اندازی Orderer"
+    success "MSP محلی Orderer نهایی شد — Orderer بالا می‌ماند"
   else
-    error "فقط $copied CA کپی شد"
+    error "مشکل در کپی CAها"
   fi
 }
 
