@@ -316,7 +316,7 @@ prepare_orderer_msp_full_cacerts() {
     fi
   done
 
-  # کپی CA Orderer خودش (نام ممکن است متفاوت باشد)
+  # کپی CA Orderer خودش (چند نام ممکن)
   local orderer_ca_paths=(
     "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
     "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
@@ -332,16 +332,18 @@ prepare_orderer_msp_full_cacerts() {
   done
   if [ $orderer_ca_copied -eq 0 ]; then
     log "هشدار: cacerts Orderer پیدا نشد"
+  else
+    ((copied++))
   fi
 
-  # --- admincerts: فقط گواهی Admin@example.com نگه دار ---
+  # --- admincerts: فقط گواهی Admin@example.com نگه دار (حذف هر چیز دیگری مثل CA) ---
   mkdir -p "$orderer_msp/admincerts"
   rm -f "$orderer_msp/admincerts"/*
 
   local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
   if [ -f "$admin_cert" ]; then
     cp "$admin_cert" "$orderer_msp/admincerts/Admin@example.com-cert.pem"
-    log "admincerts Orderer فقط با Admin@example.com تنظیم شد"
+    log "admincerts Orderer فقط با Admin@example.com تنظیم شد (هر چیز دیگری حذف شد)"
   else
     log "هشدار: گواهی Admin@example.com پیدا نشد"
   fi
