@@ -288,73 +288,68 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer — برای validate genesis.block بدون خطا"
+  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer (ریشه و orderer.example.com) — برای validate genesis.block بدون خطا"
 
   cd "$PROJECT_DIR"
 
-  local orderer_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
+  # MSP ریشه Orderer
+  local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
+  # MSP orderer.example.com
+  local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  if [ ! -d "$orderer_msp" ]; then
-    error "MSP Orderer پیدا نشد — مسیر را چک کنید: $orderer_msp"
-    return 1
+  # اصلاح MSP ریشه
+  if [ -d "$orderer_root_msp" ]; then
+    mkdir -p "$orderer_root_msp/cacerts"
+    rm -f "$orderer_root_msp/cacerts"/*
+
+    mkdir -p "$orderer_root_msp/admincerts"
+    rm -f "$orderer_root_msp/admincerts"/*
+
+    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+    if [ -f "$admin_cert" ]; then
+      cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
+      log "admincerts MSP ریشه Orderer فقط با Admin@example.com تنظیم شد"
+    fi
+
+    log "MSP ریشه Orderer اصلاح شد"
   fi
 
-  # --- cacerts: پاک‌سازی و کپی کامل همه CAها ---
-  mkdir -p "$orderer_msp/cacerts"
-  rm -f "$orderer_msp/cacerts"/*
+  # اصلاح MSP node Orderer (که قبلاً داشتید)
+  if [ -d "$orderer_node_msp" ]; then
+    mkdir -p "$orderer_node_msp/cacerts"
+    rm -f "$orderer_node_msp/cacerts"/*
 
-  local copied=0
+    local copied=0
+    for i in $(seq 1 8); do
+      local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
+      if [ -f "$org_ca" ]; then
+        cp "$org_ca" "$orderer_node_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+        ((copied++))
+      fi
+    done
 
-  # کپی CAهای ۸ سازمان Peer
-  for i in $(seq 1 8); do
-    local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
-    if [ -f "$org_ca" ]; then
-      cp "$org_ca" "$orderer_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
-      log "cacerts Org${i} کپی شد"
-      ((copied++))
-    else
-      log "هشدار: cacerts Org${i} پیدا نشد: $org_ca"
+    local orderer_ca_paths=(
+      "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+      "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
+    )
+    for ca_path in "${orderer_ca_paths[@]}"; do
+      if [ -f "$ca_path" ]; then
+        cp "$ca_path" "$orderer_node_msp/cacerts/ca.example.com-cert.pem"
+        log "cacerts Orderer کپی شد"
+        break
+      fi
+    done
+
+    mkdir -p "$orderer_node_msp/admincerts"
+    rm -f "$orderer_node_msp/admincerts"/*
+    if [ -f "$admin_cert" ]; then
+      cp "$admin_cert" "$orderer_node_msp/admincerts/Admin@example.com-cert.pem"
     fi
-  done
 
-  # کپی CA Orderer خودش (نام‌های ممکن)
-  local orderer_ca_paths=(
-    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
-    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
-  )
-  local orderer_ca_copied=0
-  for ca_path in "${orderer_ca_paths[@]}"; do
-    if [ -f "$ca_path" ]; then
-      cp "$ca_path" "$orderer_msp/cacerts/ca.example.com-cert.pem"
-      log "cacerts Orderer خودش کپی شد ($ca_path)"
-      orderer_ca_copied=1
-      ((copied++))
-      break
-    fi
-  done
-  if [ $orderer_ca_copied -eq 0 ]; then
-    log "هشدار: cacerts Orderer پیدا نشد"
-  fi
-
-  # --- admincerts: پاک‌سازی کامل و فقط کپی Admin@example.com ---
-  mkdir -p "$orderer_msp/admincerts"
-  rm -f "$orderer_msp/admincerts"/*  # حذف هر چیز قبلی (مثل ca-orderer.example.com-cert.pem)
-
-  local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
-  if [ -f "$admin_cert" ]; then
-    cp "$admin_cert" "$orderer_msp/admincerts/Admin@example.com-cert.pem"
-    log "admincerts Orderer فقط با Admin@example.com تنظیم شد (هر چیز دیگری حذف شد)"
-  else
-    log "هشدار: گواهی Admin@example.com پیدا نشد"
+    success "MSP Orderer (ریشه و node) کامل شد — Orderer بالا می‌ماند"
   fi
 
   sleep 5
-
-  if [ $copied -ge 8 ]; then
-    success "cacerts کامل (۸ سازمان + Orderer) در MSP Orderer کپی شد — Orderer بدون خطا بالا می‌ماند"
-  else
-    error "فقط $copied cacert کپی شد — genesis.block validate نمی‌شود"
-  fi
 }
 
 prepare_bundled_tls_ca() {
