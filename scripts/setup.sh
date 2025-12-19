@@ -881,7 +881,7 @@ main() {
   generate_crypto
   generate_channel_artifacts
   generate_coreyamls
-  prepare_msp_for_network
+  # prepare_msp_for_network
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
