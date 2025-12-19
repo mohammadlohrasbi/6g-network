@@ -286,6 +286,31 @@ prepare_gossip_msp_full_admincerts() {
     error "فقط $success_count Peer کامل شد"
   fi
 }
+prepare_orderer_msp_full_cacerts() {
+  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer — برای validate genesis.block"
+
+  local orderer_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
+
+  mkdir -p "$orderer_msp/cacerts"
+  rm -f "$orderer_msp/cacerts"/*
+
+  local copied=0
+  for i in {1..8}; do
+    local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
+    if [ -f "$org_ca" ]; then
+      cp "$org_ca" "$orderer_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+      ((copied++))
+    fi
+  done
+
+  # CA Orderer خودش
+  local orderer_ca="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+  if [ -f "$orderer_ca" ]; then
+    cp "$orderer_ca" "$orderer_msp/cacerts/ca.example.com-cert.pem"
+  fi
+
+  success "cacerts کامل در MSP Orderer کپی شد"
+}
 
 prepare_bundled_tls_ca() {
   log "ساخت bundled-tls-ca.pem"
@@ -882,6 +907,7 @@ main() {
   generate_channel_artifacts
   generate_coreyamls
   # prepare_msp_for_network
+  prepare_orderer_msp_full_cacerts
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
