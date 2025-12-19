@@ -288,29 +288,21 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "اصلاح کامل MSP ریشه Orderer برای بالا آمدن بدون خطای x509"
+  log "اصلاح MSP محلی Orderer (MSP node) با کپی کردن گواهی‌های ۸ سازمان Peer به cacerts"
 
   cd "$PROJECT_DIR"
 
-  # مسیر MSP ریشه Orderer (این همان مسیری است که در docker-compose مونت می‌شود)
-  local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
+  # مسیر MSP محلی Orderer (MSP node — این مسیری است که در docker-compose مونت می‌شود)
+  local orderer_local_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  # مسیر MSP node Orderer (منبع keystore و signcerts)
-  local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
-
-  if [ ! -d "$orderer_root_msp" ]; then
-    error "MSP ریشه Orderer پیدا نشد: $orderer_root_msp"
+  if [ ! -d "$orderer_local_msp" ]; then
+    error "MSP محلی Orderer پیدا نشد: $orderer_local_msp"
     return 1
   fi
 
-  if [ ! -d "$orderer_node_msp" ]; then
-    error "MSP node Orderer پیدا نشد: $orderer_node_msp"
-    return 1
-  fi
-
-  # --- cacerts: پاک‌سازی و کپی با نام‌های دقیق ---
-  mkdir -p "$orderer_root_msp/cacerts"
-  rm -f "$orderer_root_msp/cacerts"/*
+  # --- cacerts: پاک‌سازی و کپی گواهی‌های ۸ سازمان Peer + CA Orderer خودش ---
+  mkdir -p "$orderer_local_msp/cacerts"
+  rm -f "$orderer_local_msp/cacerts"/*
 
   local copied=0
 
@@ -318,64 +310,36 @@ prepare_orderer_msp_full_cacerts() {
   for i in $(seq 1 8); do
     local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
     if [ -f "$org_ca" ]; then
-      cp "$org_ca" "$orderer_root_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
-      log "cacerts Org${i} کپی شد"
+      cp "$org_ca" "$orderer_local_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+      log "CA Org${i} به cacerts MSP محلی Orderer کپی شد"
       ((copied++))
     else
-      log "هشدار: cacerts Org${i} پیدا نشد"
+      log "هشدار: CA Org${i} پیدا نشد — مسیر: $org_ca"
     fi
   done
 
-  # کپی CA Orderer با هر دو نام ممکن (برای سازگاری کامل با Fabric)
+  # کپی CA Orderer خودش با نام اصلی (cryptogen آن را با این نام ساخته)
   local orderer_ca_path="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
   if [ -f "$orderer_ca_path" ]; then
-    # نام اصلی که cryptogen ساخته
-    cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca-orderer.example.com-cert.pem"
-    # نام استاندارد که Fabric گاهی انتظار دارد (حل‌کننده خطای unknown authority)
-    cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca-example.com-cert.pem"
-    log "CA Orderer با هر دو نام ca-orderer.example.com-cert.pem و ca.example.com-cert.pem کپی شد"
+    cp "$orderer_ca_path" "$orderer_local_msp/cacerts/ca-orderer.example.com-cert.pem"
+    log "CA Orderer با نام ca-orderer.example.com-cert.pem به cacerts MSP محلی کپی شد"
     ((copied++))
   else
-    log "هشدار: ca-orderer.example.com-cert.pem پیدا نشد — cryptogen را چک کنید"
+    log "هشدار: ca-orderer.example.com-cert.pem پیدا نشد"
   fi
 
-  # --- keystore و signcerts: کپی از node به ریشه (حیاتی برای Orderer) ---
-  mkdir -p "$orderer_root_msp/keystore"
-  rm -f "$orderer_root_msp/keystore"/*
-  if ls "$orderer_node_msp/keystore"/* >/dev/null 2>&1; then
-    cp "$orderer_node_msp/keystore"/* "$orderer_root_msp/keystore/"
-    log "keystore به MSP ریشه کپی شد"
-  else
-    log "هشدار: keystore خالی است"
-  fi
-
-  mkdir -p "$orderer_root_msp/signcerts"
-  rm -f "$orderer_root_msp/signcerts"/*
-  if ls "$orderer_node_msp/signcerts"/* >/dev/null 2>&1; then
-    cp "$orderer_node_msp/signcerts"/* "$orderer_root_msp/signcerts/"
-    log "signcerts به MSP ریشه کپی شد"
-  else
-    log "هشدار: signcerts خالی است"
-  fi
-
-  # --- admincerts: فقط Admin@example.com (حذف هر چیز دیگری) ---
-  mkdir -p "$orderer_root_msp/admincerts"
-  rm -f "$orderer_root_msp/admincerts"/*
-
-  local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
-  if [ -f "$admin_cert" ]; then
-    cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
-    log "admincerts فقط با Admin@example.com تنظیم شد"
-  else
-    log "هشدار: گواهی Admin@example.com پیدا نشد"
+  # اختیاری: کپی با نام ca.example.com-cert.pem برای سازگاری کامل (در برخی موارد Fabric این نام را انتظار دارد)
+  if [ -f "$orderer_ca_path" ]; then
+    cp "$orderer_ca_path" "$orderer_local_msp/cacerts/ca.example.com-cert.pem"
+    log "CA Orderer با نام اضافی ca.example.com-cert.pem نیز کپی شد (برای سازگاری بیشتر)"
   fi
 
   sleep 5
 
   if [ $copied -ge 9 ]; then  # ۸ سازمان + Orderer
-    success "MSP ریشه Orderer کامل شد — Orderer بدون خطا بالا می‌ماند"
+    success "MSP محلی Orderer با موفقیت اصلاح شد — تمام ۸ سازمان + CA Orderer در cacerts موجود است"
   else
-    error "فقط $copied cacert کپی شد — مشکل وجود دارد"
+    error "فقط $copied گواهی کپی شد — مشکل در کپی وجود دارد"
   fi
 }
 
