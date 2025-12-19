@@ -938,7 +938,7 @@ main() {
   generate_channel_artifacts
   generate_coreyamls
   # prepare_msp_for_network
-  # prepare_orderer_msp_full_cacerts
+  prepare_orderer_msp_full_cacerts
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
