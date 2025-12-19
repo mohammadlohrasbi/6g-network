@@ -848,14 +848,16 @@ approve_and_commit_chaincode() {
       name=$(basename "$dir")
 
       # گرفتن package_id از Org1 با MSP Admin
-      package_id=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                                  -e CORE_PEER_LOCALMSPID=Org1MSP \
-                                  peer0.org1.example.com \
+      package_id=$(docker exec \
+        -e CORE_PEER_LOCALMSPID=Org1MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org1.example.com/msp \
+        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+        peer0.org1.example.com \
         peer lifecycle chaincode queryinstalled 2>/dev/null | \
         grep "Label: ${name}_1.0" | awk -F', ' '{print $2}' | cut -d: -f2 | xargs)
 
       if [ -z "$package_id" ]; then
-        log "هشدار: package_id برای $name روی Org1 یافت نشد — رد شد"
+        log "هشدار: package_id برای $name روی Org1 یافت نشد — این chaincode نصب نشده است"
         continue
       fi
 
@@ -864,50 +866,66 @@ approve_and_commit_chaincode() {
       # Approve برای همه سازمان‌ها با MSP Admin
       local approve_success=0
       for i in {1..8}; do
-        if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                       -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
-                       peer0.org${i}.example.com sh -c "\
+        log "در حال approve $name روی Org${i}..."
+
+        # خروجی کامل (stdout + stderr) را بگیر و چاپ کن
+        approve_output=$(docker exec \
+          -e CORE_PEER_LOCALMSPID=Org${i}MSP \
+          -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
+          -e CORE_PEER_TLS_ENABLED=true \
+          -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org${i}.example.com/msp \
+          peer0.org${i}.example.com \
           peer lifecycle chaincode approveformyorg \
             -o orderer.example.com:7050 \
             --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem \
-            --channelID $channel \
-            --name $name \
+            --channelID "$channel" \
+            --name "$name" \
             --version 1.0 \
-            --package-id $package_id \
+            --package-id "$package_id" \
             --sequence 1 \
             --init-required \
-            --waitForEvent" >/dev/null 2>&1; then
-          log "Approve $name روی Org${i} موفق"
+            --waitForEvent 2>&1)
+
+        if [ $? -eq 0 ]; then
+          success "Approve $name روی Org${i} موفق"
           ((approve_success++))
         else
-          log "Approve $name روی Org${i} شکست خورد"
+          error "Approve $name روی Org${i} شکست خورد:"
+          echo "$approve_output" | sed 's/^/  > /'  # نمایش خطاها با پیشوند برای خوانایی
         fi
       done
 
-      log "Approve $name: $approve_success از ۸ سازمان موفق"
+      log "Approve $name روی کانال $channel: $approve_success از ۸ سازمان موفق"
 
-      # Commit فقط از Org1 (کافی است یک سازمان commit کند)
-      if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
-                     -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
-                     peer0.org1.example.com sh -c "\
+      # Commit فقط از Org1 (با MSP Admin)
+      log "در حال commit $name روی کانال $channel..."
+
+      commit_output=$(docker exec \
+        -e CORE_PEER_LOCALMSPID=Org1MSP \
+        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org1.example.com/msp \
+        peer0.org1.example.com \
         peer lifecycle chaincode commit \
           -o orderer.example.com:7050 \
           --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem \
-          --channelID $channel \
-          --name $name \
+          --channelID "$channel" \
+          --name "$name" \
           --version 1.0 \
           --sequence 1 \
           --init-required \
           --waitForEvent \
           --peerAddresses peer0.org1.example.com:7051 \
-          --tlsRootCertFiles /etc/hyperledger/fabric/bundled-tls-ca.pem" >/dev/null 2>&1; then
+          --tlsRootCertFiles /etc/hyperledger/fabric/bundled-tls-ca.pem 2>&1)
 
-        success "Chaincode $name روی کانال $channel commit شد"
+      if [ $? -eq 0 ]; then
+        success "Chaincode $name روی کانال $channel با موفقیت commit شد"
         ((committed++))
       else
-        log "Commit $name روی کانال $channel شکست خورد"
+        error "Commit $name روی کانال $channel شکست خورد:"
+        echo "$commit_output" | sed 's/^/  > /'
       fi
     done
   done
@@ -916,7 +934,7 @@ approve_and_commit_chaincode() {
   if [ $committed -eq $expected ]; then
     success "تمام $total_chaincodes Chaincode روی $channel_count کانال با موفقیت approve و commit شدند!"
   else
-    log "هشدار: فقط $committed از $expected commit موفق شد — اسکریپت را دوباره اجرا کنید"
+    log "هشدار: فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات خطا بررسی کنید"
   fi
 }
 
