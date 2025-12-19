@@ -430,7 +430,7 @@ create_and_join_channels() {
 
     # ایجاد کانال فقط با Org1 (MSP کامل Admin@org1)
     if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
                    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                    -e CORE_PEER_TLS_ENABLED=true \
                    -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
@@ -466,7 +466,7 @@ create_and_join_channels() {
 
       # join فقط با Org1 (کافی است — gossip بقیه را join می‌کند)
       if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
                      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                      -e CORE_PEER_TLS_ENABLED=true \
                      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
@@ -745,10 +745,10 @@ EOF
     log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
     PACKAGE_OUTPUT=$(docker run --rm \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/admin-msp \
       -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
@@ -794,7 +794,7 @@ EOF
       log "در حال نصب $name روی $PEER ..."
       if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                   -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
+                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
                   "$PEER" \
                   peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
@@ -850,7 +850,7 @@ approve_and_commit_chaincode() {
       # گرفتن package_id از Org1 با MSP Admin
       package_id=$(docker exec \
         -e CORE_PEER_LOCALMSPID=Org1MSP \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org1.example.com/msp \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
         peer0.org1.example.com \
         peer lifecycle chaincode queryinstalled 2>/dev/null | \
@@ -874,7 +874,7 @@ approve_and_commit_chaincode() {
           -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
           -e CORE_PEER_TLS_ENABLED=true \
           -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
-          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org${i}.example.com/msp \
+          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
           peer0.org${i}.example.com \
           peer lifecycle chaincode approveformyorg \
             -o orderer.example.com:7050 \
@@ -906,7 +906,7 @@ approve_and_commit_chaincode() {
         -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
         -e CORE_PEER_TLS_ENABLED=true \
         -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users/Admin@org1.example.com/msp \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         peer0.org1.example.com \
         peer lifecycle chaincode commit \
           -o orderer.example.com:7050 \
