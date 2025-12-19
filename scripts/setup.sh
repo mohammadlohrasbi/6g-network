@@ -288,69 +288,59 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts کامل و admincerts درست در MSP ریشه و node Orderer — برای بالا آمدن Orderer بدون خطا"
+  log "کپی cacerts، keystore و signcerts کامل در MSP ریشه Orderer — برای بالا آمدن Orderer بدون خطا"
 
   cd "$PROJECT_DIR"
 
-  # MSP ریشه Orderer (مهم — Orderer از این استفاده می‌کند)
   local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
-
-  # MSP node Orderer
   local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  # اصلاح MSP ریشه
-  if [ -d "$orderer_root_msp" ]; then
-    mkdir -p "$orderer_root_msp/cacerts"
-    rm -f "$orderer_root_msp/cacerts"/*
-
-    local copied=0
-    for i in $(seq 1 8); do
-      local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
-      if [ -f "$org_ca" ]; then
-        cp "$org_ca" "$orderer_root_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
-        ((copied++))
-      fi
-    done
-
-    local orderer_ca_paths=(
-      "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
-      "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
-    )
-    for ca_path in "${orderer_ca_paths[@]}"; do
-      if [ -f "$ca_path" ]; then
-        cp "$ca_path" "$orderer_root_msp/cacerts/ca.example.com-cert.pem"
-        ((copied++))
-        break
-      fi
-    done
-
-    # admincerts ریشه: فقط Admin@example.com
-    mkdir -p "$orderer_root_msp/admincerts"
-    rm -f "$orderer_root_msp/admincerts"/*
-    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
-    if [ -f "$admin_cert" ]; then
-      cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
-    fi
-
-    log "MSP ریشه Orderer کامل شد"
+  if [ ! -d "$orderer_root_msp" ] || [ ! -d "$orderer_node_msp" ]; then
+    error "MSP Orderer پیدا نشد"
+    return 1
   fi
 
-  # اصلاح MSP node Orderer (اختیاری اما خوب)
-  if [ -d "$orderer_node_msp" ]; then
-    mkdir -p "$orderer_node_msp/cacerts"
-    rm -f "$orderer_node_msp/cacerts"/*
-    cp "$orderer_root_msp/cacerts"/* "$orderer_node_msp/cacerts/" 2>/dev/null
+  # کپی cacerts کامل
+  mkdir -p "$orderer_root_msp/cacerts"
+  rm -f "$orderer_root_msp/cacerts"/*
 
-    mkdir -p "$orderer_node_msp/admincerts"
-    rm -f "$orderer_node_msp/admincerts"/*
-    if [ -f "$admin_cert" ]; then
-      cp "$admin_cert" "$orderer_node_msp/admincerts/Admin@example.com-cert.pem"
+  local copied=0
+  for i in $(seq 1 8); do
+    local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
+    if [ -f "$org_ca" ]; then
+      cp "$org_ca" "$orderer_root_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+      ((copied++))
     fi
+  done
+
+  local orderer_ca_paths=(
+    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
+  )
+  for ca_path in "${orderer_ca_paths[@]}"; do
+    if [ -f "$ca_path" ]; then
+      cp "$ca_path" "$orderer_root_msp/cacerts/ca.example.com-cert.pem"
+      ((copied++))
+      break
+    fi
+  done
+
+  # کپی keystore و signcerts از node به ریشه
+  mkdir -p "$orderer_root_msp/keystore"
+  cp "$orderer_node_msp/keystore"/* "$orderer_root_msp/keystore/" 2>/dev/null
+
+  mkdir -p "$orderer_root_msp/signcerts"
+  cp "$orderer_node_msp/signcerts"/* "$orderer_root_msp/signcerts/" 2>/dev/null
+
+  # admincerts فقط Admin@example.com
+  mkdir -p "$orderer_root_msp/admincerts"
+  rm -f "$orderer_root_msp/admincerts"/*
+  local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+  if [ -f "$admin_cert" ]; then
+    cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
   fi
 
-  sleep 5
-
-  success "MSP Orderer (ریشه و node) کامل شد — Orderer بالا می‌ماند"
+  success "MSP ریشه Orderer کامل شد — Orderer بالا می‌ماند"
 }
 
 prepare_bundled_tls_ca() {
