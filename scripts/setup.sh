@@ -288,42 +288,25 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer (ریشه و orderer.example.com) — برای validate genesis.block بدون خطا"
+  log "کپی cacerts کامل همه سازمان‌ها در MSP ریشه و node Orderer — برای validate genesis.block بدون خطا"
 
   cd "$PROJECT_DIR"
 
   # MSP ریشه Orderer
   local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
-  # MSP orderer.example.com
+  # MSP node Orderer
   local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  # اصلاح MSP ریشه
+  # اصلاح MSP ریشه (مهم — Orderer از این استفاده می‌کند)
   if [ -d "$orderer_root_msp" ]; then
     mkdir -p "$orderer_root_msp/cacerts"
     rm -f "$orderer_root_msp/cacerts"/*
-
-    mkdir -p "$orderer_root_msp/admincerts"
-    rm -f "$orderer_root_msp/admincerts"/*
-
-    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
-    if [ -f "$admin_cert" ]; then
-      cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
-      log "admincerts MSP ریشه Orderer فقط با Admin@example.com تنظیم شد"
-    fi
-
-    log "MSP ریشه Orderer اصلاح شد"
-  fi
-
-  # اصلاح MSP node Orderer (که قبلاً داشتید)
-  if [ -d "$orderer_node_msp" ]; then
-    mkdir -p "$orderer_node_msp/cacerts"
-    rm -f "$orderer_node_msp/cacerts"/*
 
     local copied=0
     for i in $(seq 1 8); do
       local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
       if [ -f "$org_ca" ]; then
-        cp "$org_ca" "$orderer_node_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+        cp "$org_ca" "$orderer_root_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
         ((copied++))
       fi
     done
@@ -334,19 +317,28 @@ prepare_orderer_msp_full_cacerts() {
     )
     for ca_path in "${orderer_ca_paths[@]}"; do
       if [ -f "$ca_path" ]; then
-        cp "$ca_path" "$orderer_node_msp/cacerts/ca.example.com-cert.pem"
-        log "cacerts Orderer کپی شد"
+        cp "$ca_path" "$orderer_root_msp/cacerts/ca.example.com-cert.pem"
+        ((copied++))
         break
       fi
     done
 
+    success "cacerts کامل در MSP ریشه Orderer کپی شد"
+  fi
+
+  # اصلاح MSP node Orderer (اختیاری اما خوب)
+  if [ -d "$orderer_node_msp" ]; then
+    mkdir -p "$orderer_node_msp/cacerts"
+    rm -f "$orderer_node_msp/cacerts"/*
+    # کپی همان cacerts
+    cp "$orderer_root_msp/cacerts"/* "$orderer_node_msp/cacerts/" 2>/dev/null
+
     mkdir -p "$orderer_node_msp/admincerts"
     rm -f "$orderer_node_msp/admincerts"/*
+    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
     if [ -f "$admin_cert" ]; then
       cp "$admin_cert" "$orderer_node_msp/admincerts/Admin@example.com-cert.pem"
     fi
-
-    success "MSP Orderer (ریشه و node) کامل شد — Orderer بالا می‌ماند"
   fi
 
   sleep 5
