@@ -1,7 +1,7 @@
 OrdererOrgs:
   - Name: Orderer
     Domain: example.com
-    EnableNodeOUs: true
+    EnableNodeOUs: false
     Specs:
       - Hostname: orderer
     CA:
