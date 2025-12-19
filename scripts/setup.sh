@@ -298,12 +298,13 @@ prepare_orderer_msp_full_cacerts() {
     return 1
   fi
 
+  # --- cacerts: پاک‌سازی و کپی کامل همه CAها ---
   mkdir -p "$orderer_msp/cacerts"
-  rm -f "$orderer_msp/cacerts"/*  # پاک‌سازی قبلی
+  rm -f "$orderer_msp/cacerts"/*
 
   local copied=0
 
-  # کپی cacerts همه ۸ سازمان Peer
+  # کپی CAهای ۸ سازمان Peer
   for i in $(seq 1 8); do
     local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
     if [ -f "$org_ca" ]; then
@@ -315,20 +316,40 @@ prepare_orderer_msp_full_cacerts() {
     fi
   done
 
-  # کپی cacerts Orderer خودش (اگر وجود داشته باشد)
-  local orderer_ca="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
-  if [ -f "$orderer_ca" ]; then
-    cp "$orderer_ca" "$orderer_msp/cacerts/ca.example.com-cert.pem"
-    log "cacerts Orderer خودش کپی شد"
-    ((copied++))
+  # کپی CA Orderer خودش (نام ممکن است متفاوت باشد)
+  local orderer_ca_paths=(
+    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
+    "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
+  )
+  local orderer_ca_copied=0
+  for ca_path in "${orderer_ca_paths[@]}"; do
+    if [ -f "$ca_path" ]; then
+      cp "$ca_path" "$orderer_msp/cacerts/ca.example.com-cert.pem"
+      log "cacerts Orderer خودش کپی شد ($ca_path)"
+      orderer_ca_copied=1
+      break
+    fi
+  done
+  if [ $orderer_ca_copied -eq 0 ]; then
+    log "هشدار: cacerts Orderer پیدا نشد"
+  fi
+
+  # --- admincerts: فقط گواهی Admin@example.com نگه دار ---
+  mkdir -p "$orderer_msp/admincerts"
+  rm -f "$orderer_msp/admincerts"/*
+
+  local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+  if [ -f "$admin_cert" ]; then
+    cp "$admin_cert" "$orderer_msp/admincerts/Admin@example.com-cert.pem"
+    log "admincerts Orderer فقط با Admin@example.com تنظیم شد"
   else
-    log "هشدار: cacerts Orderer پیدا نشد: $orderer_ca"
+    log "هشدار: گواهی Admin@example.com پیدا نشد"
   fi
 
   sleep 5
 
   if [ $copied -ge 8 ]; then
-    success "cacerts کامل (حداقل ۸ سازمان) در MSP Orderer کپی شد — Orderer بدون خطا بالا می‌ماند"
+    success "cacerts کامل (۸ سازمان + Orderer) در MSP Orderer کپی شد — Orderer بدون خطا بالا می‌ماند"
   else
     error "فقط $copied cacert کپی شد — genesis.block validate نمی‌شود"
   fi
