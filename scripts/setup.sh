@@ -745,10 +745,10 @@ EOF
     log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
     PACKAGE_OUTPUT=$(docker run --rm \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp-users \
       -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
@@ -794,7 +794,7 @@ EOF
       log "در حال نصب $name روی $PEER ..."
       if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                   -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                   "$PEER" \
                   peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
