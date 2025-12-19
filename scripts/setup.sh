@@ -288,16 +288,17 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts کامل همه سازمان‌ها در MSP ریشه و node Orderer — برای validate genesis.block بدون خطا"
+  log "کپی cacerts کامل و admincerts درست در MSP ریشه و node Orderer — برای بالا آمدن Orderer بدون خطا"
 
   cd "$PROJECT_DIR"
 
-  # MSP ریشه Orderer
+  # MSP ریشه Orderer (مهم — Orderer از این استفاده می‌کند)
   local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
+
   # MSP node Orderer
   local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  # اصلاح MSP ریشه (مهم — Orderer از این استفاده می‌کند)
+  # اصلاح MSP ریشه
   if [ -d "$orderer_root_msp" ]; then
     mkdir -p "$orderer_root_msp/cacerts"
     rm -f "$orderer_root_msp/cacerts"/*
@@ -323,25 +324,33 @@ prepare_orderer_msp_full_cacerts() {
       fi
     done
 
-    success "cacerts کامل در MSP ریشه Orderer کپی شد"
+    # admincerts ریشه: فقط Admin@example.com
+    mkdir -p "$orderer_root_msp/admincerts"
+    rm -f "$orderer_root_msp/admincerts"/*
+    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+    if [ -f "$admin_cert" ]; then
+      cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
+    fi
+
+    log "MSP ریشه Orderer کامل شد"
   fi
 
   # اصلاح MSP node Orderer (اختیاری اما خوب)
   if [ -d "$orderer_node_msp" ]; then
     mkdir -p "$orderer_node_msp/cacerts"
     rm -f "$orderer_node_msp/cacerts"/*
-    # کپی همان cacerts
     cp "$orderer_root_msp/cacerts"/* "$orderer_node_msp/cacerts/" 2>/dev/null
 
     mkdir -p "$orderer_node_msp/admincerts"
     rm -f "$orderer_node_msp/admincerts"/*
-    local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
     if [ -f "$admin_cert" ]; then
       cp "$admin_cert" "$orderer_node_msp/admincerts/Admin@example.com-cert.pem"
     fi
   fi
 
   sleep 5
+
+  success "MSP Orderer (ریشه و node) کامل شد — Orderer بالا می‌ماند"
 }
 
 prepare_bundled_tls_ca() {
