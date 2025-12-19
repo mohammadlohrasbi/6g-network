@@ -287,29 +287,51 @@ prepare_gossip_msp_full_admincerts() {
   fi
 }
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer — برای validate genesis.block"
+  log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer — برای validate genesis.block بدون خطا"
+
+  cd "$PROJECT_DIR"
 
   local orderer_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
+  if [ ! -d "$orderer_msp" ]; then
+    error "MSP Orderer پیدا نشد — مسیر را چک کنید: $orderer_msp"
+    return 1
+  fi
+
   mkdir -p "$orderer_msp/cacerts"
-  rm -f "$orderer_msp/cacerts"/*
+  rm -f "$orderer_msp/cacerts"/*  # پاک‌سازی قبلی
 
   local copied=0
-  for i in {1..8}; do
+
+  # کپی cacerts همه ۸ سازمان Peer
+  for i in $(seq 1 8); do
     local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
     if [ -f "$org_ca" ]; then
       cp "$org_ca" "$orderer_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
+      log "cacerts Org${i} کپی شد"
       ((copied++))
+    else
+      log "هشدار: cacerts Org${i} پیدا نشد: $org_ca"
     fi
   done
 
-  # CA Orderer خودش
+  # کپی cacerts Orderer خودش (اگر وجود داشته باشد)
   local orderer_ca="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
   if [ -f "$orderer_ca" ]; then
     cp "$orderer_ca" "$orderer_msp/cacerts/ca.example.com-cert.pem"
+    log "cacerts Orderer خودش کپی شد"
+    ((copied++))
+  else
+    log "هشدار: cacerts Orderer پیدا نشد: $orderer_ca"
   fi
 
-  success "cacerts کامل در MSP Orderer کپی شد"
+  sleep 5
+
+  if [ $copied -ge 8 ]; then
+    success "cacerts کامل (حداقل ۸ سازمان) در MSP Orderer کپی شد — Orderer بدون خطا بالا می‌ماند"
+  else
+    error "فقط $copied cacert کپی شد — genesis.block validate نمی‌شود"
+  fi
 }
 
 prepare_bundled_tls_ca() {
@@ -907,7 +929,7 @@ main() {
   generate_channel_artifacts
   generate_coreyamls
   # prepare_msp_for_network
-  # prepare_orderer_msp_full_cacerts
+  prepare_orderer_msp_full_cacerts
   prepare_bundled_tls_ca
   start_network
   wait_for_orderer
