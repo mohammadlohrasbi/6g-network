@@ -326,11 +326,14 @@ prepare_orderer_msp_full_cacerts() {
     fi
   done
 
-  # کپی CA Orderer با نام دقیق (ca-orderer.example.com-cert.pem)
+  # کپی CA Orderer با هر دو نام ممکن (برای سازگاری کامل با Fabric)
   local orderer_ca_path="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
   if [ -f "$orderer_ca_path" ]; then
+    # نام اصلی که cryptogen ساخته
     cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca-orderer.example.com-cert.pem"
-    log "CA Orderer با نام دقیق ca-orderer.example.com-cert.pem کپی شد"
+    # نام استاندارد که Fabric گاهی انتظار دارد (حل‌کننده خطای unknown authority)
+    cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca.example.com-cert.pem"
+    log "CA Orderer با هر دو نام ca-orderer.example.com-cert.pem و ca.example.com-cert.pem کپی شد"
     ((copied++))
   else
     log "هشدار: ca-orderer.example.com-cert.pem پیدا نشد — cryptogen را چک کنید"
