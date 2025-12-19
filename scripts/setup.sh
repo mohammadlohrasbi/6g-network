@@ -332,7 +332,7 @@ prepare_orderer_msp_full_cacerts() {
     # نام اصلی که cryptogen ساخته
     cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca-orderer.example.com-cert.pem"
     # نام استاندارد که Fabric گاهی انتظار دارد (حل‌کننده خطای unknown authority)
-    cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca.example.com-cert.pem"
+    cp "$orderer_ca_path" "$orderer_root_msp/cacerts/ca-example.com-cert.pem"
     log "CA Orderer با هر دو نام ca-orderer.example.com-cert.pem و ca.example.com-cert.pem کپی شد"
     ((copied++))
   else
