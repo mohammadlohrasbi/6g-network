@@ -286,6 +286,7 @@ prepare_gossip_msp_full_admincerts() {
     error "فقط $success_count Peer کامل شد"
   fi
 }
+
 prepare_orderer_msp_full_cacerts() {
   log "کپی cacerts کامل همه سازمان‌ها در MSP Orderer — برای validate genesis.block بدون خطا"
 
@@ -316,7 +317,7 @@ prepare_orderer_msp_full_cacerts() {
     fi
   done
 
-  # کپی CA Orderer خودش (چند نام ممکن)
+  # کپی CA Orderer خودش (نام‌های ممکن)
   local orderer_ca_paths=(
     "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca.example.com-cert.pem"
     "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
@@ -327,18 +328,17 @@ prepare_orderer_msp_full_cacerts() {
       cp "$ca_path" "$orderer_msp/cacerts/ca.example.com-cert.pem"
       log "cacerts Orderer خودش کپی شد ($ca_path)"
       orderer_ca_copied=1
+      ((copied++))
       break
     fi
   done
   if [ $orderer_ca_copied -eq 0 ]; then
     log "هشدار: cacerts Orderer پیدا نشد"
-  else
-    ((copied++))
   fi
 
-  # --- admincerts: فقط گواهی Admin@example.com نگه دار (حذف هر چیز دیگری مثل CA) ---
+  # --- admincerts: پاک‌سازی کامل و فقط کپی Admin@example.com ---
   mkdir -p "$orderer_msp/admincerts"
-  rm -f "$orderer_msp/admincerts"/*
+  rm -f "$orderer_msp/admincerts"/*  # حذف هر چیز قبلی (مثل ca-orderer.example.com-cert.pem)
 
   local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
   if [ -f "$admin_cert" ]; then
