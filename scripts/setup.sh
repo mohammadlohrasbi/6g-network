@@ -288,19 +288,40 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "کپی cacerts، keystore و signcerts کامل در MSP ریشه Orderer — برای بالا آمدن Orderer بدون خطا"
+  log "کپی keystore، signcerts، cacerts کامل و admincerts درست در MSP ریشه Orderer — برای بالا آمدن Orderer بدون خطا"
 
   cd "$PROJECT_DIR"
 
+  # MSP ریشه Orderer (مهم — Orderer از این استفاده می‌کند)
   local orderer_root_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp"
+  # MSP node Orderer
   local orderer_node_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
   if [ ! -d "$orderer_root_msp" ] || [ ! -d "$orderer_node_msp" ]; then
-    error "MSP Orderer پیدا نشد"
+    error "MSP Orderer پیدا نشد — مسیرها را چک کنید"
     return 1
   fi
 
-  # کپی cacerts کامل
+  # --- keystore و signcerts: کپی از node به ریشه ---
+  mkdir -p "$orderer_root_msp/keystore"
+  rm -f "$orderer_root_msp/keystore"/*
+  if [ "$(ls -A "$orderer_node_msp/keystore" 2>/dev/null)" ]; then
+    cp "$orderer_node_msp/keystore"/* "$orderer_root_msp/keystore/" 2>/dev/null
+    log "keystore از node به MSP ریشه Orderer کپی شد"
+  else
+    log "هشدار: keystore در node Orderer خالی است"
+  fi
+
+  mkdir -p "$orderer_root_msp/signcerts"
+  rm -f "$orderer_root_msp/signcerts"/*
+  if [ "$(ls -A "$orderer_node_msp/signcerts" 2>/dev/null)" ]; then
+    cp "$orderer_node_msp/signcerts"/* "$orderer_root_msp/signcerts/" 2>/dev/null
+    log "signcerts از node به MSP ریشه Orderer کپی شد"
+  else
+    log "هشدار: signcerts در node Orderer خالی است"
+  fi
+
+  # --- cacerts: پاک‌سازی و کپی کامل همه CAها ---
   mkdir -p "$orderer_root_msp/cacerts"
   rm -f "$orderer_root_msp/cacerts"/*
 
@@ -325,22 +346,25 @@ prepare_orderer_msp_full_cacerts() {
     fi
   done
 
-  # کپی keystore و signcerts از node به ریشه
-  mkdir -p "$orderer_root_msp/keystore"
-  cp "$orderer_node_msp/keystore"/* "$orderer_root_msp/keystore/" 2>/dev/null
-
-  mkdir -p "$orderer_root_msp/signcerts"
-  cp "$orderer_node_msp/signcerts"/* "$orderer_root_msp/signcerts/" 2>/dev/null
-
-  # admincerts فقط Admin@example.com
+  # --- admincerts: فقط Admin@example.com نگه دار ---
   mkdir -p "$orderer_root_msp/admincerts"
   rm -f "$orderer_root_msp/admincerts"/*
+
   local admin_cert="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
   if [ -f "$admin_cert" ]; then
     cp "$admin_cert" "$orderer_root_msp/admincerts/Admin@example.com-cert.pem"
+    log "admincerts MSP ریشه فقط با Admin@example.com تنظیم شد"
+  else
+    log "هشدار: گواهی Admin@example.com پیدا نشد"
   fi
 
-  success "MSP ریشه Orderer کامل شد — Orderer بالا می‌ماند"
+  sleep 5
+
+  if [ $copied -ge 8 ]; then
+    success "MSP ریشه Orderer کامل شد (keystore + signcerts + cacerts + admincerts) — Orderer بالا می‌ماند"
+  else
+    error "فقط $copied cacert کپی شد"
+  fi
 }
 
 prepare_bundled_tls_ca() {
