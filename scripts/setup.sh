@@ -430,7 +430,7 @@ create_and_join_channels() {
 
     # ایجاد کانال فقط با Org1 (MSP کامل Admin@org1)
     if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                    -e CORE_PEER_TLS_ENABLED=true \
                    -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
@@ -466,7 +466,7 @@ create_and_join_channels() {
 
       # join فقط با Org1 (کافی است — gossip بقیه را join می‌کند)
       if docker exec -e CORE_PEER_LOCALMSPID=Org1MSP \
-                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+                     -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp-users \
                      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
                      -e CORE_PEER_TLS_ENABLED=true \
                      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
