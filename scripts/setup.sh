@@ -288,11 +288,10 @@ prepare_gossip_msp_full_admincerts() {
 }
 
 prepare_orderer_msp_full_cacerts() {
-  log "اصلاح MSP محلی Orderer (MSP node) با کپی کردن گواهی‌های ۸ سازمان Peer به cacerts"
+  log "اصلاح MSP محلی Orderer با کپی CAهای ۸ سازمان + اصلاح admincerts"
 
   cd "$PROJECT_DIR"
 
-  # مسیر MSP محلی Orderer (MSP node — این مسیری است که در docker-compose مونت می‌شود)
   local orderer_local_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
   if [ ! -d "$orderer_local_msp" ]; then
@@ -300,46 +299,43 @@ prepare_orderer_msp_full_cacerts() {
     return 1
   fi
 
-  # --- cacerts: پاک‌سازی و کپی گواهی‌های ۸ سازمان Peer + CA Orderer خودش ---
+  # --- cacerts ---
   mkdir -p "$orderer_local_msp/cacerts"
   rm -f "$orderer_local_msp/cacerts"/*
 
   local copied=0
 
-  # کپی CAهای ۸ سازمان Peer با نام دقیق
   for i in $(seq 1 8); do
     local org_ca="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/ca/ca-org${i}.org${i}.example.com-cert.pem"
     if [ -f "$org_ca" ]; then
       cp "$org_ca" "$orderer_local_msp/cacerts/ca-org${i}.org${i}.example.com-cert.pem"
-      log "CA Org${i} به cacerts MSP محلی Orderer کپی شد"
       ((copied++))
-    else
-      log "هشدار: CA Org${i} پیدا نشد — مسیر: $org_ca"
     fi
   done
 
-  # کپی CA Orderer خودش با نام اصلی (cryptogen آن را با این نام ساخته)
   local orderer_ca_path="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
   if [ -f "$orderer_ca_path" ]; then
     cp "$orderer_ca_path" "$orderer_local_msp/cacerts/ca-orderer.example.com-cert.pem"
-    log "CA Orderer با نام ca-orderer.example.com-cert.pem به cacerts MSP محلی کپی شد"
-    ((copied++))
-  else
-    log "هشدار: ca-orderer.example.com-cert.pem پیدا نشد"
-  fi
-
-  # اختیاری: کپی با نام ca.example.com-cert.pem برای سازگاری کامل (در برخی موارد Fabric این نام را انتظار دارد)
-  if [ -f "$orderer_ca_path" ]; then
     cp "$orderer_ca_path" "$orderer_local_msp/cacerts/ca.example.com-cert.pem"
-    log "CA Orderer با نام اضافی ca.example.com-cert.pem نیز کپی شد (برای سازگاری بیشتر)"
+    ((copied++))
   fi
 
-  sleep 5
+  # --- admincerts: فقط Admin@example.com (حذف هر چیز دیگری مثل CA) ---
+  mkdir -p "$orderer_local_msp/admincerts"
+  rm -f "$orderer_local_msp/admincerts"/*
 
-  if [ $copied -ge 9 ]; then  # ۸ سازمان + Orderer
-    success "MSP محلی Orderer با موفقیت اصلاح شد — تمام ۸ سازمان + CA Orderer در cacerts موجود است"
+  local admin_cert_path="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+  if [ -f "$admin_cert_path" ]; then
+    cp "$admin_cert_path" "$orderer_local_msp/admincerts/Admin@example.com-cert.pem"
+    log "admincerts MSP محلی Orderer فقط با Admin@example.com تنظیم شد"
   else
-    error "فقط $copied گواهی کپی شد — مشکل در کپی وجود دارد"
+    log "هشدار: Admin@example.com-cert.pem پیدا نشد"
+  fi
+
+  if [ $copied -ge 9 ]; then
+    success "MSP محلی Orderer کامل شد — آماده راه‌اندازی Orderer"
+  else
+    error "فقط $copied CA کپی شد"
   fi
 }
 
