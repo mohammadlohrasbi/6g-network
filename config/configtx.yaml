@@ -20,17 +20,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org1.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin', 'Org1MSP.peer', 'Org1MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org1MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org1.example.com
         Port: 7051
@@ -41,17 +41,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org2.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin', 'Org2MSP.peer', 'Org2MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org2MSP.admin', 'Org2MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org2MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org2.example.com
         Port: 8051
@@ -62,17 +62,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org3.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin', 'Org3MSP.peer', 'Org3MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org3MSP.admin', 'Org3MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org3MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org3.example.com
         Port: 9051
@@ -83,17 +83,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org4.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org4MSP.admin', 'Org4MSP.peer', 'Org4MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org4MSP.admin', 'Org4MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org4MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org4.example.com
         Port: 10051
@@ -104,17 +104,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org5.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org5MSP.admin', 'Org5MSP.peer', 'Org5MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org5MSP.admin', 'Org5MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org5MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org5.example.com
         Port: 11051
@@ -125,17 +125,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org6.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org6MSP.admin', 'Org6MSP.peer', 'Org6MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org6MSP.admin', 'Org6MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org6MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org6.example.com
         Port: 12051
@@ -146,17 +146,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org7.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org7MSP.admin', 'Org7MSP.peer', 'Org7MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org7MSP.admin', 'Org7MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org7MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org7.example.com
         Port: 13051
@@ -167,17 +167,17 @@ Organizations:
     MSPDir: ./crypto-config/peerOrganizations/org8.example.com/msp
     Policies:
       Readers:
-        Type: Signature
-        Rule: "OR('Org8MSP.admin', 'Org8MSP.peer', 'Org8MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
       Writers:
-        Type: Signature
-        Rule: "OR('Org8MSP.admin', 'Org8MSP.client')"
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
-        Type: Signature
-        Rule: "OR('Org8MSP.peer')"
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
