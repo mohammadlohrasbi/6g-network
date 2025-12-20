@@ -351,6 +351,47 @@ prepare_bundled_tls_ca() {
 
   success "bundled-tls-ca.pem آماده شد"
 }
+
+# این تابع را به اسکریپت setup.sh یا هر اسکریپت دیگری که قبل از راه‌اندازی شبکه اجرا می‌شود اضافه کنید
+fix_admin_msp_for_all_orgs() {
+  log "اصلاح MSP Admin برای تمام ۸ سازمان — اضافه کردن گواهی Admin به admincerts"
+
+  local fixed_count=0
+
+  for i in {1..8}; do
+    local admin_msp_dir="$PROJECT_DIR/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp"
+
+    if [ ! -d "$admin_msp_dir" ]; then
+      log "هشدار: MSP Admin برای Org${i} پیدا نشد — مسیر: $admin_msp_dir"
+      continue
+    fi
+
+    local signcert_path="$admin_msp_dir/signcerts/Admin@org${i}.example.com-cert.pem"
+    local admincert_path="$admin_msp_dir/admincerts/Admin@org${i}.example.com-cert.pem"
+
+    if [ ! -f "$signcert_path" ]; then
+      log "هشدار: گواهی signcerts برای Admin Org${i} پیدا نشد"
+      continue
+    fi
+
+    # ایجاد فولدر admincerts اگر وجود نداشته باشد
+    mkdir -p "$admin_msp_dir/admincerts"
+
+    # کپی گواهی از signcerts به admincerts
+    if cp "$signcert_path" "$admincert_path"; then
+      success "گواهی Admin به admincerts برای Org${i} کپی شد"
+      ((fixed_count++))
+    else
+      error "خطا در کپی گواهی Admin برای Org${i}"
+    fi
+  done
+
+  if [ $fixed_count -eq 8 ]; then
+    success "MSP Admin برای تمام ۸ سازمان با موفقیت اصلاح شد — حالا approve و commit کار می‌کند!"
+  else
+    log "هشدار: فقط $fixed_count از ۸ سازمان اصلاح شد"
+  fi
+}
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
   log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
@@ -982,6 +1023,7 @@ main() {
   # prepare_msp_for_network
   # prepare_orderer_msp_full_cacerts
   prepare_bundled_tls_ca
+  fix_admin_msp_for_all_orgs
   start_network
   wait_for_orderer
   # upgrade_shared_msp_full_admins
