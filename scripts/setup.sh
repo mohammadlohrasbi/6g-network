@@ -795,8 +795,9 @@ EOF
       if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
                   -e CORE_PEER_ADDRESS=${PEER}:7051 \
                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+                  -e CORE_CHAINCODE_EXECUTETIMEOUT=300s \
                   "$PEER" \
-                  peer lifecycle chaincode install /tmp/${name}.tar.gz --timeout 300s; then
+                  peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
         ((install_success++))
       else
