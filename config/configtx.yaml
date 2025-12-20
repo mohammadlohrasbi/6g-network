@@ -30,7 +30,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org1.example.com
         Port: 7051
@@ -51,7 +51,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org2.example.com
         Port: 8051
@@ -72,7 +72,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org3.example.com
         Port: 9051
@@ -93,7 +93,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org4.example.com
         Port: 10051
@@ -114,7 +114,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org5.example.com
         Port: 11051
@@ -135,7 +135,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org6.example.com
         Port: 12051
@@ -156,7 +156,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org7.example.com
         Port: 13051
@@ -177,7 +177,7 @@ Organizations:
         Rule: "ANY Admins"                # تغییر داده شد
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
+        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
