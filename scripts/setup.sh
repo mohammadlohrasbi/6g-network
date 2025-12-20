@@ -836,41 +836,46 @@ approve_and_commit_chaincode() {
   local committed=0
   local channel_count="${#CHANNELS[@]}"
 
-  # اگر chaincode وجود نداشته باشد، مرحله را رد کن
   if [ "$total_chaincodes" -eq 0 ]; then
     log "هیچ chaincode یافت نشد — مرحله approve/commit رد شد"
     return 0
   fi
 
   for channel in "${CHANNELS[@]}"; do
-    log "پردازش کانال $channel..."
+    log "=== پردازش کانال $channel ==="
 
     for dir in "$CHAINCODE_DIR"/*/; do
       [ ! -d "$dir" ] && continue
       name=$(basename "$dir")
 
-      # گرفتن package_id از Org1 با MSP Admin
-      package_id=$(docker exec \
+      # گرفتن package_id از Org1 با MSP Admin — خروجی کامل چاپ می‌شود
+      log "دریافت package_id برای chaincode $name از Org1 (با نمایش کامل خروجی)..."
+
+      query_output=$(docker exec \
         -e CORE_PEER_LOCALMSPID=Org1MSP \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
         peer0.org1.example.com \
-        peer lifecycle chaincode queryinstalled 2>/dev/null | \
-        grep "Label: ${name}_1.0" | awk -F', ' '{print $2}' | cut -d: -f2 | xargs)
+        peer lifecycle chaincode queryinstalled 2>&1)
+
+      log "خروجی کامل queryinstalled روی Org1:"
+      echo "$query_output" | sed 's/^/    > /'
+      echo ""
+
+      package_id=$(echo "$query_output" | grep "Label: ${name}_1.0" | awk -F', ' '{print $2}' | cut -d: -f2 | xargs)
 
       if [ -z "$package_id" ]; then
-        log "هشدار: package_id برای $name روی Org1 یافت نشد — این chaincode نصب نشده است"
+        error "هشدار: package_id برای $name روی Org1 یافت نشد — این chaincode نصب نشده است یا خطایی در queryinstalled رخ داده"
         continue
       fi
 
-      log "package_id برای $name: $package_id"
+      success "package_id برای $name: $package_id"
 
       # Approve برای سازمان‌های ممکن با MSP Admin
       local approve_success=0
       for i in {1..8}; do
         log "چک نصب $name روی Org${i}..."
 
-        # چک کنیم chaincode روی این Peer نصب شده باشد
         installed_check=$(docker exec \
           -e CORE_PEER_LOCALMSPID=Org${i}MSP \
           -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
@@ -885,9 +890,8 @@ approve_and_commit_chaincode() {
           continue
         fi
 
-        log "در حال approve $name روی Org${i}..."
+        success "Chaincode $name روی Org${i} نصب شده است — در حال approve..."
 
-        # تمام خروجی (stdout + stderr) را بگیریم و چاپ کنیم
         approve_output=$(docker exec \
           -e CORE_PEER_LOCALMSPID=Org${i}MSP \
           -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
@@ -908,24 +912,25 @@ approve_and_commit_chaincode() {
 
         exit_code=$?
 
+        log "خروجی کامل approve $name روی Org${i} (کد خروج: $exit_code):"
+        echo "$approve_output" | sed 's/^/    > /'
+        echo ""
+
         if [ $exit_code -eq 0 ]; then
-          success "Approve $name روی Org${i} موفق"
+          success "Approve $name روی Org${i} با موفقیت انجام شد"
           ((approve_success++))
         else
-          error "Approve $name روی Org${i} شکست خورد (exit code: $exit_code):"
-          echo "$approve_output" | sed 's/^/    > /'
+          error "Approve $name روی Org${i} شکست خورد (کد خروج: $exit_code)"
         fi
       done
 
-      log "Approve $name روی کانال $channel: $approve_success از ۸ سازمان موفق"
+      log "نتیجه approve $name روی کانال $channel: $approve_success از ۸ سازمان موفق"
 
-      # اگر حداقل ۵ approve نداشته باشیم، commit نکن
       if [ $approve_success -lt 5 ]; then
-        log "هشدار: تعداد approve کافی نیست (حداقل ۵ لازم است برای Majority) — commit رد شد"
+        error "تعداد approve کافی نیست (حداقل ۵ لازم است برای Majority) — commit برای $name روی $channel رد شد"
         continue
       fi
 
-      # Commit فقط از Org1
       log "در حال commit $name روی کانال $channel..."
 
       commit_output=$(docker exec \
@@ -949,12 +954,15 @@ approve_and_commit_chaincode() {
 
       exit_code=$?
 
+      log "خروجی کامل commit $name روی کانال $channel (کد خروج: $exit_code):"
+      echo "$commit_output" | sed 's/^/    > /'
+      echo ""
+
       if [ $exit_code -eq 0 ]; then
         success "Chaincode $name روی کانال $channel با موفقیت commit شد"
         ((committed++))
       else
-        error "Commit $name روی کانال $channel شکست خورد (exit code: $exit_code):"
-        echo "$commit_output" | sed 's/^/    > /'
+        error "Commit $name روی کانال $channel شکست خورد (کد خروج: $exit_code)"
       fi
     done
   done
@@ -963,7 +971,7 @@ approve_and_commit_chaincode() {
   if [ $committed -eq $expected ]; then
     success "تمام $total_chaincodes Chaincode روی $channel_count کانال با موفقیت approve و commit شدند!"
   else
-    log "هشدار: فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات خطا بررسی کنید"
+    error "فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات کامل بررسی کنید"
   fi
 }
 
