@@ -848,7 +848,6 @@ approve_and_commit_chaincode() {
       [ ! -d "$dir" ] && continue
       name=$(basename "$dir")
 
-      # گرفتن package_id از Org1 با MSP Admin — خروجی کامل چاپ می‌شود
       log "دریافت package_id برای chaincode $name از Org1 (با نمایش کامل خروجی)..."
 
       query_output=$(docker exec \
@@ -865,13 +864,12 @@ approve_and_commit_chaincode() {
       package_id=$(echo "$query_output" | grep "Label: ${name}_1.0" | awk -F', ' '{print $2}' | cut -d: -f2 | xargs)
 
       if [ -z "$package_id" ]; then
-        error "هشدار: package_id برای $name روی Org1 یافت نشد — این chaincode نصب نشده است یا خطایی در queryinstalled رخ داده"
+        error "هشدار: package_id برای $name روی Org1 یافت نشد — این chaincode نصب نشده است"
         continue
       fi
 
       success "package_id برای $name: $package_id"
 
-      # Approve برای سازمان‌های ممکن با MSP Admin
       local approve_success=0
       for i in {1..8}; do
         log "چک نصب $name روی Org${i}..."
@@ -908,7 +906,7 @@ approve_and_commit_chaincode() {
             --version 1.0 \
             --package-id "$package_id" \
             --sequence 1 \
-            --waitForEvent --timeout 300s 2>&1)
+            --waitForEvent 2>&1)  # <--- --timeout حذف شد
 
         exit_code=$?
 
@@ -927,7 +925,7 @@ approve_and_commit_chaincode() {
       log "نتیجه approve $name روی کانال $channel: $approve_success از ۸ سازمان موفق"
 
       if [ $approve_success -lt 5 ]; then
-        error "تعداد approve کافی نیست (حداقل ۵ لازم است برای Majority) — commit برای $name روی $channel رد شد"
+        error "تعداد approve کافی نیست (حداقل ۵ لازم است برای Majority) — commit رد شد"
         continue
       fi
 
@@ -948,7 +946,7 @@ approve_and_commit_chaincode() {
           --name "$name" \
           --version 1.0 \
           --sequence 1 \
-          --waitForEvent --timeout 300s \
+          --waitForEvent --timeout 300s \  # <--- فقط در commit نگه داشته شد
           --peerAddresses peer0.org1.example.com:7051 \
           --tlsRootCertFiles /etc/hyperledger/fabric/bundled-tls-ca.pem 2>&1)
 
@@ -971,7 +969,7 @@ approve_and_commit_chaincode() {
   if [ $committed -eq $expected ]; then
     success "تمام $total_chaincodes Chaincode روی $channel_count کانال با موفقیت approve و commit شدند!"
   else
-    error "فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات کامل بررسی کنید"
+    error "فقط $committed از $expected commit موفق شد — لاگ‌های بالا را بررسی کنید"
   fi
 }
 
