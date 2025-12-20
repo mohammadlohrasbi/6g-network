@@ -36,7 +36,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org1.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -62,7 +62,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org2.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -88,7 +88,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org3.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -114,7 +114,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org4.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -140,7 +140,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org5.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -166,7 +166,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org6.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -192,7 +192,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org7.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
@@ -218,7 +218,7 @@ PeerOrgs:
       - Hostname: Admin
         CommonName: Admin@org8.example.com
         Attributes:
-          - Name: admin
+          - Name: ADMIN
             Value: "true"
           - Name: hf.Revoker
             Value: "true"
