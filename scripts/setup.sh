@@ -796,6 +796,7 @@ EOF
                   -e CORE_PEER_ADDRESS=${PEER}:7051 \
                   -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
                   -e CORE_CHAINCODE_EXECUTETIMEOUT=300s \
+                  -e CORE_PEER_GRPCOPTIONS="keepalive_time=60s,keepalive_timeout=20s,keepalive_permit_without_calls=true" \
                   "$PEER" \
                   peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
@@ -864,7 +865,7 @@ approve_and_commit_chaincode() {
 
       log "package_id برای $name: $package_id"
 
-      # Approve فقط برای سازمان‌هایی که chaincode روی آن‌ها نصب شده است
+      # Approve برای سازمان‌های ممکن با MSP Admin
       local approve_success=0
       for i in {1..8}; do
         log "چک نصب $name روی Org${i}..."
@@ -886,12 +887,14 @@ approve_and_commit_chaincode() {
 
         log "در حال approve $name روی Org${i}..."
 
+        # تمام خروجی (stdout + stderr) را بگیریم و چاپ کنیم
         approve_output=$(docker exec \
           -e CORE_PEER_LOCALMSPID=Org${i}MSP \
           -e CORE_PEER_ADDRESS=peer0.org${i}.example.com:7051 \
           -e CORE_PEER_TLS_ENABLED=true \
           -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+          -e CORE_PEER_GRPCOPTIONS="keepalive_time=60s,keepalive_timeout=20s,keepalive_permit_without_calls=true" \
           peer0.org${i}.example.com \
           peer lifecycle chaincode approveformyorg \
             -o orderer.example.com:7050 \
@@ -901,27 +904,28 @@ approve_and_commit_chaincode() {
             --version 1.0 \
             --package-id "$package_id" \
             --sequence 1 \
-            $(if chaincode_has_init "$name"; then echo "--init-required"; fi) \
             --waitForEvent --timeout 300s 2>&1)
 
-        if [ $? -eq 0 ]; then
+        exit_code=$?
+
+        if [ $exit_code -eq 0 ]; then
           success "Approve $name روی Org${i} موفق"
           ((approve_success++))
         else
-          error "Approve $name روی Org${i} شکست خورد:"
-          echo "$approve_output" | sed 's/^/  > /'
+          error "Approve $name روی Org${i} شکست خورد (exit code: $exit_code):"
+          echo "$approve_output" | sed 's/^/    > /'
         fi
       done
 
       log "Approve $name روی کانال $channel: $approve_success از ۸ سازمان موفق"
 
-      # اگر حداقل تعداد لازم approve شد (مثلاً Majority = حداقل ۵ از ۸)
+      # اگر حداقل ۵ approve نداشته باشیم، commit نکن
       if [ $approve_success -lt 5 ]; then
-        log "هشدار: تعداد approve کافی نیست (حداقل ۵ لازم است) — commit رد شد"
+        log "هشدار: تعداد approve کافی نیست (حداقل ۵ لازم است برای Majority) — commit رد شد"
         continue
       fi
 
-      # Commit فقط از Org1 (با MSP Admin)
+      # Commit فقط از Org1
       log "در حال commit $name روی کانال $channel..."
 
       commit_output=$(docker exec \
@@ -930,6 +934,7 @@ approve_and_commit_chaincode() {
         -e CORE_PEER_TLS_ENABLED=true \
         -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+        -e CORE_PEER_GRPCOPTIONS="keepalive_time=60s,keepalive_timeout=20s,keepalive_permit_without_calls=true" \
         peer0.org1.example.com \
         peer lifecycle chaincode commit \
           -o orderer.example.com:7050 \
@@ -938,17 +943,18 @@ approve_and_commit_chaincode() {
           --name "$name" \
           --version 1.0 \
           --sequence 1 \
-          $(if chaincode_has_init "$name"; then echo "--init-required"; fi) \
           --waitForEvent --timeout 300s \
           --peerAddresses peer0.org1.example.com:7051 \
           --tlsRootCertFiles /etc/hyperledger/fabric/bundled-tls-ca.pem 2>&1)
 
-      if [ $? -eq 0 ]; then
+      exit_code=$?
+
+      if [ $exit_code -eq 0 ]; then
         success "Chaincode $name روی کانال $channel با موفقیت commit شد"
         ((committed++))
       else
-        error "Commit $name روی کانال $channel شکست خورد:"
-        echo "$commit_output" | sed 's/^/  > /'
+        error "Commit $name روی کانال $channel شکست خورد (exit code: $exit_code):"
+        echo "$commit_output" | sed 's/^/    > /'
       fi
     done
   done
@@ -957,7 +963,7 @@ approve_and_commit_chaincode() {
   if [ $committed -eq $expected ]; then
     success "تمام $total_chaincodes Chaincode روی $channel_count کانال با موفقیت approve و commit شدند!"
   else
-    log "هشدار: فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات بررسی کنید"
+    log "هشدار: فقط $committed از $expected commit موفق شد — لاگ‌های بالا را برای جزئیات خطا بررسی کنید"
   fi
 }
 
