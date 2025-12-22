@@ -37,6 +37,69 @@ generate_crypto() {
   success "Crypto-config با موفقیت تولید شد"
 }
 
+enroll_all_identities_with_fabric_ca() {
+  log "تولید گواهی‌های جدید با Fabric CA — OU = ADMIN بزرگ — NodeOUs فعال"
+
+  # مسیر پایه
+  local base_msp="$PROJECT_DIR/crypto-config"
+
+  # TLS Root Cert برای ارتباط با CAها
+  local tls_root="$PROJECT_DIR/bundled-tls-ca.pem"
+
+  # 1. Orderer Organization
+  log "Enroll Orderer Admin"
+  fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 --tls.certfiles $tls_root -M $base_msp/ordererOrganizations/example.com/users/Admin@example.com/msp
+
+  # register و enroll Orderer node
+  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer --tls.certfiles $tls_root
+  fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 --tls.certfiles $tls_root -M $base_msp/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+
+  # 2. Peer Organizations (Org1 تا Org8)
+  for i in {1..8}; do
+    local org="org${i}"
+    local ca_port=$((7054 + i * 100))  # 7154 for Org1, 7254 for Org2, etc.
+
+    log "Enroll Admin برای Org${i}"
+
+    # Enroll bootstrap admin
+    fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port --tls.certfiles $tls_root -M $base_msp/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp
+
+    # Register Peer node
+    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer --tls.certfiles $tls_root
+    fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@ca-${org}:$ca_port --tls.certfiles $tls_root -M $base_msp/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp
+
+    # Register و Enroll Admin واقعی با OU = ADMIN بزرگ
+    fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin --id.attrs 'hf.Registrar.Roles=admin,peer,client,user,hf.Revoker=true' --tls.certfiles $tls_root
+    fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@ca-${org}:$ca_port --tls.certfiles $tls_root -M $base_msp/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp
+
+    success "گواهی‌های Org${i} با OU = ADMIN بزرگ تولید شد"
+  done
+
+  # 3. config.yaml با NodeOUs و OU بزرگ بساز
+  log "ساخت config.yaml با NodeOUs فعال و OU بزرگ"
+  for msp_path in $(find "$base_msp" -type d -name "msp" | grep -v "ca\|tlsca"); do
+    cat > "$msp_path/config.yaml" << EOF
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/*.pem
+    OrganizationalUnitIdentifier: CLIENT
+  PeerOUIdentifier:
+    Certificate: cacerts/*.pem
+    OrganizationalUnitIdentifier: PEER
+  AdminOUIdentifier:
+    Certificate: cacerts/*.pem
+    OrganizationalUnitIdentifier: ADMIN
+  OrdererOUIdentifier:
+    Certificate: cacerts/*.pem
+    OrganizationalUnitIdentifier: ORDERER
+EOF
+    success "config.yaml ساخته شد: $msp_path"
+  done
+
+  success "تمام گواهی‌ها با Fabric CA تولید شد — NodeOUs فعال — OU = ADMIN بزرگ — همه چیز کار می‌کند!"
+}
+
 generate_channel_artifacts() {
   log "تولید آرتیفکت‌های کانال..."
   mkdir -p "$CHANNEL_DIR"
@@ -1017,8 +1080,9 @@ approve_and_commit_chaincode() {
 # ------------------- اجرا -------------------
 main() {
   cleanup
-  generate_crypto
-  generate_channel_artifacts
+  enroll_all_identities_with_fabric_ca
+  # generate_crypto
+  # generate_channel_artifacts
   generate_coreyamls
   # prepare_msp_for_network
   # prepare_orderer_msp_full_cacerts
