@@ -38,33 +38,47 @@ generate_crypto() {
   success "Crypto-config با موفقیت تولید شد"
 }
 
-setup_network_with_fabric_ca_nodeous_active() {
-  log "راه‌اندازی کامل شبکه با Fabric CA — NodeOUs فعال — OU بزرگ"
+setup_network_with_fabric_ca_tls_nodeous_active() {
+  log "راه‌اندازی کامل شبکه با Fabric CA — TLS فعال — NodeOUs فعال — OU بزرگ"
 
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
   local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
+  local TLS_ROOT_DIR="$PROJECT_DIR/ca-tls-roots"  # فولدر برای ذخیره TLS rootها
 
   # پاک کردن قبلی
   docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
-  rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
-  mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
+  rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TLS_ROOT_DIR"
+  mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TLS_ROOT_DIR"
 
   # بالا آوردن CAها
-  log "بالا آوردن CAها"
+  log "بالا آوردن تمام Fabric CAها (TLS فعال)"
   docker-compose -f docker-compose-ca.yml up -d
-  sleep 60
+  sleep 60  # زمان برای آماده شدن CAها و تولید گواهی TLS
 
-  # تولید گواهی‌ها
+  # کپی گواهی TLS root از داخل هر کانتینر CA
+  log "کپی گواهی TLS root از CAها"
+  docker cp ca-orderer:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem "$TLS_ROOT_DIR/ca-orderer-tls.pem"
+  for i in {1..8}; do
+    local org="org${i}"
+    docker cp ca-${org}:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem "$TLS_ROOT_DIR/ca-${org}-tls.pem"
+  done
+
+  success "گواهی‌های TLS root کپی شد"
+
+  # تولید گواهی‌ها با Fabric CA (با TLS root درست)
   log "تولید گواهی‌ها با Fabric CA"
 
   # Orderer
-  # Bootstrap Admin با http (چون TLS root هنوز نیست)
-  fabric-ca-client enroll -u http://admin:adminpw@ca-orderer:7054 \
+  fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
+    --tls.certfiles "$TLS_ROOT_DIR/ca-orderer-tls.pem" \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
-  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
+  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+    --tls.certfiles "$TLS_ROOT_DIR/ca-orderer-tls.pem"
+
   fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 \
+    --tls.certfiles "$TLS_ROOT_DIR/ca-orderer-tls.pem" \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
   # Peer Orgs
@@ -72,20 +86,26 @@ setup_network_with_fabric_ca_nodeous_active() {
     local org="org${i}"
     local ca_port=$((7054 + i * 100))
 
-    # Bootstrap Admin با http
-    fabric-ca-client enroll -u http://admin:adminpw@ca-${org}:$ca_port \
+    # Bootstrap Admin
+    fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port \
+      --tls.certfiles "$TLS_ROOT_DIR/ca-${org}-tls.pem" \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Bootstrap@${org}.example.com/msp"
 
-    # Register و Enroll Peer
-    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer
+    # Peer
+    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer \
+      --tls.certfiles "$TLS_ROOT_DIR/ca-${org}-tls.pem"
+
     fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@ca-${org}:$ca_port \
+      --tls.certfiles "$TLS_ROOT_DIR/ca-${org}-tls.pem" \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
 
-    # Register و Enroll Admin واقعی
+    # Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
-      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
+      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true" \
+      --tls.certfiles "$TLS_ROOT_DIR/ca-${org}-tls.pem"
 
     fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@ca-${org}:$ca_port \
+      --tls.certfiles "$TLS_ROOT_DIR/ca-${org}-tls.pem" \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
     success "Org${i} کامل"
@@ -125,7 +145,7 @@ EOF
   log "بالا آوردن شبکه اصلی"
   docker-compose up -d
 
-  success "شبکه با Fabric CA و NodeOUs فعال راه‌اندازی شد!"
+  success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال راه‌اندازی شد!"
 }
 
 generate_channel_artifacts() {
