@@ -50,20 +50,22 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
 
-  # بالا آوردن CAها (بدون volume — Fabric CA خودش تولید می‌کند)
+  # بالا آوردن CAها
   log "بالا آوردن CAها"
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # کپی گواهی TLS root از داخل کانتینر (نام واقعی tls-ca-cert.pem)
+  # کپی گواهی TLS root از داخل کانتینر (نام واقعی tls-cert.pem)
   log "کپی گواهی TLS root از CAها"
-  docker cp ca-orderer:/etc/hyperledger/fabric-ca-server/tls/tls-ca-cert.pem "$CRYPTO_DIR/ca-orderer-tls.pem"
+  docker cp ca-orderer:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem "$CRYPTO_DIR/ca-orderer-tls.pem"
   for i in {1..8}; do
     local org="org${i}"
-    docker cp ca-${org}:/etc/hyperledger/fabric-ca-server/tls/tls-ca-cert.pem "$CRYPTO_DIR/ca-${org}-tls.pem"
+    docker cp ca-${org}:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem "$CRYPTO_DIR/ca-${org}-tls.pem"
   done
 
-  # تولید گواهی‌ها
+  success "گواهی‌های TLS root کپی شد"
+
+  # تولید گواهی‌ها با Fabric CA
   log "تولید گواهی‌ها با Fabric CA"
 
   # Orderer
