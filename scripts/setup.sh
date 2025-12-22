@@ -44,14 +44,14 @@ setup_network_with_fabric_ca_nodeous_active() {
   local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
 
   # پاک کردن قبلی
-  docker-compose -f docker-compose-ca.yaml down -v
+  docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
 
   # بالا آوردن CAها
   log "بالا آوردن CAها"
-  docker-compose -f docker-compose-ca.yaml up -d
+  docker-compose -f docker-compose-ca.yml up -d
   sleep 40  # زمان بیشتر برای آماده شدن CAها
 
   # تولید گواهی‌ها
