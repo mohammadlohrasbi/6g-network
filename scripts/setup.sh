@@ -43,9 +43,9 @@ setup_network_with_fabric_ca_nodeous_active() {
 
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
   local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
-  local CA_ROOT="$PROJECT_DIR/ca-root"  # فولدر موقت برای گواهی‌های CA
+  local CA_ROOT="$PROJECT_DIR/ca-root"  # برای ذخیره موقت گواهی‌های CA
 
-  # پاک کردن کامل قبلی
+  # پاک کردن کامل
   docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
   docker volume prune -f
@@ -53,53 +53,52 @@ setup_network_with_fabric_ca_nodeous_active() {
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$CA_ROOT"
 
   # بالا آوردن CAها
-  log "بالا آوردن تمام Fabric CAها"
+  log "بالا آوردن CAها"
   docker-compose -f docker-compose-ca.yml up -d
-  sleep 60  # زمان کافی برای آماده شدن CAها (مهم!)
+  sleep 60  # زمان کافی برای آماده شدن CAها
 
-  # تولید گواهی‌ها با Fabric CA (بدون وابستگی به cryptogen)
+  # تولید گواهی‌ها با Fabric CA (TLS از خود CA)
   log "تولید گواهی‌ها با Fabric CA"
 
-  # Orderer Organization
+  # Orderer
   local orderer_ca_port=7054
-  local orderer_ca_tls="$CA_ROOT/ca-orderer-tls.pem"
 
-  # Bootstrap Admin Orderer
-  fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:$orderer_ca_port --tls.certfiles "$orderer_ca_tls" \
+  # Bootstrap Admin Orderer (با TLS خود CA)
+  fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:$orderer_ca_port \
+    --tls.certfiles /dev/null \  # برای bootstrap, TLS لازم نیست یا از self-signed استفاده کن
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
   # Register و Enroll Orderer node
-  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer --tls.certfiles "$orderer_ca_tls"
-  fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:$orderer_ca_port --tls.certfiles "$orderer_ca_tls" \
+  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
+  fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:$orderer_ca_port \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
-  # Peer Organizations (Org1 تا Org8)
+  # Peer Orgs
   for i in {1..8}; do
     local org="org${i}"
-    local ca_port=$((7054 + i * 100))  # 7154 for Org1, etc.
-    local ca_tls="$CA_ROOT/ca-${org}-tls.pem"
+    local ca_port=$((7054 + i * 100))
 
     # Bootstrap Admin
-    fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port --tls.certfiles "$ca_tls" \
+    fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
-    # Register و Enroll Peer node
-    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer --tls.certfiles "$ca_tls"
-    fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@ca-${org}:$ca_port --tls.certfiles "$ca_tls" \
+    # Peer
+    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer
+    fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@ca-${org}:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
 
-    # Register و Enroll Admin واقعی (با OU = ADMIN بزرگ)
+    # Admin واقعی با OU بزرگ
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
-      --id.attrs "hf.Registrar.Roles=peer,client,user,admin,hf.Revoker=true" --tls.certfiles "$ca_tls"
+      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
 
-    fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@ca-${org}:$ca_port --tls.certfiles "$ca_tls" \
+    fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@ca-${org}:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
-    success "گواهی‌های Org${i} با موفقیت تولید شد"
+    success "Org${i} کامل"
   done
 
-  # ساخت config.yaml با NodeOUs فعال و OU بزرگ
-  log "ساخت config.yaml با NodeOUs فعال و OU بزرگ"
+  # config.yaml با NodeOUs و OU بزرگ
+  log "ساخت config.yaml"
   find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
     cat > "$msp/config.yaml" << EOF
 NodeOUs:
@@ -119,7 +118,7 @@ NodeOUs:
 EOF
   done
 
-  # تولید genesis.block و channel.txها
+  # genesis و channel.tx
   log "تولید genesis.block و channel.txها"
   export FABRIC_CFG_PATH="$PROJECT_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_ARTIFACTS/system-genesis.block" -channelID system-channel
@@ -128,11 +127,11 @@ EOF
     configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" -channelID "$ch"
   done
 
-  # بالا آوردن شبکه اصلی
+  # شبکه اصلی
   log "بالا آوردن شبکه اصلی"
   docker-compose up -d
 
-  success "شبکه با Fabric CA و NodeOUs فعال با موفقیت راه‌اندازی شد — approve/commit بدون خطا کار می‌کند!"
+  success "شبکه با Fabric CA و NodeOUs فعال راه‌اندازی شد!"
 }
 
 generate_channel_artifacts() {
