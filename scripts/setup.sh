@@ -1128,7 +1128,7 @@ approve_and_commit_chaincode() {
 # ------------------- اجرا -------------------
 main() {
   cleanup
-  setup_network_with_fabric_ca_nodeous_active
+  setup_network_with_fabric_ca_tls_nodeous_active
   # generate_crypto
   # generate_channel_artifacts
   generate_coreyamls
