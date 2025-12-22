@@ -47,7 +47,7 @@ setup_network_with_fabric_ca_nodeous_active() {
   local TLS_ROOT="$PROJECT_DIR/bundled-tls-ca.pem"
 
   # 1. پاک کردن قبلی
-  docker-compose -f docker-compose-ca.yaml down -v
+  docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
