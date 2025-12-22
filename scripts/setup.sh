@@ -59,7 +59,8 @@ setup_network_with_fabric_ca_nodeous_active() {
   log "تولید گواهی‌ها با Fabric CA"
 
   # Orderer
-  fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
+  # Bootstrap Admin با http (چون TLS root هنوز نیست)
+  fabric-ca-client enroll -u http://admin:adminpw@ca-orderer:7054 \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
   fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
@@ -71,16 +72,16 @@ setup_network_with_fabric_ca_nodeous_active() {
     local org="org${i}"
     local ca_port=$((7054 + i * 100))
 
-    # Bootstrap Admin
-    fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port \
-      -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
+    # Bootstrap Admin با http
+    fabric-ca-client enroll -u http://admin:adminpw@ca-${org}:$ca_port \
+      -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Bootstrap@${org}.example.com/msp"
 
-    # Peer
+    # Register و Enroll Peer
     fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer
     fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@ca-${org}:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
 
-    # Admin واقعی
+    # Register و Enroll Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
       --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
 
