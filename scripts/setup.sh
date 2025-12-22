@@ -38,6 +38,8 @@ generate_crypto() {
 }
 
 setup_network_with_fabric_ca_nodeous_active() {
+
+  cd "$PROJECT_DIR"
   log "شروع راه‌اندازی کامل شبکه با Fabric CA — NodeOUs فعال — OU بزرگ"
 
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
