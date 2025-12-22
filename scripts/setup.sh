@@ -56,7 +56,7 @@ setup_network_with_fabric_ca_nodeous_active() {
 
   # 2. بالا آوردن CAها
   log "بالا آوردن تمام Fabric CAها"
-  docker-compose -f docker-compose-ca.yaml up -d
+  docker-compose -f docker-compose-ca.yml up -d
   sleep 30  # صبر برای آماده شدن CAها
 
   # 3. تولید گواهی‌ها با Fabric CA
