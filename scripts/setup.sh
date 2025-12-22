@@ -82,7 +82,7 @@ setup_network_with_fabric_ca_nodeous_active() {
 
     # Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
-      --id.attrs "hf.Registrar.Roles=peer,client,user,admin,hf.Revoker=true"
+      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
 
     fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@ca-${org}:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
