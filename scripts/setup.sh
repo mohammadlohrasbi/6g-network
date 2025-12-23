@@ -107,7 +107,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local org="org${i}"
     local ca_port=$((7054 + i * 100))
-    local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
+    local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
 
     fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
       --tls.certfiles "$tls_cert" \
