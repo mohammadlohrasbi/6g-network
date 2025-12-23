@@ -15,8 +15,8 @@ services:
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/ordererOrganizations/example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/ordererOrganizations/example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7054:7054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -33,8 +33,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org1.example.com/ca/ca-org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org1.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca-org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca-org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7154:7154"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -51,8 +51,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org2.example.com/ca/ca-org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org2.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca-org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca-org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7254:7254"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -69,8 +69,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org3.example.com/ca/ca-org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org3.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/tlsca-org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/tlsca-org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7354:7354"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -87,8 +87,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org4.example.com/ca/ca-org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org4.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/tlsca-org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/tlsca-org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7454:7454"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -105,8 +105,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org5.example.com/ca/ca-org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org5.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/tlsca-org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/tlsca-org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7554:7554"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -123,8 +123,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org6.example.com/ca/ca-org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org6.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/tlsca-org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/tlsca-org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7654:7654"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -141,8 +141,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org7.example.com/ca/ca-org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org7.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/tlsca-org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/tlsca-org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7754:7754"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
@@ -159,8 +159,8 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/org8.example.com/ca/ca-org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
       - ./crypto-config/peerOrganizations/org8.example.com/ca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
-      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/tlsca-org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls-cert.pem
-      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls-key.pem
+      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/tlsca-org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
+      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
     ports:
       - "7854:7854"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
