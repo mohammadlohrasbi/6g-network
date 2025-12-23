@@ -88,11 +88,12 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap با http — بقیه با https و TLS cert)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap بدون TLS root — بقیه با TLS root)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   # Orderer
-  fabric-ca-client enroll -u http://admin:adminpw@localhost:7054 \
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
+    --tls.certfiles /dev/null \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
   fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
@@ -106,8 +107,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local ca_port=$((7054 + i * 100))
     local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
 
-    # Bootstrap Admin با http
-    fabric-ca-client enroll -u http://admin:adminpw@localhost:$ca_port \
+    # Bootstrap Admin (بدون TLS root)
+    fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
+      --tls.certfiles /dev/null \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
     # Peer
