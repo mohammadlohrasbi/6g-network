@@ -77,47 +77,66 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # 4. تولید گواهی‌های نهایی با Fabric CA
   log "تولید گواهی‌های نهایی با Fabric CA"
   # Orderer
-fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
-  -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"  # بدون --tls.certfiles
-
-fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-  --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem"
-
-fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
-  --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" \
-  -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
-
-# Peer Orgs
-for i in {1..8}; do
-  local org="org${i}"
-  local ca_port=$((7054 + i * 100))
-  local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
-
-  # Bootstrap Admin بدون --tls.certfiles (مهم!)
-  fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
-    -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
-
-  # Peer
-  fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer \
-    --tls.certfiles "$tls_cert"
-
-  fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@localhost:$ca_port \
-    --tls.certfiles "$tls_cert" \
-    -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
-
-  # Admin واقعی
-  fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
-    --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true" \
-    --tls.certfiles "$tls_cert"
-
-  fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@localhost:$ca_port \
-    --tls.certfiles "$tls_cert" \
-    -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
-
-  success "گواهی‌های Org${i} تولید شد"
-done
-  # بقیه تابع همان قبلی (config.yaml, genesis, شبکه اصلی)
-  # ...
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
+    -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"  # بدون --tls.certfiles
+  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+    --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem"
+  fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
+    --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" \
+    -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
+  # Peer Orgs
+  for i in {1..8}; do
+    local org="org${i}"
+    local ca_port=$((7054 + i * 100))
+    local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
+    # Bootstrap Admin بدون --tls.certfiles
+    fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
+      -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
+    # Peer
+    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer \
+      --tls.certfiles "$tls_cert"
+    fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@localhost:$ca_port \
+      --tls.certfiles "$tls_cert" \
+      -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
+    # Admin واقعی
+    fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
+      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true" \
+      --tls.certfiles "$tls_cert"
+    fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@localhost:$ca_port \
+      --tls.certfiles "$tls_cert" \
+      -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
+    success "گواهی‌های Org${i} تولید شد"
+  done
+  # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
+  log "ساخت config.yaml"
+  find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
+    cat > "$msp/config.yaml" << EOF
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/*
+    OrganizationalUnitIdentifier: CLIENT
+  PeerOUIdentifier:
+    Certificate: cacerts/*
+    OrganizationalUnitIdentifier: PEER
+  AdminOUIdentifier:
+    Certificate: cacerts/*
+    OrganizationalUnitIdentifier: ADMIN
+  OrdererOUIdentifier:
+    Certificate: cacerts/*
+    OrganizationalUnitIdentifier: ORDERER
+EOF
+  done
+  # 6. تولید genesis.block و channel.txها
+  log "تولید genesis.block و channel.txها"
+  export FABRIC_CFG_PATH="$PROJECT_DIR"
+  configtxgen -profile SystemChannel -outputBlock "$CHANNEL_ARTIFACTS/system-genesis.block" -channelID system-channel
+  for ch in networkchannel resourcechannel; do
+    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" -channelID "$ch"
+  done
+  # 7. بالا آوردن شبکه اصلی
+  log "بالا آوردن شبکه اصلی"
+  docker-compose up -d
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 }
 
