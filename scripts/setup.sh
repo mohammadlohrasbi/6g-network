@@ -55,8 +55,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # 1. تولید گواهی‌های seed با cryptogen
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
-  cd "$TEMP_CRYPTO"
-  tree
 
   # 2. کپی گواهی‌های seed برای مونت در Fabric CA
   log "کپی گواهی‌های seed برای مونت در Fabric CA"
@@ -73,17 +71,17 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
 
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
 
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
   success "گواهی‌های seed آماده شد"
 
   # پاک کردن موقت
-  rm -rf "$TEMP_CRYPTO"
+  # rm -rf "$TEMP_CRYPTO"
 
   # 3. بالا آوردن CAها
   log "بالا آوردن Fabric CAها با TLS فعال"
@@ -107,7 +105,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local org="org${i}"
     local ca_port=$((7054 + i * 100))
-    local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
+    local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
 
     # Bootstrap Admin با http
     fabric-ca-client enroll -u http://admin:adminpw@localhost:$ca_port \
