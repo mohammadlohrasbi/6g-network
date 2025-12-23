@@ -71,10 +71,10 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
 
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
 
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
@@ -87,9 +87,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   log "بالا آوردن Fabric CAها با TLS فعال"
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
-  docker ps
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap با http — بقیه با https)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap با http — بقیه با https و TLS cert)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   # Orderer
@@ -97,7 +96,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
   fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
-
   fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
     --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
