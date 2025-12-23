@@ -37,6 +37,7 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
+
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — گواهی‌های seed با cryptogen + Fabric CA با TLS فعال + NodeOUs فعال"
 
@@ -84,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (دقیقاً مثل اسکریپت موفق شما)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر برای همه — مثل اسکریپت موفق شما)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -94,15 +95,15 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      # Orderer — با 127.0.0.1
-      fabric-ca-client enroll -u https://admin:adminpw@127.0.0.1:7054 \
+      # Orderer — با نام کانتینر (ca-orderer)
+      fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
 
-      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@127.0.0.1:7054 \
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
