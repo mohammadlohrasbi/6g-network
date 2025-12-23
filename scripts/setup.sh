@@ -87,6 +87,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   log "بالا آوردن Fabric CAها با TLS فعال"
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
+  docker ps
 
   # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap با http — بقیه با https)
   log "تولید گواهی‌های نهایی با Fabric CA"
