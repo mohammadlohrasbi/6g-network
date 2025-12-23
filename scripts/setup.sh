@@ -79,7 +79,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     cd "$PROJECT_DIR"
 
     # نام درست TLS cert: tlsca.org${i}.example.com-cert.pem
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
