@@ -37,7 +37,6 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
-
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — گواهی‌های seed با cryptogen + Fabric CA با TLS فعال + NodeOUs فعال"
 
@@ -95,7 +94,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      # Orderer — با 127.0.0.1 (مثل اسکریپت موفق)
+      # Orderer — با 127.0.0.1
       fabric-ca-client enroll -u https://admin:adminpw@127.0.0.1:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
@@ -107,7 +106,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-      # Org1 تا Org8 — با نام کانتینر (مثل اسکریپت موفق)
+      # Org1 تا Org8 — با نام کانتینر
       for i in {1..8}; do
         PORT=\$((7054 + \$i * 100))
         ORG=\"org\$i\"
@@ -135,7 +134,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         echo \"گواهی‌های \$ORG تولید شد\"
       done
 
-      echo 'تمام گواهی‌ها (Admin, Peer, Orderer) بدون خطا تولید شدند!'
+      echo 'تمام گواهی‌ها بدون خطا تولید شدند!'
     "
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
