@@ -55,6 +55,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # 1. تولید گواهی‌های seed با cryptogen
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
+  cd "$TEMP_CRYPTO"
+  tree
 
   # 2. کپی گواهی‌های seed برای مونت در Fabric CA
   log "کپی گواهی‌های seed برای مونت در Fabric CA"
