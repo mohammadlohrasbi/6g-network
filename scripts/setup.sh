@@ -56,9 +56,11 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # 1. تولید گواهی‌های seed با cryptogen
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
+  ls
 
   # 2. کپی گواهی‌های seed به مسیر نهایی (با چک وجود و wildcard)
   log "کپی گواهی‌های seed برای مونت در Fabric CA"
+  ls
 
   # Orderer
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/ca" "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
