@@ -56,7 +56,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
 
-  # 2. کپی گواهی‌های seed با نام درست
+  # 2. کپی گواهی‌های seed برای مونت در CAها
   log "کپی گواهی‌های seed برای مونت در Fabric CA"
 
   # Orderer
@@ -78,7 +78,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
-  success "گواهی‌های seed با موفقیت آماده شد"
+  success "گواهی‌های seed آماده شد"
 
   # پاک کردن موقت
   rm -rf "$TEMP_CRYPTO"
@@ -88,16 +88,15 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با localhost و پورت هاست)
-  log "تولید گواهی‌های نهایی با Fabric CA (با localhost)"
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با localhost و پورت هاست — http برای bootstrap)
+  log "تولید گواهی‌های نهایی با Fabric CA"
 
   # Orderer
-  fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
+  fabric-ca-client enroll -u http://admin:adminpw@localhost:7054 \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
   fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
-
-  fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
+  fabric-ca-client enroll -u http://orderer.example.com:ordererpw@localhost:7054 \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
 
   # Peer Orgs
@@ -105,28 +104,27 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     local ca_port=$((7054 + i * 100))
 
-    # Bootstrap Admin
-    fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
+    # Bootstrap Admin با http
+    fabric-ca-client enroll -u http://admin:adminpw@localhost:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
     # Peer
     fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer
-
-    fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@localhost:$ca_port \
+    fabric-ca-client enroll -u http://peer0.${org}.example.com:peerpw@localhost:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
 
     # Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
       --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
 
-    fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@localhost:$ca_port \
+    fabric-ca-client enroll -u http://Admin@${org}.example.com:adminpw@localhost:$ca_port \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
-    success "گواهی‌های Org${i} با Fabric CA تولید شد"
+    success "گواهی‌های Org${i} تولید شد"
   done
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
-  log "ساخت config.yaml با NodeOUs فعال و OU بزرگ"
+  log "ساخت config.yaml"
   find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
     cat > "$msp/config.yaml" << EOF
 NodeOUs:
