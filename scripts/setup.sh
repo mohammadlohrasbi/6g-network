@@ -84,26 +84,25 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با host.docker.internal)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با localhost)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
     --network config_6g-network \
-    --add-host host.docker.internal:host-gateway \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
       # Orderer
-      fabric-ca-client enroll -u https://admin:adminpw@host.docker.internal:7054 \
+      fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
 
-      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@host.docker.internal:7054 \
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -112,14 +111,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         PORT=\$((7054 + \$i * 100))
         ORG=\"org\$i\"
 
-        fabric-ca-client enroll -u https://admin:adminpw@host.docker.internal:\$PORT \
+        fabric-ca-client enroll -u https://admin:adminpw@localhost:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
 
-        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@host.docker.internal:\$PORT \
+        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@localhost:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
@@ -127,7 +126,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
 
-        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@host.docker.internal:\$PORT \
+        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@localhost:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
