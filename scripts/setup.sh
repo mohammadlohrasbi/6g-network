@@ -74,7 +74,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
 
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}..example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
@@ -88,15 +88,16 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (bootstrap بدون TLS root — بقیه با TLS root)
+  # 4. تولید گواهی‌های نهایی با Fabric CA
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   # Orderer
   fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 \
-    --tls.certfiles /dev/null \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/users/Admin@example.com/msp"
 
-  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
+  fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+    --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem"
+
   fabric-ca-client enroll -u https://orderer.example.com:ordererpw@localhost:7054 \
     --tls.certfiles "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" \
     -M "$CRYPTO_DIR/ordererOrganizations/example.com/orderers/orderer.example.com/msp"
@@ -107,13 +108,13 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local ca_port=$((7054 + i * 100))
     local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.example.com-cert.pem"
 
-    # Bootstrap Admin (بدون TLS root)
+    # Bootstrap Admin (بدون TLS root — client self-signed را قبول می‌کند)
     fabric-ca-client enroll -u https://admin:adminpw@localhost:$ca_port \
-      --tls.certfiles /dev/null \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
     # Peer
-    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer
+    fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer \
+      --tls.certfiles "$tls_cert"
 
     fabric-ca-client enroll -u https://peer0.${org}.example.com:peerpw@localhost:$ca_port \
       --tls.certfiles "$tls_cert" \
@@ -121,7 +122,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
     # Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
-      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true"
+      --id.attrs "hf.Registrar.Roles=peer,client,user,admin" --id.attrs "hf.Revoker=true" \
+      --tls.certfiles "$tls_cert"
 
     fabric-ca-client enroll -u https://Admin@${org}.example.com:adminpw@localhost:$ca_port \
       --tls.certfiles "$tls_cert" \
