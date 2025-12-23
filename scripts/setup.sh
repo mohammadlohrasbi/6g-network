@@ -72,7 +72,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
@@ -95,12 +95,19 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      # Orderer — با 127.0.0.1 (برای دور زدن خطای SAN)
+      # Orderer — با 127.0.0.1 (مثل اسکریپت موفق)
       fabric-ca-client enroll -u https://admin:adminpw@127.0.0.1:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-      # Org1 تا Org8 — با نام کانتینر (درون شبکه Docker)
+      fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
+
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@127.0.0.1:7054 \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+
+      # Org1 تا Org8 — با نام کانتینر (مثل اسکریپت موفق)
       for i in {1..8}; do
         PORT=\$((7054 + \$i * 100))
         ORG=\"org\$i\"
@@ -109,9 +116,26 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         fabric-ca-client enroll -u https://admin:adminpw@\$CA_NAME:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+        fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
+
+        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$CA_NAME:\$PORT \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
+          -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
+
+        fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
+          --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
+
+        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_NAME:\$PORT \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
+          -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+        echo \"گواهی‌های \$ORG تولید شد\"
       done
 
-      echo 'تمام ۹ Admin بدون خطا ثبت‌نام شدند!'
+      echo 'تمام گواهی‌ها (Admin, Peer, Orderer) بدون خطا تولید شدند!'
     "
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
