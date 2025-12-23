@@ -51,16 +51,13 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
-  ls
 
   # 1. تولید گواهی‌های seed با cryptogen
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
-  ls
 
-  # 2. کپی گواهی‌های seed به مسیر نهایی (با چک وجود و wildcard)
+  # 2. کپی گواهی‌های seed با نام درست
   log "کپی گواهی‌های seed برای مونت در Fabric CA"
-  ls
 
   # Orderer
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/ca" "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
@@ -73,12 +70,11 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local org="org${i}"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    ls
 
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
-    ls
 
+    # نام درست TLS cert: tlsca.org${i}.example.com-cert.pem
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
@@ -114,12 +110,10 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local ca_port=$((7054 + i * 100))
     local tls_cert="$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
 
-    # Bootstrap Admin
     fabric-ca-client enroll -u https://admin:adminpw@ca-${org}:$ca_port \
       --tls.certfiles "$tls_cert" \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/users/Admin@${org}.example.com/msp"
 
-    # Peer node
     fabric-ca-client register --id.name peer0.${org}.example.com --id.secret peerpw --id.type peer \
       --tls.certfiles "$tls_cert"
 
@@ -127,7 +121,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       --tls.certfiles "$tls_cert" \
       -M "$CRYPTO_DIR/peerOrganizations/${org}.example.com/peers/peer0.${org}.example.com/msp"
 
-    # Admin واقعی
     fabric-ca-client register --id.name Admin@${org}.example.com --id.secret adminpw --id.type admin \
       --id.attrs "hf.Registrar.Roles=peer,client,user,admin,hf.Revoker=true" \
       --tls.certfiles "$tls_cert"
@@ -140,7 +133,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
-  log "ساخت config.yaml با NodeOUs فعال و OU بزرگ"
+  log "ساخت config.yaml"
   find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
     cat > "$msp/config.yaml" << EOF
 NodeOUs:
@@ -174,16 +167,6 @@ EOF
   docker-compose up -d
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
-}
-
-generate_channel_artifacts() {
-  log "تولید آرتیفکت‌های کانال..."
-  mkdir -p "$CHANNEL_DIR"
-  configtxgen -profile SystemChannel -outputBlock "$CHANNEL_DIR/genesis.block" -channelID system-channel || error "تولید genesis.block شکست خورد"
-  for ch in "${CHANNELS[@]}"; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_DIR/${ch}.tx" -channelID "$ch" || error "تولید tx برای $ch شکست خورد"
-  done
-  success "تمام آرتیفکت‌ها تولید شدند"
 }
 
 generate_coreyamls() {
