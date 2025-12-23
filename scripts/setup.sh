@@ -51,6 +51,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
+  ls
 
   # 1. تولید گواهی‌های seed با cryptogen
   log "تولید گواهی‌های seed با cryptogen"
