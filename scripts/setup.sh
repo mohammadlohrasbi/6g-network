@@ -71,7 +71,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
 
-    cd "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca"
+    cd "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca"
     tree
     cd cd "$PROJECT_DIR"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem"
