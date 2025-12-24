@@ -85,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (دقیقاً مثل اسکریپت موفق شما)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر برای همه + ca-cert.pem برای --tls.certfiles)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -95,7 +95,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      # Orderer — با 127.0.0.1
+      # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
@@ -107,7 +107,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-      # Org1 تا Org8 — با نام کانتینر
+      # Org1 تا Org8
       for i in {1..8}; do
         PORT=\$((7054 + \$i * 100))
         ORG=\"org\$i\"
