@@ -87,14 +87,15 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # 4. استخراج ID کانتینرها
   log "استخراج ID کانتینرهای CA"
   local CA_ORDERER_ID=$(docker ps --filter "name=ca-orderer" --format "{{.ID}}")
-  local CA_IDS=()
+  local CA_IDS_STR=""
   for i in {1..8}; do
     local ca_name="ca-org${i}"
     local ca_id=$(docker ps --filter "name=${ca_name}" --format "{{.ID}}")
-    CA_IDS+=("$ca_id")
+    CA_IDS_STR="${CA_IDS_STR}${ca_id},"
   done
+  CA_IDS_STR=${CA_IDS_STR%,}  # حذف کامای آخر
 
-  # 5. تولید گواهی‌های نهایی با Fabric CA (با ID کانتینر برای همه)
+  # 5. تولید گواهی‌های نهایی با Fabric CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -104,23 +105,27 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
+      CA_ORDERER_ID=\"$CA_ORDERER_ID\"
+      IFS=',' read -r -a CA_IDS <<< \"$CA_IDS_STR\"
+
       # Orderer
-      fabric-ca-client enroll -u https://admin:adminpw@${CA_ORDERER_ID}:7054 \
+      fabric-ca-client enroll -u https://admin:adminpw@\$CA_ORDERER_ID:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
 
-      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@${CA_ORDERER_ID}:7054 \
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@\$CA_ORDERER_ID:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-      # Org1 تا Org8 (با حلقه)
-      for i in {1..8}; do
-        PORT=\$((7054 + \$i * 100))
-        ORG=\"org\$i\"
-        CA_ID=\"${CA_IDS[\$((i-1))]}\"
+      # Org1 تا Org8
+      for i in {0..7}; do
+        idx=\$i
+        PORT=\$((7054 + (i+1) * 100))
+        ORG=\"org\$((i+1))\"
+        CA_ID=\"\${CA_IDS[\$idx]}\"
         CA_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$CA_ID:\$PORT \
