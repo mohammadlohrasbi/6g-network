@@ -37,6 +37,7 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
+
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — گواهی‌های seed با cryptogen + Fabric CA با TLS فعال + NodeOUs فعال"
 
@@ -84,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر + INSECURE_SKIP_VERIFY=true برای دور زدن SAN)
+  # 4. تولید گواهی‌های نهایی با Fabric CA
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -97,14 +98,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
 
       fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
       # Org1 تا Org8
@@ -112,24 +113,25 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         PORT=\$((7054 + \$i * 100))
         ORG=\"org\$i\"
         CA_NAME=\"ca-org\$i\"
+        CA_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
+          --tls.certfiles \$CA_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem
+          --tls.certfiles \$CA_CERT
 
         fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
+          --tls.certfiles \$CA_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
           --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem
+          --tls.certfiles \$CA_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
+          --tls.certfiles \$CA_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         echo \"گواهی‌های \$ORG تولید شد\"
