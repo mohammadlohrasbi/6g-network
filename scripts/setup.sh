@@ -52,7 +52,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
 
-  # 1. تولید گواهی‌های seed با cryptogen
+  # 1. تولید گواهی‌های seed با cryptogen (با cryptogen.yaml شما)
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
 
@@ -61,18 +61,18 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # Orderer
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/ca" "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
-  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem" "$CRYPTO_DIR/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem"
+  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/"*cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/ca/"
   cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/"*_sk "$CRYPTO_DIR/ordererOrganizations/example.com/ca/priv_sk"
-  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem"
+  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/"
   cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*_sk "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/priv_sk"
 
   # Peer Orgs
   for i in {1..8}; do
     local org="org${i}"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/ca-${org}.${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/ca/priv_sk"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
   done
 
@@ -85,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر برای همه + ca-cert.pem برای --tls.certfiles)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر — سازگار با cryptogen.yaml شما)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -97,14 +97,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem
 
       fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/*cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
       # Org1 تا Org8
@@ -114,22 +114,22 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         CA_NAME=\"ca-org\$i\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem
 
         fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
           --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_NAME:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/ca-\$ORG.\$ORG.example.com-cert.pem \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/ca/*cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         echo \"گواهی‌های \$ORG تولید شد\"
