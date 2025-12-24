@@ -85,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر + INSECURE_SKIP_VERIFY + مسیر دقیق cert)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
