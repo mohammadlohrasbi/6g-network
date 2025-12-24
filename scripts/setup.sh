@@ -85,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر + INSECURE_SKIP_VERIFY + مسیر دقیق cert)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر + --tls.insecure_skip_verify)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -94,18 +94,20 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true  # دور زدن چک hostname/SAN
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@ca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        --tls.insecure_skip_verify \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        --tls.insecure_skip_verify
 
       fabric-ca-client enroll -u https://orderer.example.com:ordererpw@ca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/ca/ca-orderer.example.com-cert.pem \
+        --tls.insecure_skip_verify \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
       # Org1 تا Org8
@@ -117,21 +119,26 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
         fabric-ca-client enroll -u https://admin:adminpw@\$CA_NAME:\$PORT \
           --tls.certfiles \$CA_CERT \
+          --tls.insecure_skip_verify \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
-          --tls.certfiles \$CA_CERT
+          --tls.certfiles \$CA_CERT \
+          --tls.insecure_skip_verify
 
         fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$CA_NAME:\$PORT \
           --tls.certfiles \$CA_CERT \
+          --tls.insecure_skip_verify \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
           --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
-          --tls.certfiles \$CA_CERT
+          --tls.certfiles \$CA_CERT \
+          --tls.insecure_skip_verify
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_NAME:\$PORT \
           --tls.certfiles \$CA_CERT \
+          --tls.insecure_skip_verify \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         echo \"گواهی‌های \$ORG تولید شد\"
