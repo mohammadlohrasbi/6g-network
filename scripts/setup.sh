@@ -37,6 +37,7 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
+
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — گواهی‌های seed با cryptogen + Fabric CA با TLS فعال + NodeOUs فعال"
 
@@ -51,7 +52,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
 
-  # 1. تولید گواهی‌های seed با cryptogen (با فایل شما)
+  # 1. تولید گواهی‌های seed با cryptogen (با SAN اصلاح‌شده)
   log "تولید گواهی‌های seed با cryptogen"
   cryptogen generate --config=./cryptogen.yaml --output="$TEMP_CRYPTO"
 
@@ -84,7 +85,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر — با cryptogen.yaml شما)
+  # 4. تولید گواهی‌های نهایی با Fabric CA (با نام کانتینر)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
