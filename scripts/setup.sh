@@ -37,7 +37,6 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
-
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — با جداسازی CA + استفاده از ID کانتینر"
 
@@ -67,7 +66,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # Orderer Enrollment CA
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/rca"
-  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/"*cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/rca/"
+  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/"*.pem "$CRYPTO_DIR/ordererOrganizations/example.com/rca/"
   cp "$TEMP_CRYPTO/ordererOrganizations/example.com/ca/"*_sk "$CRYPTO_DIR/ordererOrganizations/example.com/rca/priv_sk"
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/rca/tls-msp"
 
@@ -76,12 +75,12 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     # TLS CA
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"tlsca-${org}.${org}.example.com-cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
 
     # Enrollment CA
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/rca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/rca/"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/rca/"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/ca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/rca/priv_sk"
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/rca/tls-msp"
   done
@@ -152,7 +151,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Enrollment CA"
-
   docker run --rm \
     --network config_6g-network \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -232,7 +230,6 @@ EOF
   log "تولید genesis.block و channel.txها"
   export FABRIC_CFG_PATH="$PROJECT_DIR"
   configtxgen -profile SystemChannel -outputBlock "$CHANNEL_ARTIFACTS/system-genesis.block" -channelID system-channel
-
   for ch in networkchannel resourcechannel; do
     configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" -channelID "$ch"
   done
