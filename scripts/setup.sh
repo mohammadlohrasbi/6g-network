@@ -76,7 +76,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     # TLS CA
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"tlsca.${org}.example.com-cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"tlsca-${org}.${org}.example.com-cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
 
     # Enrollment CA
