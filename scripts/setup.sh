@@ -136,6 +136,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
+  cd crypto-config
+  tree
   docker-compose -f docker-compose-rca.yml up -d
   sleep 60
 
