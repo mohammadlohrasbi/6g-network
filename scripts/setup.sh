@@ -142,8 +142,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
-          --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" \
-          --id.attrs \"hf.Revoker=true\" \
+          --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true \
           --tls.certfiles \$CA_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_ID:\$PORT \
