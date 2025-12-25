@@ -102,9 +102,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local tca_name="tca-org${i}"
     local tca_id=$(docker ps --filter "name=${tca_name}" --format "{{.ID}}")
-    TCA_IDS_STR="${TCA_IDS_STR}$(printf '%q' "$tca_id") "
+    TCA_IDS_STR="${TCA_IDS_STR}${tca_id},"
   done
-  TCA_IDS_STR=$(echo "$TCA_IDS_STR" | xargs)
+  TCA_IDS_STR=${TCA_IDS_STR%,}
 
   # 5. تولید گواهی TLS برای Enrollment CAها (با ID کانتینر TLS CA)
   log "تولید گواهی TLS برای Enrollment CAها"
@@ -115,8 +115,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      TCA_ORDERER_ID=$(printf '%q' \"$TCA_ORDERER_ID\")
-      TCA_IDS=($TCA_IDS_STR)
+      TCA_ORDERER_ID=\"$TCA_ORDERER_ID\"
+      IFS=',' read -r -a TCA_IDS <<< \"$TCA_IDS_STR\"
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ORDERER_ID:7053 \
@@ -125,9 +125,10 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Org1 تا Org8
       for i in {0..7}; do
-        TCA_ID=\${TCA_IDS[\$i]}
-        PORT=\$((7053 + (\$i + 1) * 100))
+        idx=\$i
+        PORT=\$((7053 + (i+1) * 100))
         ORG=\"org\$((i+1))\"
+        TCA_ID=\"\${TCA_IDS[\$idx]}\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
@@ -147,9 +148,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local rca_name="rca-org${i}"
     local rca_id=$(docker ps --filter "name=${rca_name}" --format "{{.ID}}")
-    RCA_IDS_STR="${RCA_IDS_STR}$(printf '%q' "$rca_id") "
+    RCA_IDS_STR="${RCA_IDS_STR}${rca_id},"
   done
-  RCA_IDS_STR=$(echo "$RCA_IDS_STR" | xargs)
+  RCA_IDS_STR=${RCA_IDS_STR%,}
 
   # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Enrollment CA"
@@ -161,8 +162,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      RCA_ORDERER_ID=$(printf '%q' \"$RCA_ORDERER_ID\")
-      RCA_IDS=($RCA_IDS_STR)
+      RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
+      IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ORDERER_ID:7054 \
@@ -178,10 +179,10 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Org1 تا Org8
       for i in {0..7}; do
-        RCA_ID=\${RCA_IDS[\$i]}
-        PORT=\$((7054 + (\$i + 1) * 100))
+        idx=\$i
+        PORT=\$((7054 + (i+1) * 100))
         ORG=\"org\$((i+1))\"
-
+        RCA_ID=\"\${RCA_IDS[\$idx]}\"
         TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/signcerts/cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ID:\$PORT \
@@ -196,7 +197,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
-          --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
+          --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true \
           --tls.certfiles \$TLS_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$RCA_ID:\$PORT \
