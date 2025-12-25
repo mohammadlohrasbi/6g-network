@@ -48,6 +48,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   # پاک کردن کامل قبلی
   docker-compose -f docker-compose-tls-ca.yml down -v
   docker-compose -f docker-compose-rca.yml down -v
+  docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
