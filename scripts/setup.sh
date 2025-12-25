@@ -102,9 +102,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local tca_name="tca-org${i}"
     local tca_id=$(docker ps --filter "name=${tca_name}" --format "{{.ID}}")
-    TCA_IDS_STR="${TCA_IDS_STR}${tca_id} "
+    TCA_IDS_STR="${TCA_IDS_STR}$(printf '%q' "$tca_id") "
   done
-  TCA_IDS_STR=$(echo "$TCA_IDS_STR" | xargs)  # حذف فضای اضافی
+  TCA_IDS_STR=$(echo "$TCA_IDS_STR" | xargs)
 
   # 5. تولید گواهی TLS برای Enrollment CAها (با ID کانتینر TLS CA)
   log "تولید گواهی TLS برای Enrollment CAها"
@@ -115,7 +115,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      TCA_ORDERER_ID='$TCA_ORDERER_ID'
+      TCA_ORDERER_ID=$(printf '%q' \"$TCA_ORDERER_ID\")
       TCA_IDS=($TCA_IDS_STR)
 
       # Orderer
@@ -147,7 +147,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   for i in {1..8}; do
     local rca_name="rca-org${i}"
     local rca_id=$(docker ps --filter "name=${rca_name}" --format "{{.ID}}")
-    RCA_IDS_STR="${RCA_IDS_STR}${rca_id} "
+    RCA_IDS_STR="${RCA_IDS_STR}$(printf '%q' "$rca_id") "
   done
   RCA_IDS_STR=$(echo "$RCA_IDS_STR" | xargs)
 
@@ -161,7 +161,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      RCA_ORDERER_ID='$RCA_ORDERER_ID'
+      RCA_ORDERER_ID=$(printf '%q' \"$RCA_ORDERER_ID\")
       RCA_IDS=($RCA_IDS_STR)
 
       # Orderer
