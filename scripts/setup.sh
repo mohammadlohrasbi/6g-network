@@ -129,6 +129,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         TCA_ID=\${TCA_IDS[\$i]}
         PORT=\$((7053 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
+
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
@@ -182,6 +183,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         RCA_ID=\${RCA_IDS[\$i]}
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
+
         TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/signcerts/cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ID:\$PORT \
@@ -208,7 +210,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       echo 'تمام گواهی‌ها بدون خطا تولید شدند!'
     "
-
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
