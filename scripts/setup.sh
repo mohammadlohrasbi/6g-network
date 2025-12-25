@@ -152,6 +152,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 8. تولید گواهی‌های نهایی با Enrollment CA (با مشخص کردن root TLS CA در محیط)
   log "تولید گواهی‌های نهایی با Enrollment CA"
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با root TLS CA در محیط)
+  log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -159,16 +161,15 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      # مشخص کردن تمام root TLS CAها (Orderer + Org1 تا Org8)
-      export FABRIC_CA_CLIENT_TLS_CERTFILES=\"/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca-org1.org1.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca-org2.org2.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org3.example.com/tlsca/tlsca-org3.org3.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org4.example.com/tlsca/tlsca-org4.org4.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org5.example.com/tlsca/tlsca-org5.org5.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org6.example.com/tlsca/tlsca-org6.org6.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org7.example.com/tlsca/tlsca-org7.org7.example.com-cert.pem \
-        /crypto-config/peerOrganizations/org8.example.com/tlsca/tlsca-org8.org8.example.com-cert.pem\"
+      export FABRIC_CA_CLIENT_TLS_CERTFILES=\"/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.orderer.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org3.example.com/tlsca/tlsca.org3.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org4.example.com/tlsca/tlsca.org4.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org5.example.com/tlsca/tlsca.org5.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org6.example.com/tlsca/tlsca.org6.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org7.example.com/tlsca/tlsca.org7.example.com-cert.pem:\
+/crypto-config/peerOrganizations/org8.example.com/tlsca/tlsca.org8.example.com-cert.pem\"
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
