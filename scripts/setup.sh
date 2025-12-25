@@ -133,7 +133,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
       done
     "
-
+    
   # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
   docker-compose -f docker-compose-rca.yml up -d
@@ -150,9 +150,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (با مشخص کردن root TLS CA در محیط)
-  log "تولید گواهی‌های نهایی با Enrollment CA"
-  # 8. تولید گواهی‌های نهایی با Enrollment CA
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با INSECURE_SKIP_VERIFY و attrs درست)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
@@ -160,7 +158,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true  # حل unknown authority
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
