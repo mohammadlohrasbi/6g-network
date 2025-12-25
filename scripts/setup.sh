@@ -39,7 +39,7 @@ generate_crypto() {
 }
 
 setup_network_with_fabric_ca_tls_nodeous_active() {
-  log "راه‌اندازی کامل شبکه — با جداسازی CA (TLS CA و Enrollment CA جداگانه) + استفاده از ID کانتینر"
+  log "راه‌اندازی کامل شبکه — با جداسازی CA + استفاده از ID کانتینر"
 
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
   local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
@@ -62,7 +62,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # Orderer TLS CA
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
-  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/"
+  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"tlsca.orderer.example.com-cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/tlsca.orderer.example.com-cert.pem"
   cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*_sk "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/priv_sk"
 
   # Orderer Enrollment CA
@@ -76,7 +76,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     # TLS CA
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"tlsca.${org}.example.com-cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/tlsca.${org}.example.com-cert.pem"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
 
     # Enrollment CA
@@ -97,10 +97,10 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 4. استخراج ID کانتینر TLS CAها
   log "استخراج ID کانتینر TLS CAها"
-  local TCA_ORDERER_ID=$(docker ps --filter "name=tca-orderer" --format "{{.ID}}")
+  local TCA_ORDERER_ID=$(docker ps --filter "name=tls-ca-orderer" --format "{{.ID}}")
   local TCA_IDS_STR=""
   for i in {1..8}; do
-    local tca_name="tca-org${i}"
+    local tca_name="tls-ca-org${i}"
     local tca_id=$(docker ps --filter "name=${tca_name}" --format "{{.ID}}")
     TCA_IDS_STR="${TCA_IDS_STR}${tca_id},"
   done
@@ -114,14 +114,13 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       TCA_ORDERER_ID=\"$TCA_ORDERER_ID\"
       IFS=',' read -r -a TCA_IDS <<< \"$TCA_IDS_STR\"
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ORDERER_ID:7053 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca.orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/rca/tls-msp
 
       # Org1 تا Org8
@@ -129,7 +128,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         TCA_ID=\${TCA_IDS[\$i]}
         PORT=\$((7053 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
-
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
@@ -161,7 +159,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
@@ -183,7 +180,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         RCA_ID=\${RCA_IDS[\$i]}
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
-
         TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/signcerts/cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ID:\$PORT \
