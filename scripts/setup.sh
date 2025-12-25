@@ -37,6 +37,7 @@ generate_crypto() {
   cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
   success "Crypto-config با موفقیت تولید شد"
 }
+
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — گواهی‌های seed با cryptogen + Fabric CA با TLS فعال + NodeOUs فعال"
 
@@ -95,7 +96,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   CA_IDS_STR=${CA_IDS_STR%,}
 
-  # 5. تولید گواهی‌های نهایی با Fabric CA (با ID کانتینر + متغیر محیطی)
+  # 5. تولید گواهی‌های نهایی با Fabric CA
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -104,7 +105,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true  # دور زدن چک SAN
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       CA_ORDERER_ID=\"$CA_ORDERER_ID\"
       IFS=',' read -r -a CA_IDS <<< \"$CA_IDS_STR\"
@@ -141,7 +142,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
-          --id.attrs 'hf.Registrar.Roles=peer,client,user,admin' --id.attrs 'hf.Revoker=true' \
+          --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" \
+          --id.attrs \"hf.Revoker=true\" \
           --tls.certfiles \$CA_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_ID:\$PORT \
@@ -153,7 +155,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       echo 'تمام گواهی‌ها بدون خطا تولید شدند!'
     "
-
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
