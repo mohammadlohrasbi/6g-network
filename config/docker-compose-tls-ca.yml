@@ -1,0 +1,155 @@
+version: '3.7'
+
+networks:
+  6g-network:
+    name: config_6g-network
+
+services:
+  tls-ca-orderer:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-orderer
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-orderer
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7053
+    volumes:
+      - ./crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/ordererOrganizations/example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7053:7053"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+  tls-ca-org1:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org1
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org1
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7153
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca-org1.org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org1.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7153:7153"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+      
+  tls-ca-org2:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org2
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org2
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7253
+    volumes:
+      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca-org2.org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org2.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7253:7253"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+  tls-ca-org3:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org3
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org3
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7353
+    volumes:
+      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/tlsca-org3.org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org3.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7353:7353"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+      
+  tls-ca-org4:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org4
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org4
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7453
+    volumes:
+      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/tlsca-org4.org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org4.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7453:7453"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+      
+  tls-ca-org5:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org5
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org5
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7553
+    volumes:
+      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/tlsca-org5.org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org5.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7553:7553"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+      
+  tls-ca-org6:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org6
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org6
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7653
+    volumes:
+      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/tlsca-org6.org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org6.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7653:7653"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+      
+  tls-ca-org7:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org7
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org7
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7753
+    volumes:
+      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/tlsca-org7.org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org7.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7753:7753"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
+
+      
+  tls-ca-org8:
+    image: hyperledger/fabric-ca:1.5.7
+    container_name: tls-ca-org8
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=tls-ca-org8
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7853
+    volumes:
+      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/tlsca-org8.org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca-cert.pem
+      - ./crypto-config/peerOrganizations/org8.example.com/tlsca/priv_sk:/etc/hyperledger/fabric-ca-server/ca-key.pem
+    ports:
+      - "7853:7853"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    networks:
+      - 6g-network
