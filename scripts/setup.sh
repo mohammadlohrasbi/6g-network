@@ -114,6 +114,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       TCA_ORDERER_ID=\"$TCA_ORDERER_ID\"
       IFS=',' read -r -a TCA_IDS <<< \"$TCA_IDS_STR\"
@@ -125,11 +126,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Org1 تا Org8
       for i in {0..7}; do
-        idx=\$i
-        PORT=\$((7053 + (i+1) * 100))
+        TCA_ID=\${TCA_IDS[\$i]}
+        PORT=\$((7053 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
-        TCA_ID=\"\${TCA_IDS[\$idx]}\"
-
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
@@ -161,6 +160,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
@@ -179,10 +179,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Org1 تا Org8
       for i in {0..7}; do
-        idx=\$i
-        PORT=\$((7054 + (i+1) * 100))
+        RCA_ID=\${RCA_IDS[\$i]}
+        PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
-        RCA_ID=\"\${RCA_IDS[\$idx]}\"
         TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/signcerts/cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ID:\$PORT \
