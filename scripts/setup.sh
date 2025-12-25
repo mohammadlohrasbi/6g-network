@@ -104,6 +104,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local tca_id=$(docker ps --filter "name=${tca_name}" --format "{{.ID}}")
     TCA_IDS_STR="${TCA_IDS_STR}${tca_id} "
   done
+  TCA_IDS_STR=$(echo "$TCA_IDS_STR" | xargs)  # حذف فضای اضافی
 
   # 5. تولید گواهی TLS برای Enrollment CAها (با ID کانتینر TLS CA)
   log "تولید گواهی TLS برای Enrollment CAها"
@@ -148,6 +149,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local rca_id=$(docker ps --filter "name=${rca_name}" --format "{{.ID}}")
     RCA_IDS_STR="${RCA_IDS_STR}${rca_id} "
   done
+  RCA_IDS_STR=$(echo "$RCA_IDS_STR" | xargs)
 
   # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Enrollment CA"
