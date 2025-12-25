@@ -46,9 +46,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   local TEMP_CRYPTO="$PROJECT_DIR/temp-seed-crypto"
 
   # پاک کردن کامل قبلی
+  docker-compose -f docker-compose-ca.yml down -v --remove-orphans
   docker-compose -f docker-compose-tls-ca.yml down -v
   docker-compose -f docker-compose-rca.yml down -v
-  docker-compose -f docker-compose-ca.yml down -v
   docker-compose down -v
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
@@ -96,8 +96,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f docker-compose-tls-ca.yml up -d
   sleep 60
 
-  # 4. تولید گواهی TLS برای Enrollment CAها با TLS CA (با ID کانتینر برای TLS CA)
-  log "تولید گواهی TLS برای Enrollment CAها"
+  # 4. استخراج ID کانتینر TLS CAها
+  log "استخراج ID کانتینر TLS CAها"
   local TCA_ORDERER_ID=$(docker ps --filter "name=tca-orderer" --format "{{.ID}}")
   local TCA_IDS_STR=""
   for i in {1..8}; do
@@ -107,6 +107,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   TCA_IDS_STR=${TCA_IDS_STR%,}
 
+  # 5. تولید گواهی TLS برای Enrollment CAها (با ID کانتینر TLS CA)
+  log "تولید گواهی TLS برای Enrollment CAها"
   docker run --rm \
     --network config_6g-network \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -130,20 +132,17 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         TCA_ID=\"\${TCA_IDS[\$idx]}\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
       done
     "
 
-  # 5. بالا آوردن Enrollment CAها
+  # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
-  cd crypto-config
-  tree
-  
   docker-compose -f docker-compose-rca.yml up -d
   sleep 60
 
-  # 6. استخراج ID Enrollment CAها
+  # 7. استخراج ID Enrollment CAها
   log "استخراج ID Enrollment CAها"
   local RCA_ORDERER_ID=$(docker ps --filter "name=rca-orderer" --format "{{.ID}}")
   local RCA_IDS_STR=""
@@ -154,7 +153,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 7. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Enrollment CA"
 
   docker run --rm \
