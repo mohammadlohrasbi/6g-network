@@ -61,7 +61,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # Orderer TLS CA
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
-  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*cert.pem "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/"
+  cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem" "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/"
   cp "$TEMP_CRYPTO/ordererOrganizations/example.com/tlsca/"*_sk "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca/priv_sk"
 
   # Orderer Enrollment CA
@@ -75,7 +75,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local org="org${i}"
     # TLS CA
     mkdir -p "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca"
-    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*cert.pem "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
+    cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/tlsca-${org}.${org}.example.com-cert.pem" "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/"
     cp "$TEMP_CRYPTO/peerOrganizations/${org}.example.com/tlsca/"*_sk "$CRYPTO_DIR/peerOrganizations/${org}.example.com/tlsca/priv_sk"
 
     # Enrollment CA
@@ -150,7 +150,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر + دور زدن چک TLS)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
@@ -158,7 +158,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true  # اضافه شده برای حل unknown authority
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
