@@ -93,9 +93,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local ca_id=$(docker ps --filter "name=${ca_name}" --format "{{.ID}}")
     CA_IDS_STR="${CA_IDS_STR}${ca_id},"
   done
-  CA_IDS_STR=${CA_IDS_STR%,}  # حذف کامای آخر
+  CA_IDS_STR=${CA_IDS_STR%,}
 
-  # 5. تولید گواهی‌های نهایی با Fabric CA (با ID کانتینر)
+  # 5. تولید گواهی‌های نهایی با Fabric CA (با ID کانتینر + متغیر محیطی)
   log "تولید گواهی‌های نهایی با Fabric CA"
 
   docker run --rm \
@@ -104,6 +104,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true  # دور زدن چک SAN
 
       CA_ORDERER_ID=\"$CA_ORDERER_ID\"
       IFS=',' read -r -a CA_IDS <<< \"$CA_IDS_STR\"
@@ -140,7 +141,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
-          --id.attrs \"hf.Registrar.Roles=peer,client,user,admin\" --id.attrs \"hf.Revoker=true\" \
+          --id.attrs 'hf.Registrar.Roles=peer,client,user,admin' --id.attrs 'hf.Revoker=true' \
           --tls.certfiles \$CA_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$CA_ID:\$PORT \
@@ -152,6 +153,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       echo 'تمام گواهی‌ها بدون خطا تولید شدند!'
     "
+
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
