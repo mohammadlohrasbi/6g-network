@@ -200,7 +200,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
         ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
-        TLSCA_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca.\$ORG.example.com-cert.pem\"
+        TLSCA_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
@@ -215,7 +215,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
           --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true \
-          --tls.certfiles \$ROOT_TLS_CERT
+          --tls.certfiles \$TLSCA_CERT
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
