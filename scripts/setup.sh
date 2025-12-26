@@ -138,7 +138,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         ORG=\"org\$((i+1))\"
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
-          --csr.hosts '\$RCA_NAME' \
+          --csr.hosts \$RCA_NAME \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
 
         cp /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/*_sk /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/tls-key.pem
