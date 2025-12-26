@@ -168,7 +168,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (با registrar جدید برای register)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با attrs جداگانه و registrar جدید)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
