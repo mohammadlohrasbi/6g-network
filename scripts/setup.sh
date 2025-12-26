@@ -125,6 +125,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ORDERER_ID:7053 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem \
+        --csr.hosts 'localhost' \
         -M /crypto-config/ordererOrganizations/example.com/rca/tls-msp
         
       cp /crypto-config/ordererOrganizations/example.com/rca/tls-msp/keystore/*_sk /crypto-config/ordererOrganizations/example.com/rca/tls-msp/keystore/tls-key.pem
@@ -136,6 +137,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         ORG=\"org\$((i+1))\"
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
+          --csr.hosts 'localhost' \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
 
         cp /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/*_sk /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/tls-key.pem
