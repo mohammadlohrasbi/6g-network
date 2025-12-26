@@ -187,6 +187,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         --id.attrs hf.Registrar.Roles=peer,client,user,admin \
         --id.attrs hf.Registrar.DelegateRoles=* \
         --id.attrs hf.Revoker=true \
+        --id.attrs hf.GenCRL=true \
+        --id.attrs hf.IntermediateCA=true \
+        --id.attrs hf.AffiliationMgr=true \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
 
       # enroll registrar برای Orderer
@@ -219,6 +222,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           --id.attrs hf.Registrar.Roles=peer,client,user,admin \
           --id.attrs hf.Registrar.DelegateRoles=* \
           --id.attrs hf.Revoker=true \
+          --id.attrs hf.GenCRL=true \
+          --id.attrs hf.IntermediateCA=true \
+          --id.attrs hf.AffiliationMgr=true \
           --tls.certfiles \$ROOT_TLS_CERT
 
         # enroll registrar برای Org
