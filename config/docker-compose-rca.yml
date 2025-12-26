@@ -16,7 +16,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck  # اختیاری، برای تست
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/rca/ca-orderer.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-orderer.example.com-cert.pem
       - ./crypto-config/ordererOrganizations/example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -40,7 +39,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org1.example.com/rca/ca-org1.org1.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org1.org1.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org1.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -64,7 +62,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org2.example.com/rca/ca-org2.org2.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org2.org2.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org2.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -88,7 +85,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org3.example.com/rca/ca-org3.org3.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org3.org3.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org3.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -112,7 +108,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org4.example.com/rca/ca-org4.org4.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org4.org4.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org4.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -136,7 +131,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org5.example.com/rca/ca-org5.org5.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org5.org5.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org5.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -160,7 +154,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org6.example.com/rca/ca-org6.org6.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org6.org6.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org6.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -184,7 +177,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org7.example.com/rca/ca-org7.org7.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org7.org7.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org7.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
@@ -208,7 +200,6 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/keystore/tls-key.pem
-      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE=nocheck
     volumes:
       - ./crypto-config/peerOrganizations/org8.example.com/rca/ca-org8.org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org8.org8.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org8.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
