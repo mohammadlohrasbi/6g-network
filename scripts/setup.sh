@@ -46,8 +46,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   local TEMP_CRYPTO="$PROJECT_DIR/temp-seed-crypto"
 
   # پاک کردن کامل قبلی
-  docker-compose -f docker-compose-tls-ca.yml down -v
-  docker-compose -f docker-compose-rca.yml down -v
+  docker-compose -f docker-compose-tls-ca.yml down -v --remove-orphans
+  docker-compose -f docker-compose-rca.yml down -v --remove-orphans
   docker-compose down -v
   docker volume prune -f
   rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
@@ -90,6 +90,9 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   rm -rf "$TEMP_CRYPTO"
 
+  cd "$CRYPTO_DIR/ordererOrganizations/example.com/rca"
+  tree
+  cd "$PROJECT_DIR"
   # 3. بالا آوردن TLS CAها
   log "بالا آوردن TLS CAها"
   docker-compose -f docker-compose-tls-ca.yml up -d
@@ -121,7 +124,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ORDERER_ID:7053 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca.orderer.example.com-cert.pem \
         -M /crypto-config/ordererOrganizations/example.com/rca/tls-msp
 
       # Org1 تا Org8
@@ -130,7 +133,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         PORT=\$((7053 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
-          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
+          --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca.\$ORG.example.com-cert.pem \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
       done
     "
@@ -151,7 +154,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (با cacerts/*.pem برای verify)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با ID کانتینر)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
@@ -159,20 +162,18 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
       RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ORDERER_ID:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-      fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+      fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
 
       fabric-ca-client enroll -u https://orderer.example.com:ordererpw@\$RCA_ORDERER_ID:7054 \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
       # Org1 تا Org8
@@ -180,25 +181,19 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         RCA_ID=\${RCA_IDS[\$i]}
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
-        ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ID:\$PORT \
-          --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
-        fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
-          --tls.certfiles \$ROOT_TLS_CERT
+        fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer
 
         fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_ID:\$PORT \
-          --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
         fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
-          --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true \
-          --tls.certfiles \$ROOT_TLS_CERT
+          --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true
 
         fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$RCA_ID:\$PORT \
-          --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         echo \"گواهی‌های \$ORG تولید شد\"
