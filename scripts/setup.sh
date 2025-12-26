@@ -187,7 +187,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem
 
       fabric-ca-client enroll -u https://orderer.example.com:ordererpw@\rca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
@@ -200,13 +200,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
         ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+        TLSCA_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca.\$ORG.example.com-cert.pem\"
 
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
-          --tls.certfiles \$ROOT_TLS_CERT
+          --tls.certfiles \$TLSCA_CERT
 
         fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
