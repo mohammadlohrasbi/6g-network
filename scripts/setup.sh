@@ -168,7 +168,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (اصولی — با attrs جداگانه و cacerts)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با registrar جدید برای register)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
@@ -181,6 +181,20 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+
+      # ثبت registrar جدید برای Orderer
+      fabric-ca-client register --id.name registrar --id.secret registrarpw --id.type client \
+        --id.attrs hf.Registrar.Roles=peer,client,user,admin \
+        --id.attrs hf.Registrar.DelegateRoles=* \
+        --id.attrs hf.Revoker=true \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+
+      # enroll registrar برای Orderer
+      fabric-ca-client enroll -u https://registrar:registrarpw@rca-orderer:7054 \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+        -M /tmp/registrar-msp
+
+      export FABRIC_CA_CLIENT_HOME=/tmp/registrar-msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
@@ -199,6 +213,20 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+        # ثبت registrar جدید برای Org
+        fabric-ca-client register --id.name registrar --id.secret registrarpw --id.type client \
+          --id.attrs hf.Registrar.Roles=peer,client,user,admin \
+          --id.attrs hf.Registrar.DelegateRoles=* \
+          --id.attrs hf.Revoker=true \
+          --tls.certfiles \$ROOT_TLS_CERT
+
+        # enroll registrar برای Org
+        fabric-ca-client enroll -u https://registrar:registrarpw@\$RCA_NAME:\$PORT \
+          --tls.certfiles \$ROOT_TLS_CERT \
+          -M /tmp/registrar-msp
+
+        export FABRIC_CA_CLIENT_HOME=/tmp/registrar-msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
           --tls.certfiles \$ROOT_TLS_CERT
