@@ -195,7 +195,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       # Org1 تا Org8
       for i in {0..7}; do
         RCA_ID=\${RCA_IDS[\$i]}
-        RCA_NAME=\"rca-org\$i\"
+        RCA_NAME=\"rca-org\$((i+1))\"
         PORT=\$((7054 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
         ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
