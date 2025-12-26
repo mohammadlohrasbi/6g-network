@@ -133,6 +133,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       # Org1 تا Org8
       for i in {0..7}; do
         TCA_ID=\${TCA_IDS[\$i]}
+        RCA_NAME=\"rca-org\$((i+1))\"
         PORT=\$((7053 + (\$i + 1) * 100))
         ORG=\"org\$((i+1))\"
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
