@@ -161,7 +161,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
 
-  # 8. تولید گواهی‌های نهایی با Enrollment CA (با cacerts/*.pem برای --tls.certfiles)
+  # 8. تولید گواهی‌های نهایی با Enrollment CA (با cacerts/*.pem برای --tls.certfiles و escape صحیح IDها)
   log "تولید گواهی‌های نهایی با Enrollment CA"
   docker run --rm \
     --network config_6g-network \
@@ -170,8 +170,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
 
-      RCA_ORDERER_ID=\"$RCA_ORDERER_ID\"
-      IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
+      RCA_ORDERER_ID=\"$(printf '%q' "$RCA_ORDERER_ID")\"
+      IFS=',' read -r -a RCA_IDS <<< \"$(printf '%q' "$RCA_IDS_STR")\"
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ORDERER_ID:7054 \
