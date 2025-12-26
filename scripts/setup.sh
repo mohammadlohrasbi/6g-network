@@ -125,7 +125,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ORDERER_ID:7053 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem \
-        --csr.hosts 'localhost' \
+        --csr.hosts 'rca-orderer' \
         -M /crypto-config/ordererOrganizations/example.com/rca/tls-msp
         
       cp /crypto-config/ordererOrganizations/example.com/rca/tls-msp/keystore/*_sk /crypto-config/ordererOrganizations/example.com/rca/tls-msp/keystore/tls-key.pem
@@ -137,7 +137,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         ORG=\"org\$((i+1))\"
         fabric-ca-client enroll -u https://admin:adminpw@\$TCA_ID:\$PORT \
           --tls.certfiles /crypto-config/peerOrganizations/\$ORG.example.com/tlsca/tlsca-\$ORG.\$ORG.example.com-cert.pem \
-          --csr.hosts 'localhost' \
+          --csr.hosts '\$RCA_NAME' \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp
 
         cp /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/*_sk /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/keystore/tls-key.pem
@@ -181,14 +181,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       IFS=',' read -r -a RCA_IDS <<< \"$RCA_IDS_STR\"
 
       # Orderer
-      fabric-ca-client enroll -u https://admin:adminpw@\localhost:7054 \
+      fabric-ca-client enroll -u https://admin:adminpw@\rca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
 
-      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@\localhost:7054 \
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@\rca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -199,14 +199,14 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         ORG=\"org\$((i+1))\"
         ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
-        fabric-ca-client enroll -u https://admin:adminpw@\localhost:\$PORT \
+        fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
         fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
           --tls.certfiles \$ROOT_TLS_CERT
 
-        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\localhost:\$PORT \
+        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
@@ -214,7 +214,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
           --id.attrs hf.Registrar.Roles=peer,client,user,admin --id.attrs hf.Revoker=true \
           --tls.certfiles \$ROOT_TLS_CERT
 
-        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\localhost:\$PORT \
+        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$RCA_NAME:\$PORT \
           --tls.certfiles \$ROOT_TLS_CERT \
           -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
