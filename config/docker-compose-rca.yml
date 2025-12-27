@@ -227,7 +227,7 @@ services:
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
-   volumes:
+    volumes:
       - ./crypto-config/peerOrganizations/org8.example.com/rca/ca-org8.org8.example.com-cert.pem:/etc/hyperledger/fabric-ca-server/ca/ca-org8.org8.example.com-cert.pem
       - ./crypto-config/peerOrganizations/org8.example.com/rca/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - ./crypto-config/peerOrganizations/org8.example.com/rca/tls-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
