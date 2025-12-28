@@ -183,6 +183,81 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
+      # ثبت registrar جدید برای Orderer
+      fabric-ca-client register --id.name registrar --id.secret registrarpw --id.type client \
+        --id.attrs \"hf.Registrar.Roles=peer\" \
+        --id.attrs \"hf.Registrar.Roles=client\" \
+        --id.attrs \"hf.Registrar.Roles=user\" \
+        --id.attrs \"hf.Registrar.Roles=admin\" \
+        --id.attrs \"hf.Registrar.DelegateRoles=*\" \
+        --id.attrs \"hf.Revoker=true\" \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+
+      # enroll registrar برای Orderer
+      fabric-ca-client enroll -u https://registrar:registrarpw@rca-orderer:7054 \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+        -M /tmp/registrar-msp
+
+      export FABRIC_CA_CLIENT_HOME=/tmp/registrar-msp
+
+      fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+
+      fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
+        --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+        -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+
+      # Org1 تا Org8
+      for i in 1 2 3 4 5 6 7 8; do
+        ORG=\"org\$i\"
+        RCA_NAME=\"rca-org\$i\"
+        PORT=\$((7054 + \$i * 100))
+        ROOT_TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+
+        fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+          --tls.certfiles \$ROOT_TLS_CERT \
+          -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+        # ثبت registrar جدید برای Org
+        fabric-ca-client register --id.name registrar --id.secret registrarpw --id.type client \
+          --id.attrs \"hf.Registrar.Roles=peer\" \
+          --id.attrs \"hf.Registrar.Roles=client\" \
+          --id.attrs \"hf.Registrar.Roles=user\" \
+          --id.attrs \"hf.Registrar.Roles=admin\" \
+          --id.attrs \"hf.Registrar.DelegateRoles=*\" \
+          --id.attrs \"hf.Revoker=true\" \
+          --tls.certfiles \$ROOT_TLS_CERT
+
+        # enroll registrar برای Org
+        fabric-ca-client enroll -u https://registrar:registrarpw@\$RCA_NAME:\$PORT \
+          --tls.certfiles \$ROOT_TLS_CERT \
+          -M /tmp/registrar-msp
+
+        export FABRIC_CA_CLIENT_HOME=/tmp/registrar-msp
+
+        fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
+          --tls.certfiles \$ROOT_TLS_CERT
+
+        fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
+          --tls.certfiles \$ROOT_TLS_CERT \
+          -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
+
+        fabric-ca-client register --id.name Admin@\$ORG.example.com --id.secret adminpw --id.type admin \
+          --id.attrs \"hf.Registrar.Roles=peer\" \
+          --id.attrs \"hf.Registrar.Roles=client\" \
+          --id.attrs \"hf.Registrar.Roles=user\" \
+          --id.attrs \"hf.Registrar.Roles=admin\" \
+          --id.attrs \"hf.Revoker=true\" \
+          --tls.certfiles \$ROOT_TLS_CERT
+
+        fabric-ca-client enroll -u https://Admin@\$ORG.example.com:adminpw@\$RCA_NAME:\$PORT \
+          --tls.certfiles \$ROOT_TLS_CERT \
+          -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+        echo \"گواهی‌های \$ORG تولید شد\"
+      done
+
+      echo 'تمام گواهی‌ها بدون خطا تولید شدند!'
     "
   tree crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
