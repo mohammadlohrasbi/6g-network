@@ -180,20 +180,22 @@ docker run --rm \
 
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
+    # enroll Admin Orderer
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
+    # register orderer (اگر قبلاً ثبت شده باشد، خطا ندهد)
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem || true
 
-    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --enrollment.id orderer.example.com --enrollment.secret ordererpw \
+    # enroll orderer با basic auth
+    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    echo 'گواهی‌های Orderer تولید شد'
+    echo 'گواهی‌های Orderer با موفقیت تولید شد'
 
     # ====================== Peer Organizations (Org1 تا Org8) ======================
     for i in {1..8}; do
@@ -204,27 +206,31 @@ docker run --rm \
 
       echo \"در حال تولید گواهی‌های \$ORG...\"
 
+      # مهم: در هر چرخه، مسیر خالی را دوباره ست کن تا basic auth استفاده شود
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
+      # enroll Admin هر Org
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
+      # register peer0 با basic auth
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH
+        --tls.certfiles \$TLS_PATH || true
 
-      # enroll peer با basic auth admin + مشخص کردن id و secret
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --enrollment.id peer0.\$ORG.example.com --enrollment.secret peerpw \
+      # enroll peer0 با basic auth — دقیقاً مثل تست دستی موفق
+      fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"گواهی‌های \$ORG کاملاً موفق تولید شد\"
+      echo \"گواهی‌های \$ORG با موفقیت کامل تولید شد\"
     done
 
-    echo 'تمام گواهی‌ها بدون هیچ خطایی تولید شدند!'
-    echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل و آماده راه‌اندازی است!'
+    echo '============================================================================='
+    echo 'تمام گواهی‌های crypto-config بدون هیچ خطایی تولید شدند!'
+    echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل، تمیز و آماده راه‌اندازی است!'
+    echo '============================================================================='
   "
   
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
