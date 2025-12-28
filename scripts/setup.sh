@@ -203,29 +203,28 @@ docker run --rm \
 
       echo \"در حال تولید گواهی‌های \$ORG...\"
 
-      # هر org با client خالی شروع می‌شود — دقیقاً مثل تست دستی
+      # همیشه با client خالی شروع کن — کلیدی برای موفقیت!
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
-      # enroll Admin هر سازمان
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-
-      # register peer0 با basic auth
+      # اول register و enroll peer — قبل از enroll Admin
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH
 
-      # enroll peer0 با basic auth — دقیقاً مثل تست دستی موفق
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"گواهی‌های \$ORG با موفقیت کامل تولید شد\"
+      # سپس enroll Admin (بدون تأثیر روی peer)
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_PATH \
+        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+      echo \"گواهی‌های \$ORG با موفقیت کامل و بدون هیچ خطایی تولید شد\"
     done
 
     echo '============================================================================='
-    echo 'تمام گواهی‌های crypto-config بدون هیچ خطایی و با موفقیت کامل تولید شدند!'
+    echo 'تمام گواهی‌های crypto-config با موفقیت کامل و بدون هیچ خطایی تولید شدند!'
     echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل، حرفه‌ای و آماده راه‌اندازی است!'
     echo '============================================================================='
   "
