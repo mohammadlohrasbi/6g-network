@@ -167,7 +167,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     RCA_IDS_STR="${RCA_IDS_STR}${rca_id},"
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
-
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
 docker run --rm \
@@ -180,19 +179,21 @@ docker run --rm \
 
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
+    # enroll Admin Orderer
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
+    # register و enroll orderer (قبل از هر چیز دیگر)
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem && echo 'orderer ثبت شد' || echo 'orderer قبلاً ثبت شده بود'
+      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
 
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    echo 'گواهی‌های Orderer آماده'
+    echo 'گواهی‌های Orderer با موفقیت کامل تولید شد'
 
     # ====================== Peer Organizations (Org1 تا Org8) ======================
     for i in {1..8}; do
@@ -205,26 +206,26 @@ docker run --rm \
 
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
-      # enroll Admin
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-
-      # register peer (با پیام واضح)
+      # اول register و enroll peer0 — دقیقاً مثل تست دستی موفق
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH && echo 'peer0.\$ORG ثبت شد' || echo 'peer0.\$ORG قبلاً ثبت شده بود'
+        --tls.certfiles \$TLS_PATH
 
-      # enroll peer با basic auth
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"گواهی‌های \$ORG آماده\"
+      # سپس enroll Admin (آخر — بدون تأثیر روی peer)
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_PATH \
+        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+      echo \"گواهی‌های \$ORG با موفقیت کامل و بدون هیچ خطایی تولید شد\"
     done
 
     echo '============================================================================='
-    echo 'تمام گواهی‌ها با موفقیت تولید شدند — شبکه ۶G شما کاملاً آماده است!'
+    echo 'تمام گواهی‌های crypto-config با موفقیت کامل و بدون هیچ خطایی تولید شدند!'
+    echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل و آماده راه‌اندازی است!'
     echo '============================================================================='
   "
   
