@@ -170,7 +170,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 8. تولید گواهی‌های نهایی با Enrollment CA (با registrar جدید برای register)
   log "تولید گواهی‌های نهایی با Enrollment CA"
-  tree /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+  tree crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
   docker run --rm \
     --network config_6g-network \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -184,7 +184,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     "
-  tree /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+  tree crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
   find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
