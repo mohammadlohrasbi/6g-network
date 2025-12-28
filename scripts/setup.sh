@@ -207,6 +207,11 @@ docker run --rm \
 
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
+      # در نهایت enroll Admin هر سازمان
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_PATH \
+        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
       # اول register peer0 با basic auth
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
@@ -216,11 +221,6 @@ docker run --rm \
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
-
-      # در نهایت enroll Admin هر سازمان
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
       echo \"گواهی‌های \$ORG با موفقیت کامل و بدون هیچ خطایی تولید شد\"
     done
