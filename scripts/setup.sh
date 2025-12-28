@@ -176,11 +176,13 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       export FABRIC_CA_CLIENT_HOME=/tmp/fabric-ca-client
+      tree /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       # Orderer
       fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
         --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
         -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+      tree /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
       # ثبت registrar جدید برای Orderer
       fabric-ca-client register --id.name registrar --id.secret registrarpw --id.type client \
