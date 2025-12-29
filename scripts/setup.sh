@@ -167,48 +167,23 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     RCA_IDS_STR="${RCA_IDS_STR}${rca_id},"
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
-  
-log "تولید گواهی‌های نهایی با Enrollment CA"
 
-# مرحله 1: Adminها
+  log "تولید گواهی‌های نهایی با Enrollment CA"
+
+# Orderer
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-admin
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
-    # غیرفعال کردن Idemix برای حذف warning
-    export FABRIC_CA_CLIENT_IDEMIX_ENABLED=false
-
-    # Orderer Admin
+    # enroll Admin اول
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    for i in {1..8}; do
-      ORG=\"org\$i\"
-      RCA_NAME=\"rca-org\$i\"
-      PORT=\$((7054 + \$i * 100))
-      TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
-
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-
-      echo \"Admin \$ORG تولید شد\"
-    done
-  "
-
-# مرحله 2: nodeها
-docker run --rm \
-  --network config_6g-network \
-  -v "$PROJECT_DIR/crypto-config":/crypto-config \
-  hyperledger/fabric-ca-tools:latest \
-  /bin/bash -c "
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-node
-    export FABRIC_CA_CLIENT_IDEMIX_ENABLED=false
-
+    # register و enroll orderer
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
@@ -217,25 +192,43 @@ docker run --rm \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    for i in {1..8}; do
-      ORG=\"org\$i\"
-      RCA_NAME=\"rca-org\$i\"
+    echo 'Orderer با موفقیت تولید شد'
+  "
+
+# هر Org در docker run جداگانه (دقیقاً مثل دستی)
+for i in {1..8}; do
+  docker run --rm \
+    --network config_6g-network \
+    -v "$PROJECT_DIR/crypto-config":/crypto-config \
+    hyperledger/fabric-ca-tools:latest \
+    /bin/bash -c "
+      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
+
+      ORG=\"org$i\"
+      RCA_NAME=\"rca-org$i\"
       PORT=\$((7054 + \$i * 100))
       TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
+      # enroll Admin اول (مثل دستی)
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_PATH \
+        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+      # register peer
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH
 
+      # enroll peer
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"peer0.\$ORG تولید شد\"
-    done
-  "
+      echo \"\$ORG با موفقیت تولید شد\"
+    "
+done
 
-echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه کامل شد!'
+echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
