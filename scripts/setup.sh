@@ -167,6 +167,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     RCA_IDS_STR="${RCA_IDS_STR}${rca_id},"
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
+  
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
 # مرحله 1: تولید تمام Adminها (با client جدا)
@@ -176,11 +177,14 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-admin
+    ls -l /tmp/ca-client-empty-admin
 
     # Orderer Admin
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+
+    ls -l /tmp/ca-client-empty-admin 
 
     # Org1 تا Org8 Admin
     for i in {1..8}; do
@@ -189,9 +193,13 @@ docker run --rm \
       PORT=\$((7054 + \$i * 100))
       TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
+      ls -l /tmp/ca-client-empty-admin
+
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+      ls -l /tmp/ca-client-empty-admin  
 
       echo \"Admin \$ORG تولید شد\"
     done
@@ -206,16 +214,20 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-node
+    ls -l /tmp/ca-client-empty-node
 
     # Orderer node
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
 
+    ls -l /tmp/ca-client-empty-node  
+
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
+    ls -l /tmp/ca-client-empty-node
     echo 'orderer تولید شد'
 
     # Peerها
@@ -225,13 +237,19 @@ docker run --rm \
       PORT=\$((7054 + \$i * 100))
       TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
+      ls -l /tmp/ca-client-empty-node
+
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH
 
+      ls -l /tmp/ca-client-empty-node  
+
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
+
+      ls -l /tmp/ca-client-empty-node  
 
       echo \"peer0.\$ORG با موفقیت تولید شد\"
     done
