@@ -312,14 +312,44 @@ NodeOUs:
 EOF
   done
 
-  # 6. تولید genesis.block و channel.txها
-  log "تولید genesis.block و channel.txها"
-  export FABRIC_CFG_PATH="$PROJECT_DIR"
-  configtxgen -profile SystemChannel -outputBlock "$CHANNEL_ARTIFACTS/system-genesis.block" -channelID system-channel
+log "6. تولید genesis.block و channel transactionها"
 
-  for ch in networkchannel resourcechannel; do
-    configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" -channelID "$ch"
+# مسیر درست configtx.yaml
+export FABRIC_CFG_PATH="$PROJECT_DIR/config"   # یا هر جایی که configtx.yaml هست
+# اگر configtx.yaml در ریشه پروژه است: export FABRIC_CFG_PATH="$PROJECT_DIR"
+
+# تولید genesis.block برای system channel
+configtxgen -profile OrdererGenesis \
+            -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
+            -channelID system-channel
+
+echo "genesis.block با موفقیت ساخته شد"
+
+# تولید channel transaction برای هر application channel
+for ch in networkchannel resourcechannel; do
+  configtxgen -profile ApplicationChannel \
+              -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" \
+              -channelID "$ch"
+
+  echo "${ch}.tx ساخته شد"
+done
+
+# تولید Anchor Peer update برای هر Org در هر channel (اجباری برای gossip)
+for ch in networkchannel resourcechannel; do
+  for i in {1..8}; do
+    org="Org${i}"
+    msp="Org${i}MSP"
+
+    configtxgen -profile ApplicationChannel \
+                -outputAnchorPeersUpdate "$CHANNEL_ARTIFACTS/${ch}_Org${i}_anchors.tx" \
+                -channelID "$ch" \
+                -asOrg "$msp"
+
+    echo "Anchor update برای $org در $ch ساخته شد"
   done
+done
+
+echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 }
