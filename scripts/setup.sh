@@ -337,19 +337,15 @@ for i in {1..8}; do
 done
 
 echo "تمام MSPهای اصلی سازمان اصلاح شدند — configtxgen حالا ۱۰۰٪ کار می‌کند!"
-
 log "تولید دوباره genesis.block و channel artifacts"
 
-# مسیر دقیق configtx.yaml — حتماً چک کنید
-export FABRIC_CFG_PATH="$PROJECT_DIR"   # اگر configtx.yaml در ریشه پروژه است
-# یا اگر در زیرپوشه است:
-# export FABRIC_CFG_PATH="$PROJECT_DIR/config"
+export FABRIC_CFG_PATH="$PROJECT_DIR"
 
 echo "FABRIC_CFG_PATH تنظیم شد روی: $FABRIC_CFG_PATH"
 echo "محتویات دایرکتوری:"
 ls -la "$FABRIC_CFG_PATH"/configtx.yaml || echo "configtx.yaml پیدا نشد!"
 
-# ۱. تولید genesis.block با پروفایل استاندارد
+# ۱. genesis.block
 configtxgen -profile OrdererGenesis \
             -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
             -channelID system-channel
@@ -358,7 +354,6 @@ if [ $? -ne 0 ]; then
   echo "خطا در تولید genesis.block — پروفایل OrdererGenesis وجود ندارد؟"
   exit 1
 fi
-
 echo "genesis.block با موفقیت ساخته شد"
 
 # ۲. channel creation tx
@@ -371,7 +366,6 @@ for ch in networkchannel resourcechannel; do
     echo "خطا در تولید ${ch}.tx"
     exit 1
   fi
-
   echo "${ch}.tx ساخته شد"
 done
 
@@ -387,13 +381,19 @@ for ch in networkchannel resourcechannel; do
       echo "خطا در anchor update برای Org${i} در $ch"
       exit 1
     fi
-
     echo "Anchor update برای Org${i}MSP در $ch ساخته شد"
   done
 done
 
+# <<< اصلاح انتها — ایمن و بدون خطا >>>
 echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
-ls -l "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.txهیچ فایلی یافت نشد"
+echo "لیست فایل‌های ساخته‌شده در $CHANNEL_ARTIFACTS:"
+ls -l "$CHANNEL_ARTIFACTS"/*.block 2>/dev/null || true
+ls -l "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null || true
+
+if [ $(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null | wc -l) -eq 0 ]; then
+  echo "هشدار: هیچ فایلی یافت نشد — ممکن است مسیر اشتباه باشد"
+fi
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 }
