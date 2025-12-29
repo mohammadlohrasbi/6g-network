@@ -254,10 +254,6 @@ EOF
     configtxgen -profile ApplicationChannel -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" -channelID "$ch"
   done
 
-  # 7. بالا آوردن شبکه اصلی
-  log "بالا آوردن شبکه اصلی"
-  docker-compose up -d
-
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 }
 
@@ -1237,16 +1233,16 @@ main() {
   generate_coreyamls
   # prepare_msp_for_network
   # prepare_orderer_msp_full_cacerts
-  prepare_bundled_tls_ca
-  fix_admin_msp_for_all_orgs
+  # prepare_bundled_tls_ca
+  # fix_admin_msp_for_all_orgs
   start_network
-  wait_for_orderer
+  #wait_for_orderer
   # upgrade_shared_msp_full_admins
-  create_and_join_channels
+  #create_and_join_channels
   # upgrade_shared_msp_full_admins
-  generate_chaincode_modules
-  package_and_install_chaincode
-  approve_and_commit_chaincode
+  #generate_chaincode_modules
+  #package_and_install_chaincode
+  #approve_and_commit_chaincode
   success "تمام شد!"
 }
 
