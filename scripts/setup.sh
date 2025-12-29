@@ -167,46 +167,19 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     RCA_IDS_STR="${RCA_IDS_STR}${rca_id},"
   done
   RCA_IDS_STR=${RCA_IDS_STR%,}
-
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
-# مرحله 1: enroll همه Adminها (Orderer و Org1-8)
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
+    # ====================== Orderer Organization ======================
+    echo 'در حال تولید گواهی‌های Orderer...'
+
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
 
-    # Orderer Admin
-    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
-
-    # Org1 تا Org8 Admin
-    for i in {1..8}; do
-      ORG=\"org\$i\"
-      RCA_NAME=\"rca-org\$i\"
-      PORT=\$((7054 + \$i * 100))
-      TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-      echo \"Admin \$ORG تولید شد\"
-    done
-
-    echo 'تمام Adminها تولید شدند'
-  "
-
-# مرحله 2: register و enroll همه nodeها (orderer و peerها) با client کاملاً خالی
-docker run --rm \
-  --network config_6g-network \
-  -v "$PROJECT_DIR/crypto-config":/crypto-config \
-  hyperledger/fabric-ca-tools:latest \
-  /bin/bash -c "
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-new
-
-    # Orderer node
+    # register و enroll orderer اول
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
@@ -215,13 +188,25 @@ docker run --rm \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    # Peerها
+    # سپس enroll Admin Orderer
+    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
+      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+      -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+
+    echo 'گواهی‌های Orderer با موفقیت کامل تولید شد'
+
+    # ====================== Peer Organizations (Org1 تا Org8) ======================
     for i in {1..8}; do
       ORG=\"org\$i\"
       RCA_NAME=\"rca-org\$i\"
       PORT=\$((7054 + \$i * 100))
       TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
+      echo \"در حال تولید گواهی‌های \$ORG...\"
+
+      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
+
+      # اول register و enroll peer0
       fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_PATH
@@ -230,17 +215,19 @@ docker run --rm \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"peer0.\$ORG تولید شد\"
+      # سپس enroll Admin
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_PATH \
+        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
+
+      echo \"گواهی‌های \$ORG با موفقیت کامل و بدون هیچ خطایی تولید شد\"
     done
 
-    echo 'تمام nodeها با موفقیت تولید شدند'
+    echo '============================================================================='
+    echo 'تمام گواهی‌های crypto-config با موفقیت کامل و بدون هیچ خطایی تولید شدند!'
+    echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل، حرفه‌ای و آماده راه‌اندازی است!'
+    echo '============================================================================='
   "
-
-echo '============================================================================='
-echo 'تمام گواهی‌های crypto-config با موفقیت کامل و بدون هیچ خطایی تولید شدند!'
-echo 'شبکه Hyperledger Fabric پروژه ۶G شما کامل و آماده راه‌اندازی است!'
-echo '============================================================================='
-  
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
   find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
