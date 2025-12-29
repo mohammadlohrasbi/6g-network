@@ -170,7 +170,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
-# مرحله 1: تولید تمام Adminها
+# مرحله 1: Adminها
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -178,12 +178,14 @@ docker run --rm \
   /bin/bash -c "
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-admin
 
+    # غیرفعال کردن Idemix برای حذف warning
+    export FABRIC_CA_CLIENT_IDEMIX_ENABLED=false
+
     # Orderer Admin
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    # Org1 تا Org8 Admin
     for i in {1..8}; do
       ORG=\"org\$i\"
       RCA_NAME=\"rca-org\$i\"
@@ -196,19 +198,17 @@ docker run --rm \
 
       echo \"Admin \$ORG تولید شد\"
     done
-
-    echo 'تمام Adminها با موفقیت تولید شدند'
   "
 
-# مرحله 2: register و enroll تمام nodeها (مسیر کاملاً جدا و تازه)
+# مرحله 2: nodeها
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty-node
+    export FABRIC_CA_CLIENT_IDEMIX_ENABLED=false
 
-    # Orderer node
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
@@ -217,7 +217,6 @@ docker run --rm \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    # Peerها
     for i in {1..8}; do
       ORG=\"org\$i\"
       RCA_NAME=\"rca-org\$i\"
@@ -232,13 +231,11 @@ docker run --rm \
         --tls.certfiles \$TLS_PATH \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"peer0.\$ORG با موفقیت تولید شد\"
+      echo \"peer0.\$ORG تولید شد\"
     done
-
-    echo 'تمام nodeها با موفقیت تولید شدند'
   "
 
-echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
+echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه کامل شد!'
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
