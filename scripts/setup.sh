@@ -340,26 +340,28 @@ echo "تمام MSPهای اصلی سازمان اصلاح شدند — configtxg
 
 log "تولید دوباره genesis.block و channel artifacts"
 
-# مسیر configtx.yaml — حتماً درست باشد
-# اگر configtx.yaml در ریشه پروژه است:
-export FABRIC_CFG_PATH="$PROJECT_DIR"
-
-# اگر در زیرپوشه‌ای مثل config است، این را بگذارید:
+# مسیر دقیق configtx.yaml — حتماً چک کنید
+export FABRIC_CFG_PATH="$PROJECT_DIR"   # اگر configtx.yaml در ریشه پروژه است
+# یا اگر در زیرپوشه است:
 # export FABRIC_CFG_PATH="$PROJECT_DIR/config"
 
-# ۱. تولید genesis.block برای system channel
-configtxgen -profile SystemChannel \
+echo "FABRIC_CFG_PATH تنظیم شد روی: $FABRIC_CFG_PATH"
+echo "محتویات دایرکتوری:"
+ls -la "$FABRIC_CFG_PATH"/configtx.yaml || echo "configtx.yaml پیدا نشد!"
+
+# ۱. تولید genesis.block با پروفایل استاندارد
+configtxgen -profile OrdererGenesis \
             -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
             -channelID system-channel
 
 if [ $? -ne 0 ]; then
-  echo "خطا در تولید genesis.block — بررسی کنید MSPها اصلاح شده باشند"
+  echo "خطا در تولید genesis.block — پروفایل OrdererGenesis وجود ندارد؟"
   exit 1
 fi
 
 echo "genesis.block با موفقیت ساخته شد"
 
-# ۲. تولید channel creation transaction برای هر application channel
+# ۲. channel creation tx
 for ch in networkchannel resourcechannel; do
   configtxgen -profile ApplicationChannel \
               -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" \
@@ -370,11 +372,10 @@ for ch in networkchannel resourcechannel; do
     exit 1
   fi
 
-  echo "${ch}.tx با موفقیت ساخته شد"
+  echo "${ch}.tx ساخته شد"
 done
 
-# ۳. تولید Anchor Peer update برای هر Org در هر channel
-# این مرحله برای gossip ضروری است
+# ۳. anchor peers update
 for ch in networkchannel resourcechannel; do
   for i in {1..8}; do
     configtxgen -profile ApplicationChannel \
@@ -383,17 +384,16 @@ for ch in networkchannel resourcechannel; do
                 -asOrg Org${i}MSP
 
     if [ $? -ne 0 ]; then
-      echo "خطا در تولید anchor update برای Org${i} در $ch"
+      echo "خطا در anchor update برای Org${i} در $ch"
       exit 1
     fi
 
-    echo "Anchor update برای Org${i}MSP در ${ch} ساخته شد"
+    echo "Anchor update برای Org${i}MSP در $ch ساخته شد"
   done
 done
 
-echo "تمام فایل‌های channel artifacts با موفقیت و بدون خطا تولید شدند!"
-echo "فایل‌های ساخته‌شده:"
-ls -l "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null || echo "هیچ فایلی یافت نشد"
+echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
+ls -l "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.txهیچ فایلی یافت نشد"
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 }
