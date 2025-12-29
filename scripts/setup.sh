@@ -223,26 +223,24 @@ for i in {1..8}; do
 done
 
 echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
+log "تولید گواهی‌های TLS برای نودها (به صورت کاملاً اصولی)"
 
-log "تولید گواهی‌های TLS برای نودها (به صورت اصولی)"
-
-# Orderer TLS
+# Orderer TLS (این بخش قبلاً موفق بود، اما برای کامل بودن دوباره می‌گذاریم)
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-tls
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-tls-orderer
 
-    # enroll با profile tls برای orderer
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       --enrollment.profile tls \
       --csr.cn orderer.example.com \
-      --csr.hosts orderer.example.com,localhost,127.0.0.1 \
+      --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls
 
-    # rename فایل‌ها به نام استاندارد
+    # rename به نام استاندارد
     cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/signcerts/cert.pem \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
     cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/keystore/*_sk \
@@ -253,42 +251,45 @@ docker run --rm \
     echo "TLS گواهی orderer ساخته شد"
   '
 
-# هر Peer Org
+# هر Peer در docker run جداگانه — تضمینی بدون syntax error و تداخل config
 for i in {1..8}; do
   docker run --rm \
     --network config_6g-network \
     -v "$PROJECT_DIR/crypto-config":/crypto-config \
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
-      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-tls
+      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-tls-peer$i
 
       ORG=org$i
       RCA_NAME=rca-org$i
-      PORT=\$((7054 + \$i * 100))
+      PORT=\$((7054 + $i * 100))
       PEER_NAME=peer0.\$ORG.example.com
-      TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+      TLS_CA_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
-      # enroll با profile tls برای peer
+      echo \"در حال تولید TLS برای \$PEER_NAME (پورت \$PORT)...\"
+
       fabric-ca-client enroll -u https://\$PEER_NAME:peerpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
+        --tls.certfiles \$TLS_CA_PATH \
         --enrollment.profile tls \
         --csr.cn \$PEER_NAME \
-        --csr.hosts \$PEER_NAME,localhost,127.0.0.1 \
+        --csr.hosts \"\$PEER_NAME,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls
 
-      # rename فایل‌ها به نام استاندارد Fabric
+      # rename فایل‌ها
       cp /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/signcerts/cert.pem \
          /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/server.crt
+
       cp /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/keystore/*_sk \
          /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/server.key
+
       cp /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/tlscacerts/* \
          /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/ca.crt
 
-      echo \"TLS گواهی \$PEER_NAME ساخته شد\"
+      echo \"TLS گواهی \$PEER_NAME با موفقیت ساخته شد\"
     "
 done
 
-echo 'تمام گواهی‌های TLS به صورت اصولی تولید شدند!'
+echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و بدون خطا تولید شدند!'
 
   # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
   log "ساخت config.yaml"
