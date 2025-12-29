@@ -251,10 +251,12 @@ Channel: &ChannelDefaults
     <<: *ChannelCapabilities
 
 Profiles:
-  SystemChannel:
+  OrdererGenesis:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
       Capabilities:
         <<: *OrdererCapabilities
     Consortiums:
