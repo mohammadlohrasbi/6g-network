@@ -748,7 +748,7 @@ start_network() {
   log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
 
   # ۱. شبکه داکر را بساز (اگر وجود نداشته باشد)
-  docker network create config_6g-network 2>/dev/null || true
+  # docker network create config_6g-network 2>/dev/null || true
 
   # ۲. کاملاً همه کانتینرها را پاک کن (این خط حیاتی است!)
   # docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" down -v --remove-orphans 
