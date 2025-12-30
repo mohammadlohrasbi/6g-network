@@ -923,8 +923,7 @@ create_and_join_channels() {
       -e CORE_PEER_TLS_ENABLED=true \
       -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
       -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
-      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
-      -e FABRIC_LOGGING_SPEC=INFO \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt \
       peer0.org1.example.com \
       peer channel create \
         -o orderer.example.com:7050 \
@@ -932,7 +931,7 @@ create_and_join_channels() {
         -f "/etc/hyperledger/configtx/${ch}.tx" \
         --outputBlock "/tmp/${ch}.block" \
         --tls \
-        --cafile /etc/hyperledger/fabric/tls/ca.crt; then
+        --cafile /var/hyperledger/orderer/tls/server.crt; then
 
       success "کانال $ch با موفقیت توسط peer0.org1 ساخته شد"
 
@@ -951,7 +950,7 @@ create_and_join_channels() {
         -e CORE_PEER_TLS_ENABLED=true \
         -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
         -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
-        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt \
         peer0.org1.example.com \
         peer channel join -b /tmp/${ch}.block; then
 
