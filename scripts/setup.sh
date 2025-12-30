@@ -777,7 +777,7 @@ start_network() {
   sleep 20
 
   # ۴. بالا آوردن Orderer و Peerها با --force-recreate (این خط تمام مشکلات قبلی را حل می‌کند!)
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d --force-recreate --remove-orphans
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d
   if [ $? -ne 0 ]; then
     error "راه‌اندازی Peerها و Orderer شکست خورد"
   fi
