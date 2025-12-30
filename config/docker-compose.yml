@@ -2,7 +2,7 @@ version: '3.7'
 
 networks:
   6g-network:
-    name: 6g-app-network
+    name: 6g-network          # نام ثابت و دائمی — تغییر نده
     driver: bridge
 
 services:
@@ -32,7 +32,7 @@ services:
     ports:
       - "7050:7050"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   # =====================================
@@ -71,7 +71,7 @@ services:
     ports:
       - "7051:7051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org2.example.com:
@@ -107,7 +107,7 @@ services:
     ports:
       - "8051:8051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org3.example.com:
@@ -143,7 +143,7 @@ services:
     ports:
       - "9051:9051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org4.example.com:
@@ -179,7 +179,7 @@ services:
     ports:
       - "10051:10051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org5.example.com:
@@ -215,7 +215,7 @@ services:
     ports:
       - "11051:11051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org6.example.com:
@@ -251,7 +251,7 @@ services:
     ports:
       - "12051:12051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org7.example.com:
@@ -287,7 +287,7 @@ services:
     ports:
       - "13051:13051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
   peer0.org8.example.com:
@@ -323,7 +323,7 @@ services:
     ports:
       - "14051:14051"
     networks:
-      - app-network
+      - 6g-network
     restart: unless-stopped
 
 # volumes برای ledger هر peer
