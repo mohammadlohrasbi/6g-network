@@ -16,6 +16,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-orderer.example.com
+      - FABRIC_CA_SERVER_CSR_OU=orderer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -41,6 +43,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org1.org1.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -66,6 +70,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org2.org2.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -91,6 +97,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org3.org3.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -116,6 +124,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org4.org4.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -141,6 +151,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org5.org5.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -166,6 +178,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org6.org6.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -191,6 +205,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org7.org7.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
@@ -216,6 +232,8 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/tls-cert.pem
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/tls-key.pem
+      - FABRIC_CA_SERVER_CSR_CN=rca-org8.org8.example.com
+      - FABRIC_CA_SERVER_CSR_OU=peer
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY=admin
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_PASSWORD=adminpw
       - FABRIC_CA_SERVER_BOOTSTRAP_IDENTITY_ATTRS="hf.Registrar.Roles=peer,client,user,admin:hf.Registrar.DelegateRoles=*:hf.Revoker=true:hf.GenCRL=true:hf.IntermediateCA=true:hf.AffiliationMgr=true"
