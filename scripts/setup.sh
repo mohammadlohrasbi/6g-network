@@ -310,23 +310,6 @@ done
 echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و بدون خطا تولید شدند!'
 log "اصلاح config.yaml با نام دقیق فایل RCA (حل خطای wildcard و OU classification)"
 
-# Orderer
-cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<EOF
-NodeOUs:
-  Enable: true
-  ClientOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
-    OrganizationalUnitIdentifier: client
-  PeerOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
-    OrganizationalUnitIdentifier: peer
-  AdminOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
-    OrganizationalUnitIdentifier: admin
-  OrdererOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
-    OrganizationalUnitIdentifier: orderer
-EOF
 
 # Peer Orgها
 for i in {1..8}; do
