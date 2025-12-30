@@ -424,13 +424,6 @@ fi
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
 
-# Orderer
-mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
-cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
-
-echo "admincerts برای MSP orderer اضافه شد"
-
 # همه Peerها
 for i in {1..8}; do
   ORG=org$i
