@@ -215,7 +215,7 @@ for i in {1..8}; do
       ORG=org$i
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
-      TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/tlscacerts/tls-rca-org\${i}-*.pem\"
+      TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
       echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
