@@ -345,7 +345,7 @@ log "اصلاح نهایی MSP سازمان‌ها — کپی cacerts از MSP p
 # Orderer Org
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ || true
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/
 
 echo "cacerts برای OrdererMSP کپی شد"
 
@@ -363,7 +363,67 @@ for i in {1..8}; do
   echo "cacerts برای Org${i}MSP از peer0 کپی شد"
 done
 
+# برای Peer Orgها
+for i in {1..8}; do
+  ORG=org$i
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml
+done
+
+# برای Orderer Org
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
+   crypto-config/ordererOrganizations/example.com/msp/config.yaml
+
 echo "تمام MSPهای اصلی سازمان اصلاح شدند — configtxgen حالا ۱۰۰٪ کار می‌کند!"
+
+# Orderer Org
+mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/admincerts/
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/
+
+# Peer Orgها
+for i in {1..8}; do
+  ORG=org$i
+
+  # MSP اصلی سازمان
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
+
+  # کپی admincerts از Admin کاربر
+  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+
+  # کپی cacerts از MSP peer (یا Admin)
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
+
+  # اختیاری: کپی config.yaml اگر OU classification بخواهید
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml 2>/dev/null || true
+
+  echo "MSP اصلی Org${i}MSP ساخته شد (admincerts + cacerts)"
+done
+
+log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
+mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
+
+# همه Peerها
+for i in {1..8}; do
+  ORG=org$i
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts
+  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts/
+
+  echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
+done
+
+tree 
+
+
 log "تولید دوباره genesis.block و channel artifacts"
 
 export FABRIC_CFG_PATH="$PROJECT_DIR"
@@ -423,53 +483,11 @@ if [ $(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null 
 fi
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
-log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
-mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
-cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
-
-# همه Peerها
-for i in {1..8}; do
-  ORG=org$i
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts
-  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts/
-
-  echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
-done
 
 
 log "ساخت MSP اصلی سازمان‌ها (کپی cacerts و admincerts — روش استاندارد Fabric)"
 
-# Orderer Org
-mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
-cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/admincerts/
-cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ || true
 
-# Peer Orgها
-for i in {1..8}; do
-  ORG=org$i
-
-  # MSP اصلی سازمان
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
-
-  # کپی admincerts از Admin کاربر
-  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
-
-  # کپی cacerts از MSP peer (یا Admin)
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
-
-  # اختیاری: کپی config.yaml اگر OU classification بخواهید
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml 2>/dev/null || true
-
-  echo "MSP اصلی Org${i}MSP ساخته شد (admincerts + cacerts)"
-done
 
 echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — genesis.block معتبر می‌شود!"
 
