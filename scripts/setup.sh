@@ -204,8 +204,6 @@ docker run --rm \
   "
 
 echo "هویت Orderer کاملاً اصولی و با OU classification تولید شد!"
-
-# هر org در docker run جداگانه (تضمینی بدون تداخل state و expansion درست)
 for i in {1..8}; do
   docker run --rm \
     --network config_6g-network \
@@ -216,22 +214,29 @@ for i in {1..8}; do
 
       ORG=org$i
       RCA_NAME=rca-org$i
-      PORT=$((7054 + $i * 100))
-      TLS_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+      PORT=\$((7054 + $i * 100))
+      TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/tlscacerts/tls-rca-org\${i}-*.pem\"
 
+      echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
+        --tls.certfiles \$TLS_CERT \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
-      fabric-ca-client register --id.name peer0.\$ORG.example.com --id.secret peerpw --id.type peer \
+      echo \"register peer0.\$ORG.example.com با OU=peer...\"
+      fabric-ca-client register --id.name peer0.\$ORG.example.com \
+        --id.secret peerpw \
+        --id.type peer \
+        --id.attrs 'ou=peer,admin=true:ecert' \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH
+        --tls.certfiles \$TLS_CERT
 
+      echo \"enroll peer0.\$ORG.example.com...\"
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_PATH \
+        --tls.certfiles \$TLS_CERT \
+        --csr.hosts 'peer0.\$ORG.example.com,localhost,127.0.0.1' \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
-      echo \"\$ORG با موفقیت تولید شد\"
+      echo \"\$ORG با موفقیت تولید شد (با OU=peer در گواهی)\"
     "
 done
 
