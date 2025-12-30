@@ -290,27 +290,53 @@ for i in {1..8}; do
 done
 
 echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و بدون خطا تولید شدند!'
+log "اصلاح config.yaml با نام دقیق فایل RCA (حل خطای wildcard و OU classification)"
 
-  # 5. ساخت config.yaml با NodeOUs فعال و OU بزرگ
-  log "ساخت config.yaml"
-  find "$CRYPTO_DIR" -type d -name "msp" | while read msp; do
-    cat > "$msp/config.yaml" << EOF
+# Orderer
+cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<EOF
 NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/*
-    OrganizationalUnitIdentifier: CLIENT
+    Certificate: cacerts/rca-orderer-7054.pem
+    OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/*
-    OrganizationalUnitIdentifier: PEER
+    Certificate: cacerts/rca-orderer-7054.pem
+    OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/*
-    OrganizationalUnitIdentifier: ADMIN
+    Certificate: cacerts/rca-orderer-7054.pem
+    OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/*
-    OrganizationalUnitIdentifier: ORDERER
+    Certificate: cacerts/rca-orderer-7054.pem
+    OrganizationalUnitIdentifier: orderer
 EOF
-  done
+
+# Peer Orgها
+for i in {1..8}; do
+  ORG=org$i
+  PORT=$((7054 + $i * 100))
+  RCA_FILE="rca-org${i}-${PORT}.pem"
+
+  cat > crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml <<EOF
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/$RCA_FILE
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/$RCA_FILE
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/$RCA_FILE
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/$RCA_FILE
+    OrganizationalUnitIdentifier: orderer
+EOF
+
+  echo "config.yaml برای peer0.$ORG.example.com اصلاح شد ($RCA_FILE)"
+done
+
+echo "تمام config.yamlها با نام دقیق RCA اصلاح شدند!"
 
 log "6. تولید genesis.block و channel transactionها"
 log "اصلاح نهایی MSP سازمان‌ها — کپی cacerts از MSP peer به MSP اصلی"
