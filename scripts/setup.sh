@@ -904,7 +904,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد و join تمام کانال‌ها با روش اصولی (فقط یک Org join اولیه — gossip پخش می‌کند)"
+  log "ایجاد و join تمام کانال‌ها با روش اصولی (ایجاد با peer، join با Admin — gossip پخش می‌کند)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -912,10 +912,10 @@ create_and_join_channels() {
   for ch in "${CHANNELS[@]}"; do
     log "در حال ایجاد کانال $ch ..."
 
-    # پاک کردن بلوک قدیمی در peer0.org1
+    # پاک کردن بلوک قدیمی
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
-    # ایجاد کانال با هویت Admin@org1.example.com (استفاده از MSP اصلی peer — اصولی و امن)
+    # ایجاد کانال با هویت peer0.org1 (MSP نود)
     if docker exec \
       -e CORE_PEER_LOCALMSPID=Org1MSP \
       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
@@ -933,19 +933,19 @@ create_and_join_channels() {
         --tls \
         --cafile /var/hyperledger/orderer/tls/server.crt; then
 
-      success "کانال $ch با موفقیت توسط peer0.org1 ساخته شد"
+      success "کانال $ch با موفقیت ساخته شد"
 
-      # کپی بلوک به هاست (برای anchor update و دیباگ)
+      # کپی بلوک به هاست
       if docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"; then
-        log "بلوک کانال $ch به هاست کپی شد ($CHANNEL_ARTIFACTS/${ch}.block)"
+        log "بلوک $ch به هاست کپی شد"
       else
-        log "هشدار: کپی بلوک به هاست شکست خورد — ادامه می‌دهیم"
+        log "هشدار: کپی بلوک $ch به هاست شکست خورد"
       fi
 
-      # فقط peer0.org1 را join می‌کنیم — gossip به طور خودکار بقیه peerها را join می‌کند
+      # join اولیه با هویت Admin (برای دسترسی Admins policy)
       if docker exec \
         -e CORE_PEER_LOCALMSPID=Org1MSP \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \  # <<< MSP Admin
         -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
         -e CORE_PEER_TLS_ENABLED=true \
         -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
@@ -954,46 +954,39 @@ create_and_join_channels() {
         peer0.org1.example.com \
         peer channel join -b /tmp/${ch}.block; then
 
-        success "peer0.org1 به کانال $ch join شد — gossip در حال پخش به بقیه peerها..."
+        success "peer0.org1 با هویت Admin به $ch join شد — gossip پخش می‌کند"
 
-        # صبر برای پخش gossip (در شبکه بزرگ ۸ سازمانی ضروری است)
-        log "صبر ۲۰ ثانیه برای پخش کامل gossip..."
-        sleep 20
+        log "صبر ۳۰ ثانیه برای پخش gossip..."
+        sleep 30
 
-        # اختیاری: چک وضعیت join همه peerها
-        log "وضعیت join peerها به کانال $ch:"
+        log "وضعیت join peerها به $ch:"
         for i in {1..8}; do
           if docker exec peer0.org${i}.example.com peer channel list | grep -q "$ch"; then
-            success "peer0.org${i} در کانال $ch است"
+            success "peer0.org${i} در $ch است"
           else
-            log "هشدار: peer0.org${i} هنوز join نشده — چند دقیقه صبر کنید یا gossip را چک کنید"
+            log "هشدار: peer0.org${i} هنوز join نشده — صبر کنید یا دستی join کنید"
           fi
         done
 
         ((created++))
       else
-        log "خطا: join اولیه peer0.org1 به $ch شکست خورد — کانال ساخته شده اما join نشده"
+        log "خطا: join اولیه با Admin شکست خورد — MSP admin-msp را چک کنید"
       fi
 
-      # پاک‌سازی بلوک موقت
+      # پاک‌سازی
       docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
-
     else
-      log "خطا: ایجاد کانال $ch کاملاً شکست خورد — configtx یا orderer را چک کنید"
+      log "خطا: ایجاد کانال $ch شکست خورد"
     fi
 
     echo "--------------------------------------------------"
   done
 
   if [ $created -eq $channel_count ]; then
-    success "تمام $channel_count کانال با موفقیت ساخته و join شدند!"
-    success "همه peerها از طریق gossip به کانال‌ها متصل شده‌اند."
+    success "تمام $channel_count کانال ساخته و join اولیه شدند — gossip در حال پخش است!"
   else
-    log "فقط $created از $channel_count کانال ساخته شد — اسکریپت را دوباره اجرا کنید"
+    log "فقط $created از $channel_count کانال ساخته شد — دوباره اجرا کنید"
   fi
-
-  log "وضعیت نهایی کانتینرها:"
-  docker ps --filter "name=peer" --filter "name=orderer" -q | xargs docker inspect --format '{{.Name}} {{.State.Status}}'
 }
 
 
