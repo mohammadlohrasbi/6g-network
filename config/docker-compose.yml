@@ -28,6 +28,7 @@ services:
       - /root/6g-network/config/channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
+      - /root/6g-network/config/channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block:ro
       # - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
     ports:
       - "7050:7050"
