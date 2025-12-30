@@ -184,14 +184,14 @@ docker run --rm \
     echo 'enroll Admin@example.com...'
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      --enrollment.attrs 'ou=admin,opt' \
+      --enrollment.attrs \"ou=admin,opt\" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo 'register orderer.example.com با OU=orderer...'
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
-      --id.attrs 'ou=orderer,opt' \
+      --id.attrs \"ou=orderer,opt\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
@@ -221,14 +221,14 @@ for i in {1..8}; do
       echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
-        --enrollment.attrs 'ou=admin,opt' \
+        --enrollment.attrs \"ou=admin,opt\" \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
       echo \"register peer0.\$ORG.example.com با OU=peer...\"
       fabric-ca-client register --id.name peer0.\$ORG.example.com \
         --id.secret peerpw \
         --id.type peer \
-        --id.attrs 'ou=peer,opt' \
+        --id.attrs \"ou=peer,opt\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
