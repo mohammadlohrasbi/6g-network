@@ -915,62 +915,64 @@ create_and_join_channels() {
     # پاک کردن بلوک قدیمی
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
-    # ایجاد کانال با هویت peer0.org1 (MSP نود)
-    if docker exec \
-      -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
-      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
-      -e CORE_PEER_TLS_ENABLED=true \
-      -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
-      -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
-      -e CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt \
-      peer0.org1.example.com \
-      peer channel create \
-        -o orderer.example.com:7050 \
-        -c "$ch" \
-        -f "/etc/hyperledger/configtx/${ch}.tx" \
-        --outputBlock "/tmp/${ch}.block" \
-        --tls \
-        --cafile /var/hyperledger/orderer/tls/server.crt; then
+    # ایجاد کانال با MSP نود peer0.org1
+    if docker exec peer0.org1.example.com \
+      bash -c '
+        export CORE_PEER_LOCALMSPID=Org1MSP
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+        export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+        export CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt
+        peer channel create \
+          -o orderer.example.com:7050 \
+          -c "'"$ch"'" \
+          -f "/etc/hyperledger/configtx/'"$ch"'.tx" \
+          --outputBlock "/tmp/'"$ch"'.block" \
+          --tls \
+          --cafile /var/hyperledger/orderer/tls/server.crt
+      '; then
 
-      success "کانال $ch با موفقیت ساخته شد"
+      success "کانال $ch ساخته شد"
 
       # کپی بلوک به هاست
       if docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"; then
         log "بلوک $ch به هاست کپی شد"
       else
-        log "هشدار: کپی بلوک $ch به هاست شکست خورد"
+        log "هشدار: کپی بلوک $ch شکست خورد"
       fi
 
-      # join اولیه با هویت Admin (برای دسترسی Admins policy)
-      if docker exec \
-        -e CORE_PEER_LOCALMSPID=Org1MSP \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \  # <<< MSP Admin
-        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
-        -e CORE_PEER_TLS_ENABLED=true \
-        -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
-        -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
-        -e CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt \
-        peer0.org1.example.com \
-        peer channel join -b /tmp/${ch}.block; then
+      # join اولیه با MSP Admin
+      if docker exec peer0.org1.example.com \
+        bash -c '
+          export CORE_PEER_LOCALMSPID=Org1MSP
+          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+          export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+          export CORE_PEER_TLS_ENABLED=true
+          export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+          export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+          export CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt
+          peer channel join -b "/tmp/'"$ch"'.block"
+        '; then
 
         success "peer0.org1 با هویت Admin به $ch join شد — gossip پخش می‌کند"
 
         log "صبر ۳۰ ثانیه برای پخش gossip..."
         sleep 30
 
-        log "وضعیت join peerها به $ch:"
+        log "وضعیت join به $ch:"
         for i in {1..8}; do
           if docker exec peer0.org${i}.example.com peer channel list | grep -q "$ch"; then
             success "peer0.org${i} در $ch است"
           else
-            log "هشدار: peer0.org${i} هنوز join نشده — صبر کنید یا دستی join کنید"
+            log "هشدار: peer0.org${i} هنوز join نشده"
           fi
         done
 
         ((created++))
       else
-        log "خطا: join اولیه با Admin شکست خورد — MSP admin-msp را چک کنید"
+        log "خطا: join با Admin شکست خورد — MSP admin-msp را چک کنید"
       fi
 
       # پاک‌سازی
@@ -983,9 +985,9 @@ create_and_join_channels() {
   done
 
   if [ $created -eq $channel_count ]; then
-    success "تمام $channel_count کانال ساخته و join اولیه شدند — gossip در حال پخش است!"
+    success "تمام $channel_count کانال ساخته و join اولیه شدند!"
   else
-    log "فقط $created از $channel_count کانال ساخته شد — دوباره اجرا کنید"
+    log "فقط $created از $channel_count کانال ساخته شد"
   fi
 }
 
