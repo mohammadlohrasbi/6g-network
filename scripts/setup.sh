@@ -438,6 +438,41 @@ for i in {1..8}; do
   echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
 done
 
+
+log "ساخت MSP اصلی سازمان‌ها (کپی cacerts و admincerts — روش استاندارد Fabric)"
+
+# Orderer Org
+mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/admincerts/
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ || true
+
+# Peer Orgها
+for i in {1..8}; do
+  ORG=org$i
+
+  # MSP اصلی سازمان
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
+
+  # کپی admincerts از Admin کاربر
+  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+
+  # کپی cacerts از MSP peer (یا Admin)
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
+
+  # اختیاری: کپی config.yaml اگر OU classification بخواهید
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml 2>/dev/null || true
+
+  echo "MSP اصلی Org${i}MSP ساخته شد (admincerts + cacerts)"
+done
+
+echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — genesis.block معتبر می‌شود!"
+
 echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
 }
 
