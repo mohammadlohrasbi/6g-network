@@ -169,7 +169,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   RCA_IDS_STR=${RCA_IDS_STR%,}
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
-log "تولید هویت Orderer با OU classification (اصولی و کامل)"
+log "تولید هویت Orderer با OU classification (روش اصولی و تضمینی)"
 
 docker run --rm \
   --network config_6g-network \
@@ -178,31 +178,32 @@ docker run --rm \
   /bin/bash -c '
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
-    TLS_CA_PATH="/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem"
+    # مسیر دقیق گواهی TLS CA (یک فایل)
+    TLS_CERT="/crypto-config/ordererOrganizations/example.com/rca/tls-msp/tlscacerts/tls-rca-orderer-7054.pem"
 
-    echo "enroll Admin@ example.com..."
+    echo "enroll Admin@example.com..."
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \$TLS_CA_PATH \
+      --tls.certfiles \$TLS_CERT \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    echo "register orderer.example.com..."
+    echo "register orderer.example.com با OU=orderer..."
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
+      --id.attrs "ou=orderer,admin=true:ecert" \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \$TLS_CA_PATH
+      --tls.certfiles \$TLS_CERT
 
-    echo "enroll orderer.example.com با OU=orderer..."
+    echo "enroll orderer.example.com..."
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles \$TLS_CA_PATH \
-      --csr.ou orderer \
+      --tls.certfiles \$TLS_CERT \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    echo "Orderer با موفقیت تولید شد (با OU classification)"
+    echo "Orderer با موفقیت تولید شد (با OU=orderer در گواهی)"
   '
 
-echo "هویت Orderer کاملاً اصولی تولید شد!"
+echo "هویت Orderer کاملاً اصولی و با OU classification تولید شد!"
 
 # هر org در docker run جداگانه (تضمینی بدون تداخل state و expansion درست)
 for i in {1..8}; do
