@@ -33,7 +33,7 @@ services:
       - "7050:7050"
     networks:
       - 6g-network
-    restart: unless-stopped
+    # restart: unless-stopped
 
   # =====================================
   # Peerها — الگوی استاندارد برای همه ۸ سازمان
