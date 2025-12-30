@@ -396,6 +396,20 @@ if [ $(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null 
 fi
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
+  log "اضافه کردن admincerts به MSPهای اصلی"
+
+# Orderer
+mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/admincerts/
+
+# Peer Orgها
+for i in {1..8}; do
+  ORG=org$i
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
+  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+done
 }
 
 generate_coreyamls() {
