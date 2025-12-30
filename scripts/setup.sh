@@ -751,8 +751,8 @@ start_network() {
   docker network create config_6g-network 2>/dev/null || true
 
   # ۲. کاملاً همه کانتینرها را پاک کن (این خط حیاتی است!)
-  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" down -v --remove-orphans >/dev/null 2>&1
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1
+  docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" down -v --remove-orphans 
+  docker-compose -f "$CONFIG_DIR/docker-compose.yml" down -v --remove-orphans 
 
   # ۳. بالا آوردن CAها
   docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
