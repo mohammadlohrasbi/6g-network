@@ -169,28 +169,40 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   RCA_IDS_STR=${RCA_IDS_STR%,}
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
-# Orderer
+log "تولید هویت Orderer با OU classification (اصولی و کامل)"
+
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
+    TLS_CA_PATH="/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem"
+
+    echo "enroll Admin@ example.com..."
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+      --tls.certfiles \$TLS_CA_PATH \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+    echo "register orderer.example.com..."
+    fabric-ca-client register --id.name orderer.example.com \
+      --id.secret ordererpw \
+      --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem
+      --tls.certfiles \$TLS_CA_PATH
 
+    echo "enroll orderer.example.com با OU=orderer..."
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+      --tls.certfiles \$TLS_CA_PATH \
+      --csr.ou orderer \
+      --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    echo "Orderer با موفقیت تولید شد"
+    echo "Orderer با موفقیت تولید شد (با OU classification)"
   '
+
+echo "هویت Orderer کاملاً اصولی تولید شد!"
 
 # هر org در docker run جداگانه (تضمینی بدون تداخل state و expansion درست)
 for i in {1..8}; do
@@ -423,6 +435,9 @@ fi
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
 log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
+mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
 
 # همه Peerها
 for i in {1..8}; do
