@@ -179,7 +179,7 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
     # مسیر دقیق گواهی TLS CA (یک فایل)
-    TLS_CERT="/crypto-config/ordererOrganizations/example.com/rca/tls-msp/tlscacerts/tls-rca-orderer-7054.pem"
+    TLS_CERT="/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem"
 
     echo "enroll Admin@example.com..."
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
