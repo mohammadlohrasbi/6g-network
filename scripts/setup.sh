@@ -396,20 +396,26 @@ if [ $(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null 
 fi
 
   success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
-  log "اضافه کردن admincerts به MSPهای اصلی"
+log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
 
 # Orderer
-mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
+mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/admincerts/
+   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
 
-# Peer Orgها
+echo "admincerts برای MSP orderer اضافه شد"
+
+# همه Peerها
 for i in {1..8}; do
   ORG=org$i
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+     crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts/
+
+  echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
 done
+
+echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
 }
 
 generate_coreyamls() {
