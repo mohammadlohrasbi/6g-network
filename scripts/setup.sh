@@ -806,9 +806,104 @@ fix_admincerts_on_host() {
   done
   log "تمام admincerts با موفقیت در هاست اصلاح شد"
 }
-
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
+  log "ایجاد و join تمام کانال‌ها با روش اصولی (فقط یک Org join اولیه — gossip پخش می‌کند)"
+
+  local channel_count="${#CHANNELS[@]}"
+  local created=0
+
+  for ch in "${CHANNELS[@]}"; do
+    log "در حال ایجاد کانال $ch ..."
+
+    # پاک کردن بلوک قدیمی در peer0.org1
+    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+
+    # ایجاد کانال با هویت Admin@org1.example.com (استفاده از MSP اصلی peer — اصولی و امن)
+    if docker exec \
+      -e CORE_PEER_LOCALMSPID=Org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      -e CORE_PEER_TLS_ENABLED=true \
+      -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
+      -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
+      -e FABRIC_LOGGING_SPEC=INFO \
+      peer0.org1.example.com \
+      peer channel create \
+        -o orderer.example.com:7050 \
+        -c "$ch" \
+        -f "/etc/hyperledger/configtx/${ch}.tx" \
+        --outputBlock "/tmp/${ch}.block" \
+        --tls \
+        --cafile /etc/hyperledger/fabric/tls/ca.crt; then
+
+      success "کانال $ch با موفقیت توسط peer0.org1 ساخته شد"
+
+      # کپی بلوک به هاست (برای anchor update و دیباگ)
+      if docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"; then
+        log "بلوک کانال $ch به هاست کپی شد ($CHANNEL_ARTIFACTS/${ch}.block)"
+      else
+        log "هشدار: کپی بلوک به هاست شکست خورد — ادامه می‌دهیم"
+      fi
+
+      # فقط peer0.org1 را join می‌کنیم — gossip به طور خودکار بقیه peerها را join می‌کند
+      if docker exec \
+        -e CORE_PEER_LOCALMSPID=Org1MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt \
+        -e CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
+        peer0.org1.example.com \
+        peer channel join -b /tmp/${ch}.block; then
+
+        success "peer0.org1 به کانال $ch join شد — gossip در حال پخش به بقیه peerها..."
+
+        # صبر برای پخش gossip (در شبکه بزرگ ۸ سازمانی ضروری است)
+        log "صبر ۲۰ ثانیه برای پخش کامل gossip..."
+        sleep 20
+
+        # اختیاری: چک وضعیت join همه peerها
+        log "وضعیت join peerها به کانال $ch:"
+        for i in {1..8}; do
+          if docker exec peer0.org${i}.example.com peer channel list | grep -q "$ch"; then
+            success "peer0.org${i} در کانال $ch است"
+          else
+            log "هشدار: peer0.org${i} هنوز join نشده — چند دقیقه صبر کنید یا gossip را چک کنید"
+          fi
+        done
+
+        ((created++))
+      else
+        log "خطا: join اولیه peer0.org1 به $ch شکست خورد — کانال ساخته شده اما join نشده"
+      fi
+
+      # پاک‌سازی بلوک موقت
+      docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+
+    else
+      log "خطا: ایجاد کانال $ch کاملاً شکست خورد — configtx یا orderer را چک کنید"
+    fi
+
+    echo "--------------------------------------------------"
+  done
+
+  if [ $created -eq $channel_count ]; then
+    success "تمام $channel_count کانال با موفقیت ساخته و join شدند!"
+    success "همه peerها از طریق gossip به کانال‌ها متصل شده‌اند."
+  else
+    log "فقط $created از $channel_count کانال ساخته شد — اسکریپت را دوباره اجرا کنید"
+  fi
+
+  log "وضعیت نهایی کانتینرها:"
+  docker ps --filter "name=peer" --filter "name=orderer" -q | xargs docker inspect --format '{{.Name}} {{.State.Status}}'
+}
+
+
+# ------------------- ایجاد و join کانال‌ها -------------------
+create_and_join_channelss() {
   log "ایجاد و join تمام کانال‌ها با هویت Admin Org1 (روش نهایی و تضمینی — gossip پخش می‌کند)"
 
   local created=0
@@ -1379,7 +1474,7 @@ main() {
   start_network
   #wait_for_orderer
   # upgrade_shared_msp_full_admins
-  #create_and_join_channels
+  create_and_join_channels
   # upgrade_shared_msp_full_admins
   #generate_chaincode_modules
   #package_and_install_chaincode
