@@ -259,7 +259,7 @@ docker run --rm \
       --id.type client \
       --id.attrs \"ou=admin:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CERT\"
+      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
     echo 'enroll Admin@example.com...'
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
@@ -303,7 +303,7 @@ for i in {1..8}; do
         --id.type client \
         --id.attrs \"ou=admin:ecert\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \"\$TLS_CERT\"
+        --tls.certfiles \$TLS_CERT
 
       echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
