@@ -296,7 +296,7 @@ docker run --rm \
     echo 'enroll Admin@example.com...'
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      --csr.ou \"admin\" \
+      --csr.names \"OU=admin\" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo 'register orderer.example.com با OU=orderer...'
@@ -310,7 +310,7 @@ docker run --rm \
     echo 'enroll orderer.example.com...'
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      --csr.ou \"orderer\" \
+      --csr.names \"OU=orderer\" \
       --csr.hosts 'orderer.example.com,localhost,127.0.0.1' \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -346,7 +346,7 @@ for i in {1..8}; do
       echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
-        --csr.ou \"admin\" \
+        --csr.names \"OU=admin\" \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
       echo \"register peer0.\$ORG.example.com با OU=peer...\"
@@ -360,7 +360,7 @@ for i in {1..8}; do
       echo \"enroll peer0.\$ORG.example.com...\"
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
-        --csr.ou \"peer\" \
+        --csr.names \"OU=peer\" \
         --csr.hosts 'peer0.\$ORG.example.com,localhost,127.0.0.1' \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
