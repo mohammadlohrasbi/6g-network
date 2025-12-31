@@ -266,7 +266,7 @@ docker run --rm \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
     echo 'enroll Admin@example.com...'
-    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
+    fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
