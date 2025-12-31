@@ -145,11 +145,11 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       done
     "
     
-  log "ساخت خودکار fabric-ca-server-config.yaml برای فعال کردن OU classification"
+log "ساخت خودکار fabric-ca-server-config.yaml برای فعال کردن OU classification (اصلاح‌شده برای Fabric CA 1.5.7)"
 
-  # برای rca-orderer
-  mkdir -p crypto-config/ordererOrganizations/example.com/rca
-  cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<EOF
+# برای rca-orderer
+mkdir -p crypto-config/ordererOrganizations/example.com/rca
+cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
@@ -159,27 +159,32 @@ ou:
       certificate: "cacerts/rca-orderer-7054.pem"
     - organizational_unit_identifier: "client"
       certificate: "cacerts/rca-orderer-7054.pem"
+
 csr:
   cn: rca-orderer.example.com
+
 tls:
   enabled: true
+
 registry:
   maxenrollments: -1
+
 affiliations:
-  allowall: true
+  ".":                     # <<< اصلاح اصلی: map به جای bool
+    - "."
+
 debug: true
 EOF
+echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد (بدون panic)"
 
-  echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد"
+# برای هر rca-orgX
+for i in {1..8}; do
+  ORG=org$i
+  PORT=$((7054 + $i * 100))
+  RCA_CERT="rca-org${i}-${PORT}.pem"
 
-  # برای هر rca-orgX
-  for i in {1..8}; do
-    ORG=org$i
-    PORT=$((7054 + $i * 100))
-    RCA_CERT="rca-org${i}-${PORT}.pem"
-
-    mkdir -p crypto-config/peerOrganizations/$ORG.example.com/rca
-    cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/rca
+  cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
@@ -189,21 +194,27 @@ ou:
       certificate: "cacerts/${RCA_CERT}"
     - organizational_unit_identifier: "client"
       certificate: "cacerts/${RCA_CERT}"
+
 csr:
-  cn: rca-${ORG}.$ORG.example.com
+  cn: rca-${ORG}.${ORG}.example.com
+
 tls:
   enabled: true
+
 registry:
   maxenrollments: -1
+
 affiliations:
-  allowall: true
+  ".":                     # <<< اصلاح اصلی
+    - "."
+
 debug: true
 EOF
 
-    echo "fabric-ca-server-config.yaml برای rca-$ORG ساخته شد"
-  done
+  echo "fabric-ca-server-config.yaml برای rca-$ORG ساخته شد (بدون panic)"
+done
 
-  echo "تمام فایل‌های fabric-ca-server-config.yaml ساخته شدند — OU classification کامل فعال است!"
+echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند — OU classification کامل فعال است!"
 
   
   # 6. بالا آوردن Enrollment CAها
