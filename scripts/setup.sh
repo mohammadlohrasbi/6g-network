@@ -289,28 +289,26 @@ docker run --rm \
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
       --id.type client \
-      --id.attrs \"ou=admin\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
     echo 'enroll Admin@example.com...'
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      --csr.names \"OU=admin\" \
+      --csr.names 'O=example.com,OU=admin' \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo 'register orderer.example.com با OU=orderer...'
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
-      --id.attrs \"ou=orderer\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
     echo 'enroll orderer.example.com...'
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
-      --csr.names \"OU=orderer\" \
+      --csr.names 'O=example.com,OU=orderer' \
       --csr.hosts 'orderer.example.com,localhost,127.0.0.1' \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -339,28 +337,26 @@ for i in {1..8}; do
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
         --id.secret adminpw \
         --id.type client \
-        --id.attrs \"ou=admin\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
       echo \"enroll Admin@\$ORG.example.com...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
-        --csr.names \"OU=admin\" \
+        --csr.names 'O=\$ORG.example.com,OU=admin' \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
 
       echo \"register peer0.\$ORG.example.com با OU=peer...\"
       fabric-ca-client register --id.name peer0.\$ORG.example.com \
         --id.secret peerpw \
         --id.type peer \
-        --id.attrs \"ou=peer\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
       echo \"enroll peer0.\$ORG.example.com...\"
       fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
-        --csr.names \"OU=peer\" \
+        --csr.names 'O=\$ORG.example.com,OU=peer' \
         --csr.hosts 'peer0.\$ORG.example.com,localhost,127.0.0.1' \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
 
