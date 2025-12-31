@@ -257,7 +257,7 @@ docker run --rm \
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
       --id.type client \
-      --id.attrs \"ou=admin:ecert\" \
+      --id.attrs \"ou=admin\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
@@ -270,7 +270,7 @@ docker run --rm \
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
-      --id.attrs \"ou=orderer:ecert\" \
+      --id.attrs \"ou=orderer\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
@@ -301,7 +301,7 @@ for i in {1..8}; do
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
         --id.secret adminpw \
         --id.type client \
-        --id.attrs \"ou=admin:ecert\" \
+        --id.attrs \"ou=admin\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
@@ -314,7 +314,7 @@ for i in {1..8}; do
       fabric-ca-client register --id.name peer0.\$ORG.example.com \
         --id.secret peerpw \
         --id.type peer \
-        --id.attrs \"ou=peer:ecert\" \
+        --id.attrs \"ou=peer\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
