@@ -145,76 +145,104 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
       done
     "
     
-log "ساخت خودکار fabric-ca-server-config.yaml برای فعال کردن OU classification (اصلاح‌شده برای Fabric CA 1.5.7)"
-
 # برای rca-orderer
-mkdir -p crypto-config/ordererOrganizations/example.com/rca
 cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
     - organizational_unit_identifier: "orderer"
-      certificate: "cacerts/rca-orderer-7054.pem"
+      certificate: "ca/ca-orderer.example.com-cert.pem"
     - organizational_unit_identifier: "admin"
-      certificate: "cacerts/rca-orderer-7054.pem"
+      certificate: "ca/ca-orderer.example.com-cert.pem"
     - organizational_unit_identifier: "client"
-      certificate: "cacerts/rca-orderer-7054.pem"
+      certificate: "ca/ca-orderer.example.com-cert.pem"
 
 csr:
   cn: rca-orderer.example.com
+  hosts:
+    - rca-orderer
+    - localhost
 
 tls:
   enabled: true
 
 registry:
   maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: client
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "client,peer,orderer,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,user"
+        hf.Revoker: true
+        hf.IntermediateCA: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"
+        hf.AffiliationMgr: true
 
 affiliations:
-  ".":                     # <<< اصلاح اصلی: map به جای bool
+  "": 
     - "."
 
 debug: true
 EOF
-echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد (بدون panic)"
+echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد (با bootstrap admin ثبت‌شده + OU classification کامل)"
 
 # برای هر rca-orgX
 for i in {1..8}; do
   ORG=org$i
   PORT=$((7054 + $i * 100))
-  RCA_CERT="rca-org${i}-${PORT}.pem"
-
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/rca
+  RCA_NAME="rca-org${i}"
+  RCA_CN="rca-org${i}.org${i}.example.com"
+  
   cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
     - organizational_unit_identifier: "peer"
-      certificate: "cacerts/${RCA_CERT}"
+      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
     - organizational_unit_identifier: "admin"
-      certificate: "cacerts/${RCA_CERT}"
+      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
     - organizational_unit_identifier: "client"
-      certificate: "cacerts/${RCA_CERT}"
+      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
 
 csr:
-  cn: rca-${ORG}.${ORG}.example.com
+  cn: $RCA_CN
+  hosts:
+    - $RCA_NAME
+    - localhost
 
 tls:
   enabled: true
 
 registry:
   maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: client
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "client,peer,orderer,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,user"
+        hf.Revoker: true
+        hf.IntermediateCA: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"
+        hf.AffiliationMgr: true
 
 affiliations:
-  ".":                     # <<< اصلاح اصلی
+  "": 
     - "."
 
 debug: true
 EOF
-
-  echo "fabric-ca-server-config.yaml برای rca-$ORG ساخته شد (بدون panic)"
+  echo "fabric-ca-server-config.yaml برای rca-org${i} ساخته شد (با bootstrap admin ثبت‌شده + OU classification کامل)"
 done
 
-echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند — OU classification کامل فعال است!"
+echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند — OU classification کامل فعال است و bootstrap admin در DB ثبت شد!"
 
   
   # 6. بالا آوردن Enrollment CAها
