@@ -253,6 +253,10 @@ docker run --rm \
     # مسیر دقیق گواهی TLS CA داخل container
     TLS_CERT=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem\"
 
+    echo 'enroll bootstrap admin (admin:adminpw)...'
+    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
+      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
@@ -296,6 +300,10 @@ for i in {1..8}; do
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
       TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+
+      echo 'enroll bootstrap admin (admin:adminpw)...'
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
+        --tls.certfiles \$TLS_CERT
 
       echo \"register Admin@\$ORG.example.com با OU=admin...\"
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
