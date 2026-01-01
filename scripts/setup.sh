@@ -655,7 +655,9 @@ fi
 
 log "ساخت MSP اصلی سازمان‌ها (کپی cacerts و admincerts — روش استاندارد Fabric)"
 
-
+  cd "$CRYPTO_DIR"
+  tree
+  cd "$PROJECT_DIR"
 
 echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — genesis.block معتبر می‌شود!"
 
@@ -1072,7 +1074,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال، اتصال به hostname peer)"
+  log "ایجاد کانال‌ها و join همه peerها با هویت Admin (TLS کاملاً فعال، localhost)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1089,7 +1091,7 @@ create_and_join_channels() {
       bash -c '
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=peer0.org1.example.com:7051  # hostname peer
+        export CORE_PEER_ADDRESS=127.0.0.1:7051
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
@@ -1108,7 +1110,7 @@ create_and_join_channels() {
 
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
 
-      log "join همه peerها به $ch (TLS فعال، hostname peer)..."
+      log "join همه peerها به $ch با هویت Admin (TLS فعال)..."
 
       for i in {1..8}; do
         ORG=org$i
@@ -1120,15 +1122,15 @@ create_and_join_channels() {
         docker exec $PEER \
           bash -c "
             export CORE_PEER_LOCALMSPID=$MSPID
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=peer0.$ORG.example.com:7051  # hostname خود peer
+            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp  # هویت Admin
+            export CORE_PEER_ADDRESS=127.0.0.1:7051
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
             peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
-          " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطای TLS"
+          " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطای access"
 
       done
 
@@ -1151,7 +1153,6 @@ create_and_join_channels() {
 
   success "تمام شد!"
 }
-
 
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channelss() {
