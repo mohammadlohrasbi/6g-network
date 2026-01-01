@@ -1012,50 +1012,58 @@ fix_admin_msp_for_all_orgs() {
 
 generate_bundled_tls_ca() {
   local bundled_file="$CONFIG_DIR/bundled-tls-ca.pem"
-  echo "در حال ساخت bundled-tls-ca.pem (ترکیب تمام TLS root certها)..."
+  echo "در حال ساخت bundled-tls-ca.pem (فقط از tlscacerts — ترکیب تمام TLS root certها)..."
+
   cd "$PROJECT_DIR"
 
-  : > "$bundled_file"  # پاک کردن قبلی
+  : > "$bundled_file"
 
   local count=0
 
-  # Orderer TLS root cert (جستجو در مسیرهای رایج)
-  local orderer_root=$(find "$PROJECT_DIR/crypto-config/ordererOrganizations" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
-  if [ -n "$orderer_root" ] && [ -f "$orderer_root" ]; then
-    cat "$orderer_root" >> "$bundled_file"
-    echo "اضافه شد orderer: $orderer_root"
+  # Orderer
+  local orderer_tls_root="$ROOT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem"
+  if [ -f "$orderer_tls_root" ]; then
+    cat "$orderer_tls_root" >> "$bundled_file"
+    echo "اضافه شد orderer: $orderer_tls_root"
     ((count++))
   else
-    echo "خطا: orderer TLS root یافت نشد (چک crypto-config/ordererOrganizations)"
+    echo "خطا: فایل orderer یافت نشد: $orderer_tls_root"
     return 1
   fi
 
-  # Peer orgها TLS root cert (جستجو در tlscacerts یا tlsca)
+  # Peer orgها (فقط tlscacerts)
   for i in {1..8}; do
     local org="org$i"
-    local peer_root=$(find "$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
-    if [ -n "$peer_root" ] && [ -f "$peer_root" ]; then
-      cat "$peer_root" >> "$bundled_file"
-      echo "اضافه شد $org: $peer_root"
+    local peer_tls_root_dir="$ROOT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts"
+    local peer_tls_file=$(ls "$peer_tls_root_dir"/tls-rca-$org-*.pem 2>/dev/null | head -1)
+    if [ -n "$peer_tls_file" ]; then
+      cat "$peer_tls_file" >> "$bundled_file"
+      echo "اضافه شد $org: $peer_tls_file"
       ((count++))
     else
-      echo "هشدار: TLS root برای $org یافت نشد (نادیده گرفته شد)"
+      echo "خطا: فایل TLS root برای $org یافت نشد در $peer_tls_root_dir"
+      return 1
     fi
   done
 
   local total=$(grep -c "BEGIN CERTIFICATE" "$bundled_file")
-  if [ "$total" -ge 9 ]; then
-    echo "bundled-tls-ca.pem با موفقیت ساخته شد ($total cert)"
+  if [ "$total" -eq 9 ]; then
+    echo "bundled-tls-ca.pem با موفقیت ساخته شد ($total cert — درست!)"
   else
-    echo "خطا: تعداد certها $total است (باید حداقل 9 باشد — فایل‌ها را چک کن با ls $ROOT_DIR/crypto-config)"
+    echo "خطا: تعداد certها $total است (باید 9 باشد)"
     return 1
   fi
 
   echo ""
   echo "اقدامات بعدی:"
-  echo "1. docker-compose.yml را اصلاح کن (mount و ROOTCERT_FILE به bundled-tls-ca.pem با مسیر جدید /etc/hyperledger/fabric/bundled-tls-ca.pem برای peerها و /var/hyperledger/orderer/bundled-tls-ca.pem برای orderer)."
-  echo "2. شبکه را ری‌استارت کن: docker-compose down -v && docker-compose up -d"
-  echo "3. چک listen و لاگ — خطای bad certificate ناپدید می‌شود!"
+  echo "1. docker-compose.yml را اصلاح کن (mount به مسیر جدید برای جلوگیری از conflict):"
+  echo "   برای peerها: - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
+  echo "   برای orderer: - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro"
+  echo "2. ROOTCERT_FILE را تغییر بده:"
+  echo "   برای peerها: CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
+  echo "   برای orderer: ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/bundled-tls-ca.pem]"
+  echo "3. شبکه را ری‌استارت کن: docker-compose down -v && docker-compose up -d"
+  echo "4. چک listen و لاگ — خطای bad certificate ناپدید می‌شود و gossip کار می‌کند!"
 }
 
 # ------------------- راه‌اندازی شبکه -------------------
