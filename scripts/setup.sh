@@ -1074,7 +1074,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها با TLS فعال و join محلی با TLS خاموش (روش استاندارد و امن)"
+  log "ایجاد و join کانال‌ها با fabric-tools CLI (TLS کاملاً فعال — روش اصولی Fabric)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1083,59 +1083,66 @@ create_and_join_channels() {
   mkdir -p "$CHANNEL_ARTIFACTS"
 
   for ch in "${CHANNELS[@]}"; do
-    log "در حال ایجاد کانال $ch ..."
+    log "در حال ایجاد کانال $ch با fabric-tools ..."
 
-    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
+    if [ -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
+      log "بلوک $ch وجود دارد — skip create"
+    else
+      docker run --rm \
+        --network config_6g-network \
+        -v "$PROJECT_DIR/crypto-config":/crypto-config \
+        -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
+        -v "$CHANNEL_ARTIFACTS":/blocks \
+        hyperledger/fabric-tools:latest \
+        bash -c "
+          export CORE_PEER_LOCALMSPID=Org1MSP
+          export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+          export CORE_PEER_TLS_ENABLED=true
+          export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
-    if docker exec peer0.org1.example.com \
-      bash -c '
-        export CORE_PEER_LOCALMSPID=Org1MSP
-        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=127.0.0.1:7051
-        export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-        export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+          peer channel create \
+            -o orderer.example.com:7050 \
+            -c $ch \
+            -f /channel-artifacts/${ch}.tx \
+            --outputBlock /blocks/${ch}.block \
+            --tls \
+            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacacerts/tls-rca-orderer-7054.pem
+        "
 
-        peer channel create \
-          -o orderer.example.com:7050 \
-          -c "'"$ch"'" \
-          -f /etc/hyperledger/configtx/'"$ch"'.tx \
-          --outputBlock /tmp/'"$ch"'.block \
-          --tls \
-          --cafile /var/hyperledger/orderer/tls/tlscacerts/tls-rca-orderer-7054.pem
-      '; then
-
-      success "کانال $ch ساخته شد"
-
-      docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
-
-      log "join همه peerها به $ch با هویت نود peer (join محلی — TLS خاموش)"
-
-      for i in {1..8}; do
-        ORG=org$i
-        PEER=peer0.$ORG.example.com
-        MSPID=${ORG}MSP
-        PORT=$((7051 + (i-1)*1000))
-
-        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
-
-        docker exec $PEER \
-          bash -c "
-            export CORE_PEER_LOCALMSPID=$MSPID
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=127.0.0.1:$PORT
-            export CORE_PEER_TLS_ENABLED=false  # فقط برای join محلی — امن و استاندارد
-
-            peer channel join -b /tmp/${ch}.block
-          " && success "peer0.$ORG به $ch join شد" || log "خطا (اگر قبلاً join شده)"
-
-      done
-
-      ((created++))
+      if [ $? -eq 0 ]; then
+        success "کانال $ch ساخته شد"
+        ((created++))
+      else
+        log "خطا در ایجاد کانال $ch"
+        continue
+      fi
     fi
 
-    echo "--------------------------------------------------"
+    log "join همه peerها به $ch با fabric-tools (TLS فعال)"
+
+    for i in {1..8}; do
+      ORG=org$i
+      PEER=peer0.$ORG.example.com
+      PORT=$((7051 + (i-1)*1000))
+      ADMIN_MSP="/crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp"
+      TLS_ROOT="/crypto-config/peerOrganizations/$ORG.example.com/tlsca/tlsca.$ORG.example.com-cert.pem"
+
+      docker run --rm \
+        --network config_6g-network \
+        -v "$PROJECT_DIR/crypto-config":/crypto-config \
+        -v "$CHANNEL_ARTIFACTS":/blocks \
+        hyperledger/fabric-tools:latest \
+        bash -c "
+          export CORE_PEER_LOCALMSPID=${ORG}MSP
+          export CORE_PEER_MSPCONFIGPATH=$ADMIN_MSP
+          export CORE_PEER_ADDRESS=$PEER:$PORT
+          export CORE_PEER_TLS_ENABLED=true
+          export CORE_PEER_TLS_ROOTCERT_FILE=$TLS_ROOT
+
+          peer channel join -b /blocks/${ch}.block || echo 'join قبلاً انجام شده'
+        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطا"
+
+    done
   done
 
   success "تمام کانال‌ها ساخته و همه peerها join شدند!"
