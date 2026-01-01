@@ -1009,6 +1009,61 @@ fix_admin_msp_for_all_orgs() {
     log "هشدار: فقط $fixed_count از ۸ سازمان اصلاح شد"
   fi
 }
+
+generate_bundled_tls_ca() {
+  local bundled_file="$CONFIG_DIR/bundled-tls-ca.pem"
+
+  echo "در حال ساخت bundled-tls-ca.pem (ترکیب تمام TLS root certها)..."
+
+  # پاک کردن فایل قبلی
+  : > "$bundled_file"  # بهتر از > (در صورت عدم وجود فایل خطا نمی‌دهد)
+
+  # Orderer
+  local orderer_tls_root="$ROOT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem"
+  if [ -f "$orderer_tls_root" ]; then
+    cat "$orderer_tls_root" >> "$bundled_file"
+    echo "اضافه شد: $orderer_tls_root"
+  else
+    echo "خطا: فایل orderer TLS root یافت نشد: $orderer_tls_root"
+    return 1
+  fi
+
+  # Peer orgها
+  local found=0
+  for i in {1..8}; do
+    local org="org$i"
+    local peer_tls_root="$ROOT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts/tls-rca-$org-*.pem"
+    if ls $peer_tls_root 1> /dev/null 2>&1; then
+      cat $peer_tls_root >> "$bundled_file"
+      echo "اضافه شد: $peer_tls_root"
+      ((found++))
+    else
+      echo "هشدار: فایل peer TLS root برای $org یافت نشد (نادیده گرفته شد): $peer_tls_root"
+      # return 1 را حذف کن اگر می‌خواهی ادامه بده (اختیاری)
+    fi
+  done
+
+  if [ $found -eq 0 ]; then
+    echo "خطا: هیچ TLS root cert برای peerها پیدا نشد!"
+    return 1
+  fi
+
+  echo ""
+  echo "bundled-tls-ca.pem با موفقیت ساخته شد در: $bundled_file"
+  echo "تعداد certهای ترکیب شده: $(grep -c "BEGIN CERTIFICATE" "$bundled_file")"
+  echo ""
+  echo "اقدامات بعدی (دقیق):"
+  echo "1. در docker-compose.yml برای همه peerها و orderer، mount اضافه کن:"
+  echo "   - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro  (برای peerها)"
+  echo "   - ./bundled-tls-ca.pem:/var/hyperledger/orderer/tls/bundled-tls-ca.pem:ro  (برای orderer)"
+  echo "2. برای peerها، environment تغییر بده:"
+  echo "   - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem"
+  echo "3. برای orderer، environment تغییر بده:"
+  echo "   - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/bundled-tls-ca.pem]"
+  echo "4. شبکه را ری‌استارت کن: docker-compose down -v && docker-compose up -d"
+  echo "5. چک کن listen و لاگ (خطای bad certificate ناپدید می‌شود)!"
+}
+
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
   log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
@@ -1724,6 +1779,7 @@ main() {
   # prepare_orderer_msp_full_cacerts
   # prepare_bundled_tls_ca
   # fix_admin_msp_for_all_orgs
+  generate_bundled_tls_ca
   start_network
   #wait_for_orderer
   # upgrade_shared_msp_full_admins
