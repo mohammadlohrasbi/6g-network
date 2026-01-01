@@ -1086,7 +1086,7 @@ create_and_join_channels() {
     log "در حال ایجاد کانال $ch با fabric-tools ..."
 
     if [ -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
-      log "بلوک $ch وجود دارد — skip create"
+      log "بلوک $ch از قبل وجود دارد — skip ایجاد"
     else
       docker run --rm \
         --network config_6g-network \
@@ -1106,14 +1106,14 @@ create_and_join_channels() {
             -f /channel-artifacts/${ch}.tx \
             --outputBlock /blocks/${ch}.block \
             --tls \
-            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacacerts/tls-rca-orderer-7054.pem
+            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem  # <<< اصلاح: tlscacerts (نه tlscacacerts)
         "
 
       if [ $? -eq 0 ]; then
         success "کانال $ch ساخته شد"
         ((created++))
       else
-        log "خطا در ایجاد کانال $ch"
+        log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر --cafile دقیق باشد)"
         continue
       fi
     fi
