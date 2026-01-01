@@ -21,7 +21,7 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/bundled-tls-ca.pem]
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/bundled-tls-ca.pem]
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
     volumes:
@@ -30,7 +30,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
-      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
     ports:
       - "7050:7050"
     networks:
@@ -61,7 +61,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt     # گواهی TLS peer
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem    # RCA سازمان خودش
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem    # RCA سازمان خودش
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -70,7 +70,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
       - "7051:7051"
@@ -99,7 +99,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -108,7 +108,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
       - "8051:8051"
@@ -137,7 +137,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -146,7 +146,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
       - "9051:9051"
@@ -175,7 +175,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -184,7 +184,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
       - "10051:10051"
@@ -213,7 +213,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -222,7 +222,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
       - "11051:11051"
@@ -251,7 +251,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -260,7 +260,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
       - "12051:12051"
@@ -289,7 +289,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -298,7 +298,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
       - "13051:13051"
@@ -327,7 +327,7 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp:ro
@@ -336,7 +336,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
       - "14051:14051"
