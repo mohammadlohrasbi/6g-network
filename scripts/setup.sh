@@ -1112,7 +1112,7 @@ create_and_join_channels() {
         if docker exec peer0.$ORG.example.com \
           bash -c '
             export CORE_PEER_LOCALMSPID=${ORG}MSP
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
             export CORE_PEER_ADDRESS=peer0.'"$ORG"'.example.com:7051
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
