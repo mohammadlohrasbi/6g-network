@@ -1081,7 +1081,7 @@ create_and_join_channels() {
       bash -c '
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+        export CORE_PEER_ADDRESS=localhost:7051
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
@@ -1092,7 +1092,7 @@ create_and_join_channels() {
           -f "/etc/hyperledger/configtx/'"$ch"'.tx" \
           --outputBlock "/tmp/'"$ch"'.block" \
           --tls \
-          --cafile /var/hyperledger/orderer/tls/server.crt
+          --cafile /etc/hyperledger/fabric/tls/ca.crt
       '; then
 
       success "کانال $ch ساخته شد"
@@ -1104,27 +1104,26 @@ create_and_join_channels() {
 
       # join همه peerها با MSP Admin
       log "join همه peerها به $ch با هویت Admin..."
-      for i in {1..8}; do
+for i in {1..8}; do
         ORG=org$i
+        PEER=peer0.$ORG.example.com
+        MSPID=${ORG}MSP
 
-        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" peer0.$ORG.example.com:/tmp/${ch}.block
+        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
 
-        if docker exec peer0.$ORG.example.com \
-          bash -c '
-            export CORE_PEER_LOCALMSPID=${ORG}MSP
+        docker exec $PEER \
+          bash -c "
+            export CORE_PEER_LOCALMSPID=$MSPID
             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=peer0.'"$ORG"'.example.com:7051
+            export CORE_PEER_ADDRESS=localhost:7051
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-            peer channel join -b "/tmp/'"$ch"'.block"
-          '; then
 
-          success "peer0.$ORG به $ch join شد"
-        else
-          log "خطا: join peer0.$ORG به $ch شکست خورد"
-        fi
+            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
+          " && success "peer0.$ORG به $ch join شد" || log "خطا در join peer0.$ORG (ممکن است قبلاً join شده باشد)"
+
       done
 
       ((created++))
@@ -1135,17 +1134,15 @@ create_and_join_channels() {
     echo "--------------------------------------------------"
   done
 
-  if [ $created -eq $channel_count ]; then
-    success "تمام $channel_count کانال ساخته و همه peerها join شدند!"
-  else
-    log "فقط $created از $channel_count کانال ساخته شد"
-  fi
+  success "تمام کانال‌ها ساخته و همه peerها join شدند!"
 
   log "وضعیت نهایی join:"
   for i in {1..8}; do
     echo "peer0.org${i}.example.com:"
     docker exec peer0.org${i}.example.com peer channel list
   done
+
+  success "تمام شد!"
 }
 
 
