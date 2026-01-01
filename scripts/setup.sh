@@ -1065,7 +1065,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها با هویت Admin (روش تضمینی و اصولی)"
+  log "ایجاد کانال‌ها و join همه peerها با هویت نود peer (روش تضمینی — TLS فعال، localhost برای همه اتصال‌ها)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1073,10 +1073,10 @@ create_and_join_channels() {
   for ch in "${CHANNELS[@]}"; do
     log "در حال ایجاد کانال $ch ..."
 
-    # پاک کردن بلوک قدیمی
+    # پاک کردن بلوک قدیمی در peer0.org1
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
-    # ایجاد کانال با MSP نود peer0.org1
+    # ایجاد کانال با هویت نود peer0.org1 (TLS فعال با orderer — localhost برای peer، cafile صحیح orderer)
     if docker exec peer0.org1.example.com \
       bash -c '
         export CORE_PEER_LOCALMSPID=Org1MSP
@@ -1086,30 +1086,32 @@ create_and_join_channels() {
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
         export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+
         peer channel create \
           -o orderer.example.com:7050 \
           -c "'"$ch"'" \
           -f "/etc/hyperledger/configtx/'"$ch"'.tx" \
           --outputBlock "/tmp/'"$ch"'.block" \
           --tls \
-          --cafile /etc/hyperledger/fabric/tls/ca.crt
+          --cafile /etc/hyperledger/fabric/orderer-tls/ca.crt  # <<< اصلاح: مسیر tlscacerts orderer
       '; then
 
       success "کانال $ch ساخته شد"
 
       # کپی بلوک به هاست
+      mkdir -p "$CHANNEL_ARTIFACTS"
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
-
       log "بلوک $ch به هاست کپی شد"
 
-      # join همه peerها با MSP Admin
-      log "join همه peerها به $ch با هویت Admin..."
-for i in {1..8}; do
+      # join همه peerها با هویت نود peer (TLS فعال، localhost)
+      log "join همه peerها به $ch با هویت نود peer..."
+
+      for i in {1..8}; do
         ORG=org$i
         PEER=peer0.$ORG.example.com
         MSPID=${ORG}MSP
 
-        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
+        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block 2>/dev/null || true
 
         docker exec $PEER \
           bash -c "
@@ -1121,25 +1123,29 @@ for i in {1..8}; do
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
-            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
-          " && success "peer0.$ORG به $ch join شد" || log "خطا در join peer0.$ORG (ممکن است قبلاً join شده باشد)"
+            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده یا بلوک موجود نیست'
+          " && success "peer0.$ORG به $ch join شد" || log "join peer0.$ORG قبلاً انجام شده یا خطای غیرمنتظره"
 
       done
 
       ((created++))
     else
-      log "خطا: ایجاد کانال $ch شکست خورد"
+      log "خطا: ایجاد کانال $ch شکست خورد (احتمالاً مشکل TLS با orderer — چک کنید tlscacerts orderer در peer0.org1 mount شده باشد)"
     fi
 
     echo "--------------------------------------------------"
   done
 
-  success "تمام کانال‌ها ساخته و همه peerها join شدند!"
+  if [ $created -eq $channel_count ]; then
+    success "تمام $channel_count کانال ساخته و همه peerها join شدند!"
+  else
+    log "فقط $created از $channel_count کانال ساخته شد"
+  fi
 
   log "وضعیت نهایی join:"
   for i in {1..8}; do
     echo "peer0.org${i}.example.com:"
-    docker exec peer0.org${i}.example.com peer channel list
+    docker exec peer0.org${i}.example.com peer channel list 2>/dev/null || echo "هیچ کانالی join نشده"
   done
 
   success "تمام شد!"
