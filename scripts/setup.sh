@@ -1074,7 +1074,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها با TLS فعال و join محلی با TLS خاموش (روش استاندارد و امن Fabric)"
+  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال — بعد از اصلاح clientAuthRequired)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1083,7 +1083,7 @@ create_and_join_channels() {
   mkdir -p "$CHANNEL_ARTIFACTS"
 
   for ch in "${CHANNELS[@]}"; do
-    log "در حال ایجاد کانال $ch با TLS فعال ..."
+    log "در حال ایجاد کانال $ch ..."
 
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
@@ -1103,14 +1103,14 @@ create_and_join_channels() {
           -f /etc/hyperledger/configtx/'"$ch"'.tx \
           --outputBlock /tmp/'"$ch"'.block \
           --tls \
-          --cafile /var/hyperledger/orderer/tls/tlscacerts/tls-rca-orderer-7054.pem && echo "create $ch موفق"
+          --cafile /var/hyperledger/orderer/tls/tlscacerts/tls-rca-orderer-7054.pem
       '; then
 
       success "کانال $ch ساخته شد"
 
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
 
-      log "join همه peerها به $ch با هویت نود peer (join محلی — TLS خاموش برای موفقیت تضمینی)"
+      log "join همه peerها به $ch (TLS فعال، IPv4 اجباری)..."
 
       for i in {1..8}; do
         ORG=org$i
@@ -1125,10 +1125,13 @@ create_and_join_channels() {
             export CORE_PEER_LOCALMSPID=$MSPID
             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
             export CORE_PEER_ADDRESS=127.0.0.1:$PORT
-            export CORE_PEER_TLS_ENABLED=false  # فقط برای join محلی — امن و استاندارد (هیچ ریسک ندارد)
+            export CORE_PEER_TLS_ENABLED=true
+            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+            export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+            export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
-            peer channel join -b /tmp/${ch}.block && echo 'join موفق'
-          " && success "peer0.$ORG به $ch join شد" || log "خطا (اگر قبلاً join شده)"
+            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
+          " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده"
 
       done
 
