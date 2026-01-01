@@ -1020,7 +1020,7 @@ generate_bundled_tls_ca() {
   local count=0
 
   # Orderer TLS root cert (جستجو در مسیرهای رایج)
-  local orderer_root=$(find "$ROOT_DIR/crypto-config/ordererOrganizations" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
+  local orderer_root=$(find "$PROJECT_DIR/crypto-config/ordererOrganizations" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
   if [ -n "$orderer_root" ] && [ -f "$orderer_root" ]; then
     cat "$orderer_root" >> "$bundled_file"
     echo "اضافه شد orderer: $orderer_root"
@@ -1033,7 +1033,7 @@ generate_bundled_tls_ca() {
   # Peer orgها TLS root cert (جستجو در tlscacerts یا tlsca)
   for i in {1..8}; do
     local org="org$i"
-    local peer_root=$(find "$ROOT_DIR/crypto-config/peerOrganizations/$org.example.com" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
+    local peer_root=$(find "$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com" -name "*.pem" -path "*/tlscacerts/*" -o -path "*/tlsca/*" | head -1)
     if [ -n "$peer_root" ] && [ -f "$peer_root" ]; then
       cat "$peer_root" >> "$bundled_file"
       echo "اضافه شد $org: $peer_root"
