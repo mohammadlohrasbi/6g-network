@@ -1065,54 +1065,57 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها با fabric-tools CLI (TLS فعال) و join همه peerها با هویت نود peer (TLS فعال، localhost)"
+  log "ایجاد کانال‌ها با fabric-tools CLI (TLS فعال) و join همه peerها با هویت نود peer (TLS فعال، IPv4 اجباری برای localhost)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
 
-  # ایجاد دایرکتوری بلوک‌ها اگر وجود نداشته باشد
+  # تنظیم CHANNEL_ARTIFACTS اگر خالی باشد (جلوگیری از mkdir '')
+  CHANNEL_ARTIFACTS="${CHANNEL_ARTIFACTS:-./channel-blocks}"
   mkdir -p "$CHANNEL_ARTIFACTS"
 
-  # ایجاد همه کانال‌ها با fabric-tools (TLS فعال، cafile دقیق)
+  # حذف بلوک‌های قدیمی برای force recreate (اگر لازم باشد — کامنت کن اگر نمی‌خواهی)
+  # rm -f "$CHANNEL_ARTIFACTS"/*.block
+
+  # ایجاد همه کانال‌ها با fabric-tools (TLS فعال)
   for ch in "${CHANNELS[@]}"; do
     log "در حال ایجاد کانال $ch با fabric-tools ..."
 
     if [ -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
-      log "بلوک $ch از قبل وجود دارد — skip ایجاد کانال"
-      created=$((created + 1))
-      continue
-    fi
-
-    docker run --rm \
-      --network config_6g-network \
-      -v "$PROJECT_DIR/crypto-config":/crypto-config \
-      -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
-      -v "$CHANNEL_ARTIFACTS":/blocks \
-      hyperledger/fabric-tools:latest \
-      bash -c "
-        export CORE_PEER_LOCALMSPID=Org1MSP
-        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-        export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
-
-        peer channel create \
-          -o orderer.example.com:7050 \
-          -c $ch \
-          -f /channel-artifacts/${ch}.tx \
-          --outputBlock /blocks/${ch}.block \
-          --tls \
-          --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem
-      "
-
-    if [ $? -eq 0 ]; then
-      success "کانال $ch ساخته شد"
-      ((created++))
+      log "بلوک $ch از قبل وجود دارد — سعی در join"
     else
-      log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر tlscacerts orderer درست باشد)"
+      docker run --rm \
+        --network config_6g-network \
+        -v "$PROJECT_DIR/crypto-config":/crypto-config \
+        -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
+        -v "$CHANNEL_ARTIFACTS":/blocks \
+        hyperledger/fabric-tools:latest \
+        bash -c "
+          export CORE_PEER_LOCALMSPID=Org1MSP
+          export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+          export CORE_PEER_TLS_ENABLED=true
+          export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+
+          peer channel create \
+            -o orderer.example.com:7050 \
+            -c $ch \
+            -f /channel-artifacts/${ch}.tx \
+            --outputBlock /blocks/${ch}.block \
+            --tls \
+            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem
+        "
+
+      if [ $? -eq 0 ]; then
+        success "کانال $ch ساخته شد"
+        ((created++))
+      else
+        log "خطا: ایجاد کانال $ch شکست خورد"
+        continue
+      fi
     fi
   done
 
-  # join همه peerها به همه کانال‌ها (داخل کانتینر، TLS فعال، localhost)
+  # join همه peerها به همه کانال‌ها (TLS فعال، IPv4 اجباری)
   for ch in "${CHANNELS[@]}"; do
     log "join همه peerها به $ch با هویت نود peer..."
 
@@ -1132,14 +1135,14 @@ create_and_join_channels() {
         bash -c "
           export CORE_PEER_LOCALMSPID=$MSPID
           export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-          export CORE_PEER_ADDRESS=localhost:7051
+          export CORE_PEER_ADDRESS=127.0.0.1:7051  # <<< اصلاح کلیدی: IPv4 اجباری برای جلوگیری از [::1] connection refused
           export CORE_PEER_TLS_ENABLED=true
           export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
           export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
           export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
-          peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده یا بلوک موجود نیست'
-        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطا"
+          peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده یا خطای غیرمنتظره'
+        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطا (چک کنید MSP نود درست mount شده باشد)"
 
     done
   done
