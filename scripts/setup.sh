@@ -285,8 +285,6 @@ docker run --rm \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
-    fabric-ca-client identity remove --id Admin@example.com --force 
-
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
@@ -299,8 +297,6 @@ docker run --rm \
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
-
-    fabric-ca-client identity remove --id orderer.example.com --force 
 
     echo 'register orderer.example.com با OU=orderer...'
     fabric-ca-client register --id.name orderer.example.com \
@@ -336,8 +332,6 @@ for i in {1..8}; do
       echo 'enroll bootstrap admin (admin:adminpw)...'
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
-
-      fabric-ca-client identity remove --id Admin@\$ORG.example.com --force
       
       echo \"register Admin@\$ORG.example.com با OU=admin...\"
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
@@ -351,8 +345,6 @@ for i in {1..8}; do
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT \
         -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-
-      fabric-ca-client identity remove --id peer0.\$ORG.example.com --force
       
       echo \"register peer0.\$ORG.example.com با OU=peer...\"
       fabric-ca-client register --id.name peer0.\$ORG.example.com \
