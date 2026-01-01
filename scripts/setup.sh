@@ -1719,7 +1719,7 @@ main() {
   setup_network_with_fabric_ca_tls_nodeous_active
   # generate_crypto
   # generate_channel_artifacts
-  generate_coreyamls
+  # generate_coreyamls
   # prepare_msp_for_network
   # prepare_orderer_msp_full_cacerts
   # prepare_bundled_tls_ca
