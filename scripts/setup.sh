@@ -1065,87 +1065,79 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها با هویت نود peer (روش تضمینی — TLS فعال، localhost برای همه اتصال‌ها)"
+  log "ایجاد کانال‌ها با fabric-tools CLI (TLS فعال) و join همه peerها با هویت نود peer (TLS فعال، localhost)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
 
-  for ch in "${CHANNELS[@]}"; do
-    log "در حال ایجاد کانال $ch ..."
+  # ایجاد همه کانال‌ها با fabric-tools (TLS فعال، cafile دقیق از crypto-config)
+  docker run --rm \
+    --network config_6g-network \
+    -v "$PROJECT_DIR/crypto-config":/crypto-config \
+    -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
+    -v "$CHANNEL_ARTIFACTS":/blocks \
+    hyperledger/fabric-tools:latest \
+    bash -c "
+      # تنظیمات برای یک admin (مثلاً Org1)
+      export FABRIC_CFG_PATH=/etc/hyperledger/fabric
+      export CORE_PEER_LOCALMSPID=Org1MSP
+      export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      export CORE_PEER_TLS_ENABLED=true
+      export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 
-    # پاک کردن بلوک قدیمی در peer0.org1
-    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
-
-    # ایجاد کانال با هویت نود peer0.org1 (TLS فعال با orderer — localhost برای peer، cafile صحیح orderer)
-    if docker exec peer0.org1.example.com \
-      bash -c '
-        export CORE_PEER_LOCALMSPID=Org1MSP
-        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=localhost:7051
-        export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-        export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-        export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-
+      for ch in ${CHANNELS[@]}; do
+        echo 'در حال ایجاد کانال \$ch ...'
         peer channel create \
           -o orderer.example.com:7050 \
-          -c "'"$ch"'" \
-          -f "/etc/hyperledger/configtx/'"$ch"'.tx" \
-          --outputBlock "/tmp/'"$ch"'.block" \
+          -c \$ch \
+          -f /channel-artifacts/\$ch.tx \
+          --outputBlock /blocks/\$ch.block \
           --tls \
-          --cafile /etc/hyperledger/fabric/orderer-tls/ca.crt  # <<< اصلاح: مسیر tlscacerts orderer
-      '; then
+          --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem
 
-      success "کانال $ch ساخته شد"
-
-      # کپی بلوک به هاست
-      mkdir -p "$CHANNEL_ARTIFACTS"
-      docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
-      log "بلوک $ch به هاست کپی شد"
-
-      # join همه peerها با هویت نود peer (TLS فعال، localhost)
-      log "join همه peerها به $ch با هویت نود peer..."
-
-      for i in {1..8}; do
-        ORG=org$i
-        PEER=peer0.$ORG.example.com
-        MSPID=${ORG}MSP
-
-        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block 2>/dev/null || true
-
-        docker exec $PEER \
-          bash -c "
-            export CORE_PEER_LOCALMSPID=$MSPID
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=localhost:7051
-            export CORE_PEER_TLS_ENABLED=true
-            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-            export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-            export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-
-            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده یا بلوک موجود نیست'
-          " && success "peer0.$ORG به $ch join شد" || log "join peer0.$ORG قبلاً انجام شده یا خطای غیرمنتظره"
-
+        if [ \$? -eq 0 ]; then
+          echo 'موفق: کانال \$ch ساخته شد'
+        else
+          echo 'خطا: ایجاد کانال \$ch شکست خورد'
+        fi
       done
+    "
 
-      ((created++))
-    else
-      log "خطا: ایجاد کانال $ch شکست خورد (احتمالاً مشکل TLS با orderer — چک کنید tlscacerts orderer در peer0.org1 mount شده باشد)"
-    fi
+  # join همه peerها (داخل کانتینر، TLS فعال، localhost)
+  for ch in "${CHANNELS[@]}"; do
+    log "join همه peerها به $ch ..."
 
-    echo "--------------------------------------------------"
+    for i in {1..8}; do
+      ORG=org$i
+      PEER=peer0.$ORG.example.com
+      MSPID=${ORG}MSP
+
+      docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block 2>/dev/null || true
+
+      docker exec $PEER \
+        bash -c "
+          export CORE_PEER_LOCALMSPID=$MSPID
+          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+          export CORE_PEER_ADDRESS=localhost:7051
+          export CORE_PEER_TLS_ENABLED=true
+          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+          export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+          export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+
+          peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
+        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده"
+
+    done
+
+    ((created++))
   done
 
-  if [ $created -eq $channel_count ]; then
-    success "تمام $channel_count کانال ساخته و همه peerها join شدند!"
-  else
-    log "فقط $created از $channel_count کانال ساخته شد"
-  fi
+  success "تمام کانال‌ها ساخته و همه peerها join شدند!"
 
   log "وضعیت نهایی join:"
   for i in {1..8}; do
     echo "peer0.org${i}.example.com:"
-    docker exec peer0.org${i}.example.com peer channel list 2>/dev/null || echo "هیچ کانالی join نشده"
+    docker exec peer0.org${i}.example.com peer channel list
   done
 
   success "تمام شد!"
