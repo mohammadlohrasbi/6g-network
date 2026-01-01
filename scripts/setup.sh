@@ -1098,7 +1098,7 @@ create_and_join_channels() {
           export CORE_PEER_LOCALMSPID=Org1MSP
           export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
           export CORE_PEER_TLS_ENABLED=true
-          export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+          export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/tlscacerts/tls-rca-org1-7154.pem
 
           peer channel create \
             -o orderer.example.com:7050 \
@@ -1106,14 +1106,14 @@ create_and_join_channels() {
             -f /channel-artifacts/${ch}.tx \
             --outputBlock /blocks/${ch}.block \
             --tls \
-            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem  # <<< اصلاح: tlscacerts (نه tlscacacerts)
+            --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem
         "
 
       if [ $? -eq 0 ]; then
         success "کانال $ch ساخته شد"
         ((created++))
       else
-        log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر --cafile دقیق باشد)"
+        log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر --cafile و TLS_ROOTCERT_FILE دقیق باشد)"
         continue
       fi
     fi
@@ -1125,7 +1125,7 @@ create_and_join_channels() {
       PEER=peer0.$ORG.example.com
       PORT=$((7051 + (i-1)*1000))
       ADMIN_MSP="/crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp"
-      TLS_ROOT="/crypto-config/peerOrganizations/$ORG.example.com/tlsca/tlsca.$ORG.example.com-cert.pem"
+      TLS_ROOT="/crypto-config/peerOrganizations/$ORG.example.com/peers/$PEER/tls/tlscacerts/tls-rca-$ORG-$((7154 + (i-1)*100)).pem"  # پورت RCA برای هر org متفاوت است (7154 برای org1, 8154 برای org2 و غیره)
 
       docker run --rm \
         --network config_6g-network \
