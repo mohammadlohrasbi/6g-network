@@ -1,5 +1,5 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی و ۱۰۰٪ درست برای Fabric 2.5 (اصلاح MSP ID و clientAuthRequired برای حل gossip و join)
+# generateCoreyamls.sh - نسخه نهایی و ۱۰۰٪ درست برای Fabric 2.5 (اصلاح MSP ID و clientAuthRequired برای حل gossip و listen)
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
@@ -21,10 +21,10 @@ peer:
     orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
   mspConfigPath: /etc/hyperledger/fabric/msp
-  localMspId: org${i}MSP  # <<< اصلاح: حرف کوچک o (match با گواهی MSP)
+  localMspId: org${i}MSP  # <<< حرف کوچک o (match با گواهی MSP)
   tls:
     enabled: true
-    clientAuthRequired: false  # <<< اضافه: mutual auth خاموش برای gossip (TLS فعال می‌ماند، خطای bad certificate حل می‌شود)
+    clientAuthRequired: false  # <<< mutual auth خاموش برای gossip (TLS فعال می‌ماند، خطای bad certificate حل می‌شود)
     cert:
       file: /etc/hyperledger/fabric/tls/server.crt
     key:
@@ -40,7 +40,6 @@ peer:
   ledger:
     state:
       stateDatabase: goleveldb
-  # این بخش حیاتی است — external builder را فعال می‌کند
   chaincode:
     externalBuilders:
       - name: simple
@@ -50,5 +49,4 @@ peer:
 EOF
   echo "Generated: $CORE_FILE"
 done
-# cp لازم نیست (هر peer core-orgX خودش را دارد)
 echo "All 8 core.yaml files generated successfully!"
