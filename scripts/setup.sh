@@ -1065,27 +1065,24 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها داخل peer0.org1 (TLS فعال) و join همه peerها با هویت نود peer (TLS فعال، localhost)"
+  log "ایجاد کانال‌ها داخل peer0.org1 (TLS فعال) و join همه peerها با هویت نود peer (TLS فعال، IPv4 اجباری)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
 
-  # تنظیم CHANNEL_ARTIFACTS
   CHANNEL_ARTIFACTS="${CHANNEL_ARTIFACTS:-./channel-blocks}"
   mkdir -p "$CHANNEL_ARTIFACTS"
 
   for ch in "${CHANNELS[@]}"; do
     log "در حال ایجاد کانال $ch داخل peer0.org1 ..."
 
-    # پاک کردن بلوک قدیمی
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
-    # ایجاد کانال داخل peer0.org1 (DNS داخل network کار می‌کند + TLS فعال)
     if docker exec peer0.org1.example.com \
       bash -c '
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=localhost:7051
+        export CORE_PEER_ADDRESS=127.0.0.1:7051
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
@@ -1097,7 +1094,7 @@ create_and_join_channels() {
           -f /etc/hyperledger/configtx/'"$ch"'.tx \
           --outputBlock /tmp/'"$ch"'.block \
           --tls \
-          --cafile /etc/hyperledger/fabric/tls/orderer-ca.crt  # <<< مسیر صحیح tlscacerts orderer در peer (چک کنید در docker-compose mount شده باشد)
+          --cafile /var/hyperledger/orderer/tls/tlscacerts/tls-rca-orderer-7054.pem  # <<< مسیر دقیق mount شده در peerها
       '; then
 
       success "کانال $ch ساخته شد"
@@ -1105,7 +1102,6 @@ create_and_join_channels() {
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
       log "بلوک $ch به هاست کپی شد"
 
-      # join همه peerها (TLS فعال، localhost + IPv4)
       log "join همه peerها به $ch ..."
 
       for i in {1..8}; do
@@ -1119,7 +1115,7 @@ create_and_join_channels() {
           bash -c "
             export CORE_PEER_LOCALMSPID=$MSPID
             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=127.0.0.1:7051
+            export CORE_PEER_ADDRESS=127.0.0.1:7051  # IPv4 اجباری
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
@@ -1132,7 +1128,7 @@ create_and_join_channels() {
 
       ((created++))
     else
-      log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر --cafile صحیح باشد یا orderer.example.com resolve شود)"
+      log "خطا: ایجاد کانال $ch شکست کرد (اگر خطا داد، docker exec peer0.org1.example.com ls /var/hyperledger/orderer/tls/tlscacerts را چک کنید و مطمئن شوید tls-rca-orderer-7054.pem وجود دارد)"
     fi
 
     echo "--------------------------------------------------"
