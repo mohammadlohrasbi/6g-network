@@ -1083,9 +1083,9 @@ create_and_join_channels() {
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
         export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
         export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-        export CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt
         peer channel create \
           -o orderer.example.com:7050 \
           -c "'"$ch"'" \
@@ -1115,9 +1115,9 @@ create_and_join_channels() {
             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
             export CORE_PEER_ADDRESS=peer0.'"$ORG"'.example.com:7051
             export CORE_PEER_TLS_ENABLED=true
+            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-            export CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/orderer/tls/server.crt
             peer channel join -b "/tmp/'"$ch"'.block"
           '; then
 
