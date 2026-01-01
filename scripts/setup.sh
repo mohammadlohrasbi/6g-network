@@ -1070,47 +1070,61 @@ create_and_join_channels() {
   local channel_count="${#CHANNELS[@]}"
   local created=0
 
-  # ایجاد همه کانال‌ها با fabric-tools (TLS فعال، cafile دقیق از crypto-config)
-  docker run --rm \
-    --network config_6g-network \
-    -v "$PROJECT_DIR/crypto-config":/crypto-config \
-    -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
-    -v "$CHANNEL_ARTIFACTS":/blocks \
-    hyperledger/fabric-tools:latest \
-    bash -c "
-      # تنظیمات برای یک admin (مثلاً Org1)
-      export FABRIC_CFG_PATH=/etc/hyperledger/fabric
-      export CORE_PEER_LOCALMSPID=Org1MSP
-      export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-      export CORE_PEER_TLS_ENABLED=true
-      export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+  # ایجاد دایرکتوری بلوک‌ها اگر وجود نداشته باشد
+  mkdir -p "$CHANNEL_ARTIFACTS"
 
-      for ch in ${CHANNELS[@]}; do
-        echo 'در حال ایجاد کانال \$ch ...'
+  # ایجاد همه کانال‌ها با fabric-tools (TLS فعال، cafile دقیق)
+  for ch in "${CHANNELS[@]}"; do
+    log "در حال ایجاد کانال $ch با fabric-tools ..."
+
+    if [ -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
+      log "بلوک $ch از قبل وجود دارد — skip ایجاد کانال"
+      created=$((created + 1))
+      continue
+    fi
+
+    docker run --rm \
+      --network config_6g-network \
+      -v "$PROJECT_DIR/crypto-config":/crypto-config \
+      -v "$PROJECT_DIR/channel-artifacts":/channel-artifacts \
+      -v "$CHANNEL_ARTIFACTS":/blocks \
+      hyperledger/fabric-tools:latest \
+      bash -c "
+        export CORE_PEER_LOCALMSPID=Org1MSP
+        export CORE_PEER_MSPCONFIGPATH=/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+
         peer channel create \
           -o orderer.example.com:7050 \
-          -c \$ch \
-          -f /channel-artifacts/\$ch.tx \
-          --outputBlock /blocks/\$ch.block \
+          -c $ch \
+          -f /channel-artifacts/${ch}.tx \
+          --outputBlock /blocks/${ch}.block \
           --tls \
           --cafile /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem
+      "
 
-        if [ \$? -eq 0 ]; then
-          echo 'موفق: کانال \$ch ساخته شد'
-        else
-          echo 'خطا: ایجاد کانال \$ch شکست خورد'
-        fi
-      done
-    "
+    if [ $? -eq 0 ]; then
+      success "کانال $ch ساخته شد"
+      ((created++))
+    else
+      log "خطا: ایجاد کانال $ch شکست خورد (چک کنید مسیر tlscacerts orderer درست باشد)"
+    fi
+  done
 
-  # join همه peerها (داخل کانتینر، TLS فعال، localhost)
+  # join همه peerها به همه کانال‌ها (داخل کانتینر، TLS فعال، localhost)
   for ch in "${CHANNELS[@]}"; do
-    log "join همه peerها به $ch ..."
+    log "join همه peerها به $ch با هویت نود peer..."
 
     for i in {1..8}; do
       ORG=org$i
       PEER=peer0.$ORG.example.com
       MSPID=${ORG}MSP
+
+      if [ ! -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
+        log "بلوک $ch وجود ندارد — skip join برای $PEER"
+        continue
+      fi
 
       docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block 2>/dev/null || true
 
@@ -1124,12 +1138,10 @@ create_and_join_channels() {
           export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
           export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
-          peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
-        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده"
+          peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده یا بلوک موجود نیست'
+        " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطا"
 
     done
-
-    ((created++))
   done
 
   success "تمام کانال‌ها ساخته و همه peerها join شدند!"
@@ -1137,7 +1149,7 @@ create_and_join_channels() {
   log "وضعیت نهایی join:"
   for i in {1..8}; do
     echo "peer0.org${i}.example.com:"
-    docker exec peer0.org${i}.example.com peer channel list
+    docker exec peer0.org${i}.example.com peer channel list 2>/dev/null || echo "هیچ کانالی join نشده"
   done
 
   success "تمام شد!"
