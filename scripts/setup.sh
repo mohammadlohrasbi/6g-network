@@ -87,7 +87,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   done
 
   success "seed گواهی‌ها آماده شد"
-  cd "$CRYPTO_DIR/ordererOrganizations/example.com/rca"
+  cd "$CRYPTO_DIR"
   tree
   cd "$PROJECT_DIR"
 
@@ -432,6 +432,9 @@ for i in {1..8}; do
 done
 
 echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و بدون خطا تولید شدند!'
+  cd "$CRYPTO_DIR"
+  tree
+  cd "$PROJECT_DIR"
 
   log "ساخت یکپارچه تمام فایل‌های config.yaml + آماده‌سازی MSP Admin کاربر برای mount مستقیم (Peer و Orderer)"
 
