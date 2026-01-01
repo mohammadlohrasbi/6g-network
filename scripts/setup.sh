@@ -1074,7 +1074,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها با هویت Admin (TLS کاملاً فعال، localhost)"
+  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال، پورت درست برای هر org)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1091,7 +1091,7 @@ create_and_join_channels() {
       bash -c '
         export CORE_PEER_LOCALMSPID=Org1MSP
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-        export CORE_PEER_ADDRESS=127.0.0.1:7051
+        export CORE_PEER_ADDRESS=127.0.0.1:7051  # org1 پورت 7051
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
@@ -1110,27 +1110,28 @@ create_and_join_channels() {
 
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
 
-      log "join همه peerها به $ch با هویت Admin (TLS فعال)..."
+      log "join همه peerها به $ch (TLS فعال، پورت درست)..."
 
       for i in {1..8}; do
         ORG=org$i
         PEER=peer0.$ORG.example.com
         MSPID=${ORG}MSP
+        PORT=$((7051 + (i-1)*1000))  # پورت درست: 7051, 8051, 9051, ...
 
         docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
 
         docker exec $PEER \
           bash -c "
             export CORE_PEER_LOCALMSPID=$MSPID
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp  # هویت Admin
-            export CORE_PEER_ADDRESS=127.0.0.1:7051
+            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+            export CORE_PEER_ADDRESS=127.0.0.1:$PORT
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
             peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
-          " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده یا خطای access"
+          " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده"
 
       done
 
