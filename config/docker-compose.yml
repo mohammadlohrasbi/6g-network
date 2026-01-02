@@ -30,6 +30,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp:rw
       - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
+      - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
       - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/bundled-msp-ca.pem:ro
       - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
     ports:
