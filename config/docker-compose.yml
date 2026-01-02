@@ -26,7 +26,6 @@ services:
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
     volumes:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block:ro
-      - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp:rw
       - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
