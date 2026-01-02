@@ -1,11 +1,11 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با orgLeader برای org1 و bootstrap چند peer)
+# generateCoreyamls.sh - نسخه نهایی (با orgLeader و bootstrap کامل 8 peer)
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
 
-echo "Generating core.yaml files for 8 organizations (با orgLeader برای org1 و bootstrap چند peer برای gossip کامل)..."
+echo "Generating core.yaml files for 8 organizations (با orgLeader برای org1 و bootstrap کامل 8 peer برای gossip عالی)..."
 
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
@@ -23,11 +23,11 @@ peer:
   chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
   address: peer0.org${i}.example.com:${PORT}
   gossip:
-    bootstrap: peer0.org1.example.com:7051 peer0.org2.example.com:8051 peer0.org3.example.com:9051 peer0.org4.example.com:10051 peer0.org5.example.com:11051  # چند bootstrap برای discovery بهتر
+    bootstrap: peer0.org1.example.com:7051 peer0.org2.example.com:8051 peer0.org3.example.com:9051 peer0.org4.example.com:10051 peer0.org5.example.com:11051 peer0.org6.example.com:12051 peer0.org7.example.com:13051 peer0.org8.example.com:14051  # <<< کامل 8 peer برای discovery عالی
     useLeaderElection: true
     orgLeader: ${ORG_LEADER}  # org1 leader
     endpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true  # نگه دار برای حل identity
+    skipMSPValidation: true  # حل identity
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP
   tls:
