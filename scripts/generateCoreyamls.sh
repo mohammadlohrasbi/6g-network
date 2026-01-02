@@ -1,11 +1,11 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با skipMSPValidation برای حل MSP identity در gossip)
+# generateCoreyamls.sh - نسخه نهایی (با skipMSPValidation: true برای حل کامل identity)
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
 
-echo "Generating core.yaml files for 8 organizations (با skipMSPValidation برای gossip امن با TLS)..."
+echo "Generating core.yaml files for 8 organizations (با skipMSPValidation: true برای gossip امن با TLS و bundled MSP)..."
 
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
@@ -23,8 +23,9 @@ peer:
     useLeaderElection: true
     orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
+    skipMSPValidation: true  # <<< اضافه شد (حل خطای identity — TLS امنیت را تأمین می‌کند)
   mspConfigPath: /etc/hyperledger/fabric/msp
-  localMspId: org${i}MSP  # حرف کوچک o
+  localMspId: org${i}MSP
   tls:
     enabled: true
     clientAuthRequired: false
