@@ -1021,7 +1021,7 @@ generate_bundled_tls_ca() {
   local count=0
 
   # Orderer
-  local orderer_tls_root="$ROOT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem"
+  local orderer_tls_root="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem"
   if [ -f "$orderer_tls_root" ]; then
     cat "$orderer_tls_root" >> "$bundled_file"
     echo "اضافه شد orderer: $orderer_tls_root"
@@ -1034,7 +1034,7 @@ generate_bundled_tls_ca() {
   # Peer orgها (فقط tlscacerts)
   for i in {1..8}; do
     local org="org$i"
-    local peer_tls_root_dir="$ROOT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts"
+    local peer_tls_root_dir="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts"
     local peer_tls_file=$(ls "$peer_tls_root_dir"/tls-rca-$org-*.pem 2>/dev/null | head -1)
     if [ -n "$peer_tls_file" ]; then
       cat "$peer_tls_file" >> "$bundled_file"
