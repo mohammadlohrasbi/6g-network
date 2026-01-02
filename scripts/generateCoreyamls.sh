@@ -1,5 +1,5 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با skipMSPValidation برای حل MSP authentication در gossip)
+# generateCoreyamls.sh - نسخه نهایی (با skipMSPValidation برای حل MSP identity در gossip)
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
@@ -23,7 +23,7 @@ peer:
     useLeaderElection: true
     orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true  # <<< MSP check برای gossip خاموش (TLS فعال امنیت را تأمین می‌کند)
+    skipMSPValidation: true  # <<< MSP validation برای gossip خاموش (TLS فعال امنیت را تأمین می‌کند)
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP  # حرف کوچک o
   tls:
@@ -34,7 +34,7 @@ peer:
     key:
       file: /etc/hyperledger/fabric/tls/server.key
     rootcert:
-      file: /etc/hyperledger/fabric/bundled-tls-ca.pem  # bundled برای TLS trust
+      file: /etc/hyperledger/fabric/bundled-tls-ca.pem
   bccsp:
     default: SW
     sw:
