@@ -1834,7 +1834,7 @@ main() {
   start_network
   #wait_for_orderer
   # upgrade_shared_msp_full_admins
-  create_and_join_channels
+  # create_and_join_channels
   # upgrade_shared_msp_full_admins
   #generate_chaincode_modules
   #package_and_install_chaincode
