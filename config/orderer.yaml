@@ -1,5 +1,4 @@
 General:
-  LedgerType: file
   ListenAddress: 0.0.0.0
   ListenPort: 7050
   TLS:
@@ -13,8 +12,6 @@ General:
   BootstrapFile: /etc/hyperledger/fabric/genesis.block
   LocalMSPDir: /var/hyperledger/orderer/msp
   LocalMSPID: OrdererMSP
-  Profile:
-    Enabled: false
   BCCSP:
     Default: SW
 
@@ -23,10 +20,8 @@ FileLedger:
 
 Operations:
   ListenAddress: 0.0.0.0:8443
+  TLS:
+    Enabled: false
 
 Metrics:
   Provider: disabled
-
-Consensus:
-  WALDir: /var/hyperledger/production/orderer/etcdraft/wal
-  SnapDir: /var/hyperledger/production/orderer/etcdraft/snapshot
