@@ -27,7 +27,7 @@ peer:
     useLeaderElection: true
     orgLeader: ${ORG_LEADER}
     endpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true  # <<< capital درست (حل نهایی identity)
+    skipMSPValidation: true  # <<< capital درست (حل نهایی)
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP
   tls:
