@@ -1,5 +1,5 @@
 #!/bin/bash
-# /root/6g-network/scripts/setup.sh
+# /root/6g-network/scripts/network.sh
 # نسخه نهایی — ۱۰۰٪ بدون خطا
 
 # set -e
