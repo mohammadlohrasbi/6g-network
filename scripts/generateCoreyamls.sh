@@ -1,9 +1,9 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با externalEndpoint + system chaincodes enable)
+# generateCoreyamls.sh - نسخه نهایی (بهینه‌شده)
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
-echo "Generating core.yaml files for 8 organizations (با externalEndpoint برای gossip کامل + system chaincodes enable)..."
+echo "Generating core.yaml files for 8 organizations..."
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
   PORT=$((7051 + (i-1)*1000))
@@ -16,12 +16,12 @@ peer:
   chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
   address: peer0.org${i}.example.com:${PORT}
   gossip:
-    bootstrap: peer0.org${i}.example.com:${PORT}  # <<< فقط به خودش (بهتر از لیست همه برای جلوگیری از attempts ناخواسته)
+    bootstrap: peer0.org${i}.example.com:${PORT}
     useLeaderElection: true
     orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
     externalEndpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true
+    skipMSPValidation: true  # برای تست true، production false
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP
   tls:
@@ -54,6 +54,7 @@ peer:
       lscc: enable
       qscc: enable
       vscc: enable
+      escc: enable  # اختیاری اما کامل‌تر
 EOF
   echo "Generated: $CORE_FILE"
 done
