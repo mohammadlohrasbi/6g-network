@@ -8,10 +8,6 @@ for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
   PORT=$((7051 + (i-1)*1000))
   CHAINCODE_PORT=$((7052 + (i-1)*1000))
-  ORG_LEADER="false"
-  if [ "$i" -eq 1 ]; then
-    ORG_LEADER="true"
-  fi
   cat > "$CORE_FILE" <<EOF
 peer:
   id: peer0.org${i}.example.com
@@ -20,9 +16,9 @@ peer:
   chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
   address: peer0.org${i}.example.com:${PORT}
   gossip:
-    bootstrap: peer0.org1.example.com:7051 peer0.org2.example.com:8051 peer0.org3.example.com:9051 peer0.org4.example.com:10051 peer0.org5.example.com:11051 peer0.org6.example.com:12051 peer0.org7.example.com:13051 peer0.org8.example.com:14051
+    bootstrap: peer0.org${i}.example.com:${PORT}  # <<< فقط به خودش (بهتر از لیست همه برای جلوگیری از attempts ناخواسته)
     useLeaderElection: true
-    orgLeader: ${ORG_LEADER}
+    orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
     externalEndpoint: peer0.org${i}.example.com:${PORT}
     skipMSPValidation: true
