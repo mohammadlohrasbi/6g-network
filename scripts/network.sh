@@ -31,13 +31,6 @@ cleanup() {
   cd "$PROJECT_DIR"
 }
 
-# ------------------- تولید crypto و آرتیفکت‌ها -------------------
-generate_crypto() {
-  log "تولید crypto-config..."
-  cryptogen generate --config="$CONFIG_DIR/cryptogen.yaml" --output="$CRYPTO_DIR" || error "تولید crypto-config شکست خورد"
-  success "Crypto-config با موفقیت تولید شد"
-}
-
 setup_network_with_fabric_ca_tls_nodeous_active() {
   log "راه‌اندازی کامل شبکه — با جداسازی CA + استفاده از ID کانتینر + cacerts برای verify"
 
