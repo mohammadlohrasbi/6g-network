@@ -23,7 +23,6 @@ peer:
     useLeaderElection: true
     orgLeader: false
     endpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true  # <<< MSP validation برای gossip خاموش (TLS فعال امنیت را تأمین می‌کند)
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP  # حرف کوچک o
   tls:
