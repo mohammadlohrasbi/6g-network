@@ -31,7 +31,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
-      - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
     ports:
       - "7050:7050"
@@ -72,7 +72,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org1.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
@@ -111,7 +111,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org2.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
@@ -150,7 +150,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org3.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
@@ -189,7 +189,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org4.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
@@ -228,7 +228,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org5.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
@@ -267,7 +267,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org6.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
@@ -306,7 +306,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org7.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
@@ -345,7 +345,7 @@ services:
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       - ./core-org8.yaml:/etc/hyperledger/fabric/core.yaml:ro
-      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/bundled-msp-ca.pem:ro
+      - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
