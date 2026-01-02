@@ -1010,61 +1010,110 @@ fix_admin_msp_for_all_orgs() {
   fi
 }
 
-generate_bundled_tls_ca() {
-  local bundled_file="$CONFIG_DIR/bundled-tls-ca.pem"
-  echo "در حال ساخت bundled-tls-ca.pem (فقط از tlscacerts — ترکیب تمام TLS root certها)..."
+
+
+generate_bundled_certs() {
+  echo "در حال ساخت bundled certها برای TLS و MSP (برای حل gossip و authentication در multi-org)..."
 
   cd "$PROJECT_DIR"
 
-  : > "$bundled_file"
+  local tls_bundled="$CONFIG_DIR/bundled-tls-ca.pem"
+  local msp_bundled="$CONFIG_DIR/bundled-msp-ca.pem"
 
-  local count=0
+  : > "$tls_bundled"
+  : > "$msp_bundled"
 
-  # Orderer
+  local tls_count=0
+  local msp_count=0
+
+  # --- TLS bundled (برای TLS verify در gossip) ---
+  # Orderer TLS root
   local orderer_tls_root="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem"
   if [ -f "$orderer_tls_root" ]; then
-    cat "$orderer_tls_root" >> "$bundled_file"
-    echo "اضافه شد orderer: $orderer_tls_root"
-    ((count++))
+    cat "$orderer_tls_root" >> "$tls_bundled"
+    echo "TLS - اضافه شد orderer: $orderer_tls_root"
+    ((tls_count++))
   else
-    echo "خطا: فایل orderer یافت نشد: $orderer_tls_root"
+    echo "خطا: فایل TLS root orderer یافت نشد: $orderer_tls_root"
     return 1
   fi
 
-  # Peer orgها (فقط tlscacerts)
+  # Peer orgها TLS root
   for i in {1..8}; do
     local org="org$i"
-    local peer_tls_root_dir="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts"
-    local peer_tls_file=$(ls "$peer_tls_root_dir"/tls-rca-$org-*.pem 2>/dev/null | head -1)
-    if [ -n "$peer_tls_file" ]; then
-      cat "$peer_tls_file" >> "$bundled_file"
-      echo "اضافه شد $org: $peer_tls_file"
-      ((count++))
+    local peer_tls_root="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts/tls-rca-$org-*.pem"
+    if ls $peer_tls_root 1> /dev/null 2>&1; then
+      cat $peer_tls_root >> "$tls_bundled"
+      echo "TLS - اضافه شد $org: $peer_tls_root"
+      ((tls_count++))
     else
-      echo "خطا: فایل TLS root برای $org یافت نشد در $peer_tls_root_dir"
+      echo "خطا: فایل TLS root برای $org یافت نشد: $peer_tls_root"
       return 1
     fi
   done
 
-  local total=$(grep -c "BEGIN CERTIFICATE" "$bundled_file")
-  if [ "$total" -eq 9 ]; then
-    echo "bundled-tls-ca.pem با موفقیت ساخته شد ($total cert — درست!)"
+  # --- MSP bundled (برای MSP identity verify در gossip) ---
+  # Orderer MSP root
+  local orderer_msp_root="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem"
+  if [ -f "$orderer_msp_root" ]; then
+    cat "$orderer_msp_root" >> "$msp_bundled"
+    echo "MSP - اضافه شد orderer: $orderer_msp_root"
+    ((msp_count++))
   else
-    echo "خطا: تعداد certها $total است (باید 9 باشد)"
+    echo "خطا: فایل MSP root orderer یافت نشد: $orderer_msp_root"
     return 1
   fi
 
+  # Peer orgها MSP root
+  for i in {1..8}; do
+    local org="org$i"
+    local peer_msp_root="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/msp/cacerts/rca-$org-*.pem"
+    if ls $peer_msp_root 1> /dev/null 2>&1; then
+      cat $peer_msp_root >> "$msp_bundled"
+      echo "MSP - اضافه شد $org: $peer_msp_root"
+      ((msp_count++))
+    else
+      echo "خطا: فایل MSP root برای $org یافت نشد: $peer_msp_root"
+      return 1
+    fi
+  done
+
+  local tls_total=$(grep -c "BEGIN CERTIFICATE" "$tls_bundled")
+  local msp_total=$(grep -c "BEGIN CERTIFICATE" "$msp_bundled")
+
   echo ""
-  echo "اقدامات بعدی:"
-  echo "1. docker-compose.yml را اصلاح کن (mount به مسیر جدید برای جلوگیری از conflict):"
-  echo "   برای peerها: - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
-  echo "   برای orderer: - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro"
-  echo "2. ROOTCERT_FILE را تغییر بده:"
-  echo "   برای peerها: CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
-  echo "   برای orderer: ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/bundled-tls-ca.pem]"
+  echo "bundled-tls-ca.pem ساخته شد ($tls_total cert) در: $tls_bundled"
+  echo "bundled-msp-ca.pem ساخته شد ($msp_total cert) در: $msp_bundled"
+  echo ""
+
+  if [ "$tls_total" -eq 9 ] && [ "$msp_total" -eq 9 ]; then
+    echo "هر دو bundled با موفقیت ساخته شدند (9 cert هر کدام — کامل!)"
+  else
+    echo "خطا: تعداد certها نادرست است (TLS: $tls_total, MSP: $msp_total — باید 9 باشد)"
+    return 1
+  fi
+
+  echo "اقدامات بعدی در docker-compose.yml:"
+  echo "1. برای همه peerها:"
+  echo "   - mount برای TLS bundled (مسیر جدید):"
+  echo "     - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro"
+  echo "   - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
+  echo "   - mount برای MSP bundled (جایگزین cacerts اصلی):"
+  echo "     - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro"
+  echo ""
+  echo "2. برای orderer:"
+  echo "   - mount برای TLS bundled (مسیر جدید):"
+  echo "     - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro"
+  echo "   - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/bundled-tls-ca.pem]"
+  echo "   - mount برای MSP bundled (جایگزین cacerts اصلی):"
+  echo "     - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro"
+  echo ""
   echo "3. شبکه را ری‌استارت کن: docker-compose down -v && docker-compose up -d"
-  echo "4. چک listen و لاگ — خطای bad certificate ناپدید می‌شود و gossip کار می‌کند!"
+  echo "4. چک کن listen و لاگ — gossip و authentication کار می‌کند!"
 }
+
+# اگر می‌خواهی تابع خودکار اجرا شود، این خط را بدون # بگذار:
+# generate_bundled_certs
 
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
@@ -1131,7 +1180,7 @@ fix_admincerts_on_host() {
 }
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال — بعد از اصلاح clientAuthRequired)"
+  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال — با bundled-tls-ca.pem برای trust همه orgها)"
 
   local channel_count="${#CHANNELS[@]}"
   local created=0
@@ -1140,17 +1189,17 @@ create_and_join_channels() {
   mkdir -p "$CHANNEL_ARTIFACTS"
 
   for ch in "${CHANNELS[@]}"; do
-    log "در حال ایجاد کانال $ch ..."
+    log "در حال ایجاد کانال $ch (TLS فعال با bundled) ..."
 
     docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
 
     if docker exec peer0.org1.example.com \
       bash -c '
-        export CORE_PEER_LOCALMSPID=Org1MSP
+        export CORE_PEER_LOCALMSPID=org1MSP  # حرف کوچک
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
         export CORE_PEER_ADDRESS=127.0.0.1:7051
         export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem  # <<< bundled برای trust همه
         export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
         export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
@@ -1160,19 +1209,19 @@ create_and_join_channels() {
           -f /etc/hyperledger/configtx/'"$ch"'.tx \
           --outputBlock /tmp/'"$ch"'.block \
           --tls \
-          --cafile /var/hyperledger/orderer/tls/tlscacerts/tls-rca-orderer-7054.pem
+          --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem  # <<< bundled برای orderer TLS root
       '; then
 
       success "کانال $ch ساخته شد"
 
       docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
 
-      log "join همه peerها به $ch (TLS فعال، IPv4 اجباری)..."
+      log "join همه peerها به $ch (TLS فعال با bundled و hostname برای verify)..."
 
       for i in {1..8}; do
         ORG=org$i
         PEER=peer0.$ORG.example.com
-        MSPID=${ORG}MSP
+        MSPID=org${i}MSP  # حرف کوچک
         PORT=$((7051 + (i-1)*1000))
 
         docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
@@ -1181,13 +1230,13 @@ create_and_join_channels() {
           bash -c "
             export CORE_PEER_LOCALMSPID=$MSPID
             export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-            export CORE_PEER_ADDRESS=127.0.0.1:$PORT
+            export CORE_PEER_ADDRESS=peer0.$ORG.example.com:$PORT  # <<< hostname برای TLS verify
             export CORE_PEER_TLS_ENABLED=true
-            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+            export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem  # <<< bundled برای trust همه
             export CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
             export CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
 
-            peer channel join -b /tmp/${ch}.block || echo 'join قبلاً انجام شده'
+            peer channel join -b /tmp/${ch}.block && echo 'join موفق' || echo 'join قبلاً انجام شده'
           " && success "peer0.$ORG به $ch join شد" || log "join قبلاً انجام شده"
 
       done
@@ -1781,7 +1830,7 @@ main() {
   # prepare_orderer_msp_full_cacerts
   # prepare_bundled_tls_ca
   # fix_admin_msp_for_all_orgs
-  generate_bundled_tls_ca
+  generate_bundled_certs
   start_network
   #wait_for_orderer
   # upgrade_shared_msp_full_admins
