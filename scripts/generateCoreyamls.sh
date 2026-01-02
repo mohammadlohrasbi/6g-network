@@ -1,11 +1,11 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (حل کامل با skipMSPValidation capital)
+# generateCoreyamls.sh - نسخه نهایی (با externalEndpoint برای حل discovery و listen)
 
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
 
-echo "Generating core.yaml files for 8 organizations (با skipMSPValidation capital و bootstrap کامل)..."
+echo "Generating core.yaml files for 8 organizations (با externalEndpoint برای gossip کامل)..."
 
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
@@ -27,7 +27,8 @@ peer:
     useLeaderElection: true
     orgLeader: ${ORG_LEADER}
     endpoint: peer0.org${i}.example.com:${PORT}
-    skipMSPValidation: true  # <<< capital درست (حل نهایی identity)
+    externalEndpoint: peer0.org${i}.example.com:${PORT}  # <<< حل discovery و membership
+    skipMSPValidation: true
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP
   tls:
