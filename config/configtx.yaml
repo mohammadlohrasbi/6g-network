@@ -184,11 +184,11 @@ Organizations:
         
 Capabilities:
   Channel: &ChannelCapabilities
-    V2_5: true  # تغییر به V2_5 برای v2.5 (حذف کامل legacy lifecycle)
+    V2_0: true
   Orderer: &OrdererCapabilities
-    V2_5: true
+    V2_0: true
   Application: &ApplicationCapabilities
-    V2_5: true
+    V2_0: true
 
 Application: &ApplicationDefaults
   Organizations:
