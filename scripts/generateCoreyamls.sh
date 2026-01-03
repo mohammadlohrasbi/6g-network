@@ -1,9 +1,9 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با legacy + new lifecycle برای v2.5)
+# generateCoreyamls.sh - نسخه نهایی (بدون externalBuilders برای v2.5)
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
-echo "Generating core.yaml files with legacy system chaincodes enabled (برای حل error cscc در join)..."
+echo "Generating core.yaml files without externalBuilders (برای حل conflict cscc در v2.5)..."
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
   PORT=$((7051 + (i-1)*1000))
@@ -43,18 +43,8 @@ peer:
     state:
       stateDatabase: goleveldb
   chaincode:
-    externalBuilders:
-      - name: simple
-        path: /opt/hlf/builder
-        propagateEnvironment:
-          - CHAINCODE_SERVER_ADDRESS
     system:
       _lifecycle: enable
-      cscc: enable
-      lscc: enable
-      qscc: enable
-      vscc: enable
-      escc: enable
 EOF
   echo "Generated: $CORE_FILE"
 done
