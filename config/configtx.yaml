@@ -181,14 +181,14 @@ Organizations:
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
-
+        
 Capabilities:
   Channel: &ChannelCapabilities
-    V2_0: true
+    V2_5: true  # تغییر به V2_5 برای v2.5 (حذف کامل legacy lifecycle)
   Orderer: &OrdererCapabilities
-    V2_0: true
+    V2_5: true
   Application: &ApplicationCapabilities
-    V2_0: true
+    V2_5: true
 
 Application: &ApplicationDefaults
   Organizations:
