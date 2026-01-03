@@ -1,9 +1,9 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (بهینه‌شده برای v2.5)
+# generateCoreyamls.sh - نسخه نهایی (با legacy + new lifecycle برای v2.5)
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
-echo "Generating core.yaml files for 8 organizations (با _lifecycle enable برای v2.5)..."
+echo "Generating core.yaml files with legacy system chaincodes enabled (برای حل error cscc در join)..."
 for i in {1..8}; do
   CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
   PORT=$((7051 + (i-1)*1000))
@@ -49,7 +49,12 @@ peer:
         propagateEnvironment:
           - CHAINCODE_SERVER_ADDRESS
     system:
-      _lifecycle: enable  # فقط این کافیه برای v2.5
+      _lifecycle: enable
+      cscc: enable
+      lscc: enable
+      qscc: enable
+      vscc: enable
+      escc: enable
 EOF
   echo "Generated: $CORE_FILE"
 done
