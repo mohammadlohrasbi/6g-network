@@ -27,7 +27,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -48,7 +48,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -69,7 +69,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -90,7 +90,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -111,7 +111,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -132,7 +132,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -153,7 +153,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -174,7 +174,7 @@ Organizations:
         Rule: "ANY Writers"
       Admins:
         Type: ImplicitMeta
-        Rule: "ANY Admins"                # تغییر داده شد
+        Rule: "ANY Admins"
       Endorsement:
         Type: ImplicitMeta
         Rule: "ANY Endorsement"
@@ -204,10 +204,10 @@ Application: &ApplicationDefaults
       Rule: "ANY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
-      Rule: "ANY Endorsement"
+      Rule: "MAJORITY Endorsement"  # تغییر به MAJORITY برای فعال کردن کامل new lifecycle
     Endorsement:
       Type: ImplicitMeta
-      Rule: "ANY Endorsement"
+      Rule: "MAJORITY Endorsement"  # تغییر به MAJORITY برای فعال کردن کامل new lifecycle
   Capabilities:
     <<: *ApplicationCapabilities
 
