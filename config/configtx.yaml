@@ -28,9 +28,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org1.example.com
         Port: 7051
@@ -49,9 +46,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org2.example.com
         Port: 8051
@@ -70,9 +64,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org3.example.com
         Port: 9051
@@ -91,9 +82,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org4.example.com
         Port: 10051
@@ -112,9 +100,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org5.example.com
         Port: 11051
@@ -133,9 +118,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org6.example.com
         Port: 12051
@@ -154,9 +136,6 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org7.example.com
         Port: 13051
@@ -175,13 +154,10 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
-      Endorsement:
-        Type: ImplicitMeta
-        Rule: "ANY Endorsement"
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
-        
+
 Capabilities:
   Channel: &ChannelCapabilities
     V2_0: true
@@ -204,10 +180,10 @@ Application: &ApplicationDefaults
       Rule: "ANY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"  # تغییر به MAJORITY برای فعال کردن کامل new lifecycle
+      Rule: "MAJORITY Endorsement"
     Endorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"  # تغییر به MAJORITY برای فعال کردن کامل new lifecycle
+      Rule: "MAJORITY Endorsement"
   Capabilities:
     <<: *ApplicationCapabilities
 
