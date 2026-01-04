@@ -592,76 +592,82 @@ for i in {1..8}; do
   echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
 done
 
+#!/bin/bash
+# اسکریپت تولید genesis.block و channel artifacts - نسخه اصلاح‌شده و ایمن‌تر
 log "تولید دوباره genesis.block و channel artifacts"
 
+# تنظیم مسیر configtx.yaml
 export FABRIC_CFG_PATH="$PROJECT_DIR"
-
 echo "FABRIC_CFG_PATH تنظیم شد روی: $FABRIC_CFG_PATH"
-echo "محتویات دایرکتوری:"
-ls -la "$FABRIC_CFG_PATH"/configtx.yaml || echo "configtx.yaml پیدا نشد!"
+
+# چک وجود configtx.yaml
+if [ ! -f "$FABRIC_CFG_PATH/configtx.yaml" ]; then
+  echo "خطا: configtx.yaml در مسیر $FABRIC_CFG_PATH پیدا نشد!"
+  echo "محتویات دایرکتوری:"
+  ls -la "$FABRIC_CFG_PATH"
+  exit 1
+fi
+
+echo "configtx.yaml پیدا شد — ادامه تولید artifacts..."
 
 # ۱. genesis.block
+echo "در حال تولید genesis.block..."
 configtxgen -profile OrdererGenesis \
             -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
             -channelID system-channel
 
 if [ $? -ne 0 ]; then
-  echo "خطا در تولید genesis.block — پروفایل OrdererGenesis وجود ندارد؟"
+  echo "خطا در تولید genesis.block — پروفایل OrdererGenesis وجود ندارد یا configtx.yaml مشکل دارد؟"
   exit 1
 fi
 echo "genesis.block با موفقیت ساخته شد"
 
 # ۲. channel creation tx
 for ch in networkchannel resourcechannel; do
+  echo "در حال تولید ${ch}.tx..."
   configtxgen -profile ApplicationChannel \
               -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" \
               -channelID "$ch"
 
   if [ $? -ne 0 ]; then
-    echo "خطا در تولید ${ch}.tx"
+    echo "خطا در تولید ${ch}.tx — چک کنید پروفایل ApplicationChannel یا channelID درست باشد"
     exit 1
   fi
-  echo "${ch}.tx ساخته شد"
+  echo "${ch}.tx با موفقیت ساخته شد"
 done
 
-# ۳. anchor peers update
+# ۳. anchor peers update tx
 for ch in networkchannel resourcechannel; do
   for i in {1..8}; do
+    echo "در حال تولید anchor update برای Org${i} در $ch..."
     configtxgen -profile ApplicationChannel \
                 -outputAnchorPeersUpdate "$CHANNEL_ARTIFACTS/${ch}_Org${i}_anchors.tx" \
                 -channelID "$ch" \
                 -asOrg Org${i}MSP
 
     if [ $? -ne 0 ]; then
-      echo "خطا در anchor update برای Org${i} در $ch"
+      echo "خطا در تولید anchor update برای Org${i}MSP در $ch"
       exit 1
     fi
-    echo "Anchor update برای Org${i}MSP در $ch ساخته شد"
+    echo "Anchor update برای Org${i}MSP در $ch با موفقیت ساخته شد"
   done
 done
 
-# <<< اصلاح انتها — ایمن و بدون خطا >>>
+# چک نهایی
 echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
 echo "لیست فایل‌های ساخته‌شده در $CHANNEL_ARTIFACTS:"
-ls -l "$CHANNEL_ARTIFACTS"/*.block 2>/dev/null || true
-ls -l "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null || true
+ls -l "$CHANNEL_ARTIFACTS"/*.block 2>/dev/null || echo "هیچ .block یافت نشد"
+ls -l "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null || echo "هیچ .tx یافت نشد"
 
-if [ $(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null | wc -l) -eq 0 ]; then
-  echo "هشدار: هیچ فایلی یافت نشد — ممکن است مسیر اشتباه باشد"
+FILE_COUNT=$(ls -1 "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null | wc -l)
+if [ "$FILE_COUNT" -eq 0 ]; then
+  echo "هشدار: هیچ فایلی ساخته نشد — مسیر $CHANNEL_ARTIFACTS یا configtx.yaml را چک کنید"
+  exit 1
+else
+  echo "تعداد فایل‌های ساخته‌شده: $FILE_COUNT — همه چیز OK!"
 fi
 
-  success "شبکه با Fabric CA، TLS فعال و NodeOUs فعال با موفقیت راه‌اندازی شد!"
-
-
-log "ساخت MSP اصلی سازمان‌ها (کپی cacerts و admincerts — روش استاندارد Fabric)"
-
-  cd "$CRYPTO_DIR"
-  tree
-  cd "$PROJECT_DIR"
-
-echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — genesis.block معتبر می‌شود!"
-
-echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
+echo "تولید artifacts کامل شد — حالا شبکه را restart کنید و channelها را ایجاد/join کنید!"
 }
 
 generate_coreyamls() {
