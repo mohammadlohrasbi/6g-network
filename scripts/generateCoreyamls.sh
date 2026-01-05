@@ -1,11 +1,11 @@
 #!/bin/bash
-# generateCoreyamls.sh - نسخه نهایی (با legacy system chaincodes برای v2.5)
+# generateCoreyamls.sh - نسخه نهایی (بدون بخش chaincode برای v2.5 استاندارد)
 ROOT_DIR="/root/6g-network"
 CONFIG_DIR="$ROOT_DIR/config"
 mkdir -p "$CONFIG_DIR"
-echo "Generating core.yaml files with legacy system chaincodes enabled (برای حل error cscc در join v2.5)..."
+echo "Generating core.yaml files without chaincode section..."
 for i in {1..8}; do
-  CORE_FILE="$CONFIG_DIR/core-org${i}.yaml"
+  CORE_FILE="$$ CONFIG_DIR/core-org $${i}.yaml"
   PORT=$((7051 + (i-1)*1000))
   CHAINCODE_PORT=$((7052 + (i-1)*1000))
   cat > "$CORE_FILE" <<EOF
@@ -14,13 +14,13 @@ peer:
   networkId: 6g-network
   listenAddress: 0.0.0.0:${PORT}
   chaincodeListenAddress: 0.0.0.0:${CHAINCODE_PORT}
-  address: peer0.org${i}.example.com:${PORT}
+  address: peer0.org$$ {i}.example.com: $${PORT}
   gossip:
-    bootstrap: peer0.org${i}.example.com:${PORT}
+    bootstrap: peer0.org$$ {i}.example.com: $${PORT}
     useLeaderElection: true
     orgLeader: false
-    endpoint: peer0.org${i}.example.com:${PORT}
-    externalEndpoint: peer0.org${i}.example.com:${PORT}
+    endpoint: peer0.org$$ {i}.example.com: $${PORT}
+    externalEndpoint: peer0.org$$ {i}.example.com: $${PORT}
     skipMSPValidation: true
   mspConfigPath: /etc/hyperledger/fabric/msp
   localMspId: org${i}MSP
@@ -42,14 +42,6 @@ peer:
   ledger:
     state:
       stateDatabase: goleveldb
-  chaincode:
-    system:
-      _lifecycle: enable
-      cscc: enable
-      lscc: enable
-      qscc: enable
-      vscc: enable
-      escc: enable
 EOF
   echo "Generated: $CORE_FILE"
 done
