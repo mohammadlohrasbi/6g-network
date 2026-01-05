@@ -773,6 +773,7 @@ start_network() {
 
   docker pull hyperledger/fabric-peer:2.5
   docker pull hyperledger/fabric-orderer:2.5
+  docker pull hyperledger/fabric-ca:1.5
 
   # ۳. بالا آوردن CAها
   # docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
