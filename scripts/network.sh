@@ -844,7 +844,7 @@ create_and_join_channels() {
         # join
         docker exec $PEER bash -c "
           export CORE_PEER_LOCALMSPID=${MSPID}
-          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
           export CORE_PEER_ADDRESS=peer0.${ORG}.example.com:${PORT}
           export CORE_PEER_TLS_ENABLED=true
           export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
