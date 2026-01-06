@@ -847,7 +847,7 @@ create_and_join_channels() {
         docker exec $PEER \
           bash -c "
             export CORE_PEER_LOCALMSPID=$MSPID
-            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+            export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
             export CORE_PEER_ADDRESS=peer0.$ORG.example.com:$PORT  # <<< hostname برای TLS verify
             export CORE_PEER_TLS_ENABLED=true
             export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem  # <<< bundled برای trust همه
@@ -885,7 +885,7 @@ main() {
   setup_network_with_fabric_ca_tls_nodeous_active
   generate_bundled_certs
   start_network
-  # create_and_join_channels
+  create_and_join_channels
 }
 
 main
