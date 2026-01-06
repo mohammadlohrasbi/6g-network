@@ -968,25 +968,25 @@ package_and_install_chaincode() {
     cat > "$pkg/metadata.json" <<EOF
 {"type":"golang","label":"${name}_1.0"}
 EOF
+
     cat > "$pkg/connection.json" <<EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
     log "چک: metadata.json و connection.json ساخته شدند — OK"
 
-    log "در حال بسته‌بندی $name (با MSP استاندارد org1)..."
+    log "در حال بسته‌بندی $name (با MSP org1MSP)..."
     PACKAGE_OUTPUT=$(docker run --rm \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/admin-msp \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
       -v /tmp:/tmp \
-      -e CORE_PEER_LOCALMSPID=Org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
       -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0 2>&1)
 
     PACKAGE_EXIT_CODE=$?
-
     if [ $PACKAGE_EXIT_CODE -eq 0 ]; then
       log "چک: بسته‌بندی $name موفق — OK"
       log "خروجی بسته‌بندی: $PACKAGE_OUTPUT"
@@ -1010,10 +1010,12 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..2}; do
-      PEER="peer0.org${i}.example.com"
-      log "در حال کپی فایل $tar به داخل $PEER:/tmp/ ..."
+    for i in {1..8}; do  # نصب روی همه ۸ org
+      PEER=peer0.org${i}.example.com
+      MSPID=org${i}MSP
+      PORT=$((7051 + (i-1)*1000))
 
+      log "در حال کپی فایل $tar به داخل $PEER:/tmp/ ..."
       if docker cp "$tar" "${PEER}:/tmp/"; then
         log "چک: فایل $tar با موفقیت به داخل $PEER کپی شد — OK"
       else
@@ -1023,11 +1025,10 @@ EOF
       fi
 
       log "در حال نصب $name روی $PEER ..."
-      if docker exec -e CORE_PEER_LOCALMSPID=Org${i}MSP \
-                  -e CORE_PEER_ADDRESS=${PEER}:7051 \
-                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      if docker exec -e CORE_PEER_LOCALMSPID=$MSPID \
+                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+                  -e CORE_PEER_ADDRESS=$PEER:$PORT \
                   -e CORE_CHAINCODE_EXECUTETIMEOUT=300s \
-                  -e CORE_PEER_GRPCOPTIONS="keepalive_time=60s,keepalive_timeout=20s,keepalive_permit_without_calls=true" \
                   "$PEER" \
                   peer lifecycle chaincode install /tmp/${name}.tar.gz; then
         log "چک: نصب روی Org${i} موفق — OK"
