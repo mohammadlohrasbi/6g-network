@@ -1026,7 +1026,7 @@ EOF
 
       log "در حال نصب $name روی $PEER ..."
       if docker exec -e CORE_PEER_LOCALMSPID=$MSPID \
-                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+                  -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
                   -e CORE_PEER_ADDRESS=$PEER:$PORT \
                   -e CORE_CHAINCODE_EXECUTETIMEOUT=300s \
                   "$PEER" \
