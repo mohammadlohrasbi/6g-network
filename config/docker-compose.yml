@@ -37,6 +37,7 @@ services:
       - "7050:7050"
     networks:
       - 6g-network
+    network_mode: "host"
     # restart: unless-stopped
 
   # =====================================
@@ -79,6 +80,7 @@ services:
       - "7051:7051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org2.example.com:
@@ -118,6 +120,7 @@ services:
       - "8051:8051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org3.example.com:
@@ -157,6 +160,7 @@ services:
       - "9051:9051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org4.example.com:
@@ -196,6 +200,7 @@ services:
       - "10051:10051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org5.example.com:
@@ -235,6 +240,7 @@ services:
       - "11051:11051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org6.example.com:
@@ -274,6 +280,7 @@ services:
       - "12051:12051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org7.example.com:
@@ -313,6 +320,7 @@ services:
       - "13051:13051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
   peer0.org8.example.com:
@@ -352,6 +360,7 @@ services:
       - "14051:14051"
     networks:
       - 6g-network
+    network_mode: "host"
     restart: unless-stopped
 
 # volumes برای ledger هر peer
