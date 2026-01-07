@@ -932,6 +932,11 @@ package_and_install_chaincode() {
     return 0
   fi
 
+  # پیش pull imageهای لازم برای chaincode build (برای جلوگیری از timeout داخل peer)
+  log "پیش pull imageهای لازم برای chaincode build..."
+  docker pull hyperledger/fabric-ccenv:2.5 || log "هشدار: pull fabric-ccenv:2.5 شکست خورد — چک کنید اینترنت یا registry"
+  docker pull hyperledger/fabric-baseos:2.5 || log "هشدار: pull fabric-baseos:2.5 شکست خورد — چک کنید اینترنت یا registry"
+
   # پاک‌سازی کامل /tmp از فایل‌های قدیمی
   rm -f /tmp/*.tar.gz
   rm -rf /tmp/pkg_*
@@ -1010,7 +1015,8 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..2}; do  # نصب روی همه ۸ org
+    # نصب روی همه ۸ org
+    for i in {1..2}; do
       PEER=peer0.org${i}.example.com
       MSPID=org${i}MSP
       PORT=$((7051 + (i-1)*1000))
