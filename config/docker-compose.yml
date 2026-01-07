@@ -35,9 +35,11 @@ services:
       - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
     ports:
       - "7050:7050"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     # restart: unless-stopped
 
   # =====================================
@@ -78,9 +80,11 @@ services:
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
       - "7051:7051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org2.example.com:
@@ -118,9 +122,11 @@ services:
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
       - "8051:8051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org3.example.com:
@@ -158,9 +164,11 @@ services:
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
       - "9051:9051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org4.example.com:
@@ -198,9 +206,11 @@ services:
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
       - "10051:10051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org5.example.com:
@@ -238,9 +248,11 @@ services:
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
       - "11051:11051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org6.example.com:
@@ -278,9 +290,11 @@ services:
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
       - "12051:12051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org7.example.com:
@@ -318,9 +332,11 @@ services:
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
       - "13051:13051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
   peer0.org8.example.com:
@@ -358,9 +374,11 @@ services:
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
       - "14051:14051"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - 6g-network
-    network_mode: "host"
     restart: unless-stopped
 
 # volumes برای ledger هر peer
