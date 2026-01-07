@@ -1010,7 +1010,7 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..8}; do  # نصب روی همه ۸ org
+    for i in {1..2}; do  # نصب روی همه ۸ org
       PEER=peer0.org${i}.example.com
       MSPID=org${i}MSP
       PORT=$((7051 + (i-1)*1000))
