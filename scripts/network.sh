@@ -861,16 +861,6 @@ create_and_join_channels() {
 
   success "تمام کانال‌ها ساخته و همه peerها join شدند!"
 
-  log "چک نهایی join:"
-  for ch in networkchannel resourcechannel; do
-    echo "کانال $ch:"
-    for i in {1..8}; do
-      echo "peer0.org${i}.example.com:"
-      docker exec peer0.org${i}.example.com peer channel list | grep "$ch" || echo "join نشده"
-    done
-    echo "--------------------------------------------------"
-  done
-
   success "تابع create_and_join_channels کامل شد!"
 }
 
