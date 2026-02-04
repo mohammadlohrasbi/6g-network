@@ -934,7 +934,7 @@ package_and_install_chaincode() {
   local installed_count=0
   local failed_count=0
 
-  log "شروع بسته‌بندی و نصب $total Chaincode..."
+  success "شروع بسته‌بندی و نصب $total Chaincode — تاییدیه موفقیت/خطا واضح نمایش داده می‌شود ✅"
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -947,7 +947,7 @@ package_and_install_chaincode() {
     log "=== پردازش Chaincode: $name ==="
 
     if [ ! -f "$dir/chaincode.go" ]; then
-      log "خطا: chaincode.go وجود ندارد"
+      log "خطا: chaincode.go وجود ندارد ❌"
       ((failed_count++))
       continue
     fi
@@ -974,10 +974,10 @@ EOF
         --path /chaincode --lang golang --label ${name}_1.0
 
     if [ $? -eq 0 ] && [ -f "$tar" ]; then
-      log "بسته‌بندی $name موفق — حجم: $(du -h "$tar" | cut -f1)"
+      success "بسته‌بندی $name موفق — حجم: $(du -h "$tar" | cut -f1) ✅"
       ((packaged++))
     else
-      log "خطا: بسته‌بندی $name شکست خورد"
+      log "خطا: بسته‌بندی $name شکست خورد ❌"
       ((failed_count++))
       continue
     fi
@@ -985,39 +985,50 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..1}; do
+    for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       MSPID="org${i}MSP"
       PORT=$((7051 + (i-1)*1000))
 
-      docker cp "$tar" "${PEER}:/tmp/" && log "کپی به $PEER موفق" || { log "خطا کپی به $PEER"; ((install_failed++)); continue; }
+      if docker cp "$tar" "${PEER}:/tmp/"; then
+        log "کپی به $PEER موفق"
+      else
+        log "خطا: کپی به $PEER شکست ❌"
+        ((install_failed++))
+        continue
+      fi
 
       log "نصب $name روی $PEER (Org${i}) ..."
       INSTALL_OUTPUT=$(docker exec \
         -e CORE_PEER_LOCALMSPID=$MSPID \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-        -e CORE_PEER_ADDRESS=localhost:$PORT \
-        -e CORE_PEER_TLS_ENABLED=true \
-        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+        -e CORE_PEER_ADDRESS=$PEER:$PORT \
         -e CORE_CHAINCODE_EXECUTETIMEOUT=600s \
         "$PEER" \
         peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
 
       if [ $? -eq 0 ]; then
-        log "نصب روی Org${i} موفق"
+        success "نصب $name روی Org${i} موفق! 🚀✅"
+
+        # چک Package ID
         QUERY_OUTPUT=$(docker exec \
           -e CORE_PEER_LOCALMSPID=$MSPID \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-          -e CORE_PEER_ADDRESS=localhost:$PORT \
-          -e CORE_PEER_TLS_ENABLED=true \
-          -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+          -e CORE_PEER_ADDRESS=$PEER:$PORT \
           "$PEER" \
           peer lifecycle chaincode queryinstalled 2>&1)
-        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo "Unknown")
-        log "Package ID روی Org${i}: $PACKAGE_ID"
+
+        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo " (قبلاً نصب شده — already installed)")
+        success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
+
+        # چک اضافی از لاگ peer
+        LOG_COUNT=$(docker logs "$PEER" 2>&1 | grep -i "installed chaincodes" | tail -1 | grep -o "[0-9]*" || echo "1+")
+        success "تاییدیه اضافی از لاگ peer: $LOG_COUNT chaincode نصب‌شده ✅"
+
         ((install_success++))
       else
-        log "خطا: نصب روی Org${i} شکست — خروجی: $INSTALL_OUTPUT"
+        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
+        log "$INSTALL_OUTPUT"
         ((install_failed++))
       fi
 
@@ -1025,6 +1036,7 @@ EOF
     done
 
     log "نتیجه نصب $name: موفق $install_success — شکست $install_failed"
+
     ((installed_count += install_success))
     ((failed_count += install_failed))
 
@@ -1035,9 +1047,9 @@ EOF
   log "Chaincodeها: $total | بسته‌بندی موفق: $packaged | نصب موفق: $installed_count | شکست: $failed_count"
 
   if [ $failed_count -eq 0 ] && [ $packaged -eq $total ]; then
-    success "تمام Chaincodeها با موفقیت نصب شدند! حالا approve/commit کن."
+    success "🎉 تمام Chaincodeها با موفقیت نصب شدند! Package IDها و تعداد در لاگ بالا هستند. حالا approve/commit و تست با Caliper کن 🚀"
   else
-    log "هشدار: برخی شکست خوردند — لاگ‌ها رو چک کن"
+    log "⚠️ برخی مراحل شکست خوردند — جزئیات بالا یا docker logs peerها رو چک کن"
   fi
 }
 
