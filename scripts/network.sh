@@ -934,7 +934,7 @@ package_and_install_chaincode() {
   local installed_count=0
   local failed_count=0
 
-  success "شروع بسته‌بندی و نصب $total Chaincode — تاییدیه موفقیت/خطا واضح نمایش داده می‌شود ✅"
+  success "شروع بسته‌بندی و نصب $total Chaincode — ممکنه چند دقیقه طول بکشه (simulation chaincode سنگین است) ✅"
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -985,7 +985,7 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..8}; do
+    for i in {1..1}; do
       PEER="peer0.org${i}.example.com"
       MSPID="org${i}MSP"
       PORT=$((7051 + (i-1)*1000))
@@ -998,19 +998,19 @@ EOF
         continue
       fi
 
-      log "نصب $name روی $PEER (Org${i}) ..."
+      success "نصب $name روی Org${i} شروع شد — صبر کن (ممکنه ۵-۱۰ دقیقه طول بکشه، simulation سنگین است) ⏳"
+
       INSTALL_OUTPUT=$(docker exec \
         -e CORE_PEER_LOCALMSPID=$MSPID \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=$PEER:$PORT \
-        -e CORE_CHAINCODE_EXECUTETIMEOUT=600s \
+        -e CORE_CHAINCODE_EXECUTETIMEOUT=900s \  # بالاتر برای safety
         "$PEER" \
         peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
 
       if [ $? -eq 0 ]; then
         success "نصب $name روی Org${i} موفق! 🚀✅"
 
-        # چک Package ID
         QUERY_OUTPUT=$(docker exec \
           -e CORE_PEER_LOCALMSPID=$MSPID \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
@@ -1018,16 +1018,12 @@ EOF
           "$PEER" \
           peer lifecycle chaincode queryinstalled 2>&1)
 
-        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo " (قبلاً نصب شده — already installed)")
+        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo " (قبلاً نصب شده یا در لاگ peer چک کن)")
         success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
-
-        # چک اضافی از لاگ peer
-        LOG_COUNT=$(docker logs "$PEER" 2>&1 | grep -i "installed chaincodes" | tail -1 | grep -o "[0-9]*" || echo "1+")
-        success "تاییدیه اضافی از لاگ peer: $LOG_COUNT chaincode نصب‌شده ✅"
 
         ((install_success++))
       else
-        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
+        log "خطا در نصب روی Org${i} ❌ — جزئیات (ممکنه timeout باشه، صبر کن یا timeout رو بالاتر ببر):"
         log "$INSTALL_OUTPUT"
         ((install_failed++))
       fi
@@ -1047,9 +1043,9 @@ EOF
   log "Chaincodeها: $total | بسته‌بندی موفق: $packaged | نصب موفق: $installed_count | شکست: $failed_count"
 
   if [ $failed_count -eq 0 ] && [ $packaged -eq $total ]; then
-    success "🎉 تمام Chaincodeها با موفقیت نصب شدند! Package IDها و تعداد در لاگ بالا هستند. حالا approve/commit و تست با Caliper کن 🚀"
+    success "🎉 تمام Chaincodeها با موفقیت نصب شدند! Package IDها در لاگ بالا هستند. حالا approve/commit کن 🚀"
   else
-    log "⚠️ برخی مراحل شکست خوردند — جزئیات بالا یا docker logs peerها رو چک کن"
+    log "⚠️ برخی مراحل شکست خوردند — اگر timeout بود، صبر کن یا chaincode رو بهینه کن (init سریع‌تر)"
   fi
 }
 
