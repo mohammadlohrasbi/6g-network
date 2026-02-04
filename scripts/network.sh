@@ -963,15 +963,7 @@ EOF
 EOF
 
     log "بسته‌بندی $name ..."
-    docker run --rm \
-      -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
-      -v /tmp:/tmp \
-      -e CORE_PEER_LOCALMSPID=org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
-      hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0
+    docker run --rm -v "$pkg":/chaincode -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp -v /tmp:/tmp -e CORE_PEER_LOCALMSPID=org1MSP -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp hyperledger/fabric-tools:2.5 peer lifecycle chaincode package /tmp/${name}.tar.gz --path /chaincode --lang golang --label ${name}_1.0
 
     if [ $? -eq 0 ] && [ -f "$tar" ]; then
       success "بسته‌بندی $name موفق — حجم: $(du -h "$tar" | cut -f1) ✅"
@@ -985,7 +977,7 @@ EOF
     local install_success=0
     local install_failed=0
 
-    for i in {1..1}; do
+    for i in {1..8}; do
       PEER="peer0.org${i}.example.com"
       MSPID="org${i}MSP"
       PORT=$((7051 + (i-1)*1000))
@@ -998,32 +990,21 @@ EOF
         continue
       fi
 
-      success "نصب $name روی Org${i} شروع شد — صبر کن (ممکنه ۵-۱۰ دقیقه طول بکشه، simulation سنگین است) ⏳"
+      success "نصب $name روی Org${i} شروع شد — صبر کن (۵-۱۰ دقیقه ممکنه طول بکشه) ⏳"
 
-      INSTALL_OUTPUT=$(docker exec \
-        -e CORE_PEER_LOCALMSPID=$MSPID \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-        -e CORE_PEER_ADDRESS=$PEER:$PORT \
-        -e CORE_CHAINCODE_EXECUTETIMEOUT=900s \  # بالاتر برای safety
-        "$PEER" \
-        peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+      INSTALL_OUTPUT=$(docker exec -e CORE_PEER_LOCALMSPID=$MSPID -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp -e CORE_PEER_ADDRESS=$PEER:$PORT -e CORE_CHAINCODE_EXECUTETIMEOUT=900s "$PEER" peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
 
       if [ $? -eq 0 ]; then
         success "نصب $name روی Org${i} موفق! 🚀✅"
 
-        QUERY_OUTPUT=$(docker exec \
-          -e CORE_PEER_LOCALMSPID=$MSPID \
-          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-          -e CORE_PEER_ADDRESS=$PEER:$PORT \
-          "$PEER" \
-          peer lifecycle chaincode queryinstalled 2>&1)
+        QUERY_OUTPUT=$(docker exec -e CORE_PEER_LOCALMSPID=$MSPID -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp -e CORE_PEER_ADDRESS=$PEER:$PORT "$PEER" peer lifecycle chaincode queryinstalled 2>&1)
 
         PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo " (قبلاً نصب شده یا در لاگ peer چک کن)")
         success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
 
         ((install_success++))
       else
-        log "خطا در نصب روی Org${i} ❌ — جزئیات (ممکنه timeout باشه، صبر کن یا timeout رو بالاتر ببر):"
+        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
         log "$INSTALL_OUTPUT"
         ((install_failed++))
       fi
@@ -1045,7 +1026,7 @@ EOF
   if [ $failed_count -eq 0 ] && [ $packaged -eq $total ]; then
     success "🎉 تمام Chaincodeها با موفقیت نصب شدند! Package IDها در لاگ بالا هستند. حالا approve/commit کن 🚀"
   else
-    log "⚠️ برخی مراحل شکست خوردند — اگر timeout بود، صبر کن یا chaincode رو بهینه کن (init سریع‌تر)"
+    log "⚠️ برخی مراحل شکست خوردند — اگر timeout بود، صبر کن یا chaincode init رو ساده‌تر کن"
   fi
 }
 
