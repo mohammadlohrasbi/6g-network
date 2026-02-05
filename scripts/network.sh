@@ -922,7 +922,7 @@ package_and_install_chaincode() {
     return 0
   fi
 
-  success "شروع بسته‌بندی و نصب — دقیقاً مثل تست دستی موفق (برای اولین Org صبر کن, ممکنه چند دقیقه طول بکشه) ⏳"
+  success "شروع بسته‌بندی و نصب — مثل تست دستی موفق (سریع) ✅"
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
 
@@ -932,7 +932,6 @@ package_and_install_chaincode() {
 
     log "=== پردازش Chaincode: $name ==="
 
-    # بسته‌بندی مثل دستی
     pkg="/tmp/pkg_$name"
     tar="/tmp/${name}.tar.gz"
     rm -rf "$pkg" "$tar"
@@ -947,7 +946,7 @@ EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    docker run --rm --memory=4g \
+    docker run --rm --memory=8g \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
       -v /tmp:/tmp \
@@ -971,32 +970,30 @@ EOF
 
       docker cp "$tar" "${PEER}:/tmp/" || log "کپی شکست ❌"
 
-      if [ $i -eq 1 ]; then
-        success "نصب روی Org1 شروع شد — صبر کن (چند دقیقه ممکنه) ⏳"
-      fi
+      log "نصب $name روی Org${i}..."
 
-      # دقیقاً مثل دستی (hostname کامل + admin-msp, بدون چیز اضافی)
-      docker exec \
+      INSTALL_OUTPUT=$(docker exec \
         -e CORE_PEER_LOCALMSPID=$MSPID \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=$PEER:$PORT \
         "$PEER" \
-        peer lifecycle chaincode install /tmp/${name}.tar.gz
+        peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
 
       if [ $? -eq 0 ]; then
-        success "نصب روی Org${i} موفق! ✅"
+        success "نصب $name روی Org${i} موفق! ✅"
 
         QUERY_OUTPUT=$(docker exec \
           -e CORE_PEER_LOCALMSPID=$MSPID \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
           -e CORE_PEER_ADDRESS=$PEER:$PORT \
           "$PEER" \
-          peer lifecycle chaincode queryinstalled)
+          peer lifecycle chaincode queryinstalled 2>&1)
 
         PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo "already installed — موفق!")
         success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
       else
-        log "خطا در نصب روی Org${i} ❌"
+        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
+        log "$INSTALL_OUTPUT"
       fi
 
       docker exec "$PEER" rm -f /tmp/${name}.tar.gz || true
@@ -1005,7 +1002,7 @@ EOF
     rm -rf "$pkg" "$tar"
   done
 
-  success "تمام Chaincodeها نصب شدند (مثل تست دستی)! حالا approve/commit کن 🚀"
+  success "تمام Chaincodeها نصب شدند! حالا approve/commit کن 🚀"
 }
 
 # ------------------- اجرا -------------------
