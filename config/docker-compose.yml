@@ -55,6 +55,7 @@ services:
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
       - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7052
+      - CORE_CHAINCODE_EXECUTETIMEOUT=1800s
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
@@ -83,6 +84,10 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    deploy:
+      resources:
+        limits:
+          memory: 8g
     networks:
       - 6g-network
     restart: unless-stopped
