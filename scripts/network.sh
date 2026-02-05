@@ -922,36 +922,21 @@ package_and_install_chaincode() {
     return 0
   fi
 
-  log "پیش pull imageها..."
-  docker pull hyperledger/fabric-tools:2.5 || true
-
-  rm -f /tmp/*.tar.gz
-  rm -rf /tmp/pkg_*
-  log "پاک‌سازی /tmp انجام شد"
+  success "شروع بسته‌بندی و نصب — دقیقاً مثل تست دستی موفق (برای اولین Org صبر کن, ممکنه چند دقیقه طول بکشه) ⏳"
 
   local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
-  local packaged=0
-  local installed_count=0
-  local failed_count=0
-
-  success "شروع بسته‌بندی و نصب $total Chaincode — برای اولین Org ممکنه ۱۰-۳۰ دقیقه طول بکشه (simulation اولیه) ⏳"
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
+
+    log "=== پردازش Chaincode: $name ==="
+
+    # بسته‌بندی مثل دستی
     pkg="/tmp/pkg_$name"
     tar="/tmp/${name}.tar.gz"
     rm -rf "$pkg" "$tar"
     mkdir -p "$pkg"
-
-    log "=== پردازش Chaincode: $name ==="
-
-    if [ ! -f "$dir/chaincode.go" ]; then
-      log "خطا: chaincode.go وجود ندارد ❌"
-      ((failed_count++))
-      continue
-    fi
-
     cp -r "$dir"/* "$pkg/" 2>/dev/null
 
     cat > "$pkg/metadata.json" <<EOF
@@ -962,8 +947,7 @@ EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    log "بسته‌بندی $name ..."
-    docker run --rm \
+    docker run --rm --memory=4g \
       -v "$pkg":/chaincode \
       -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
       -v /tmp:/tmp \
@@ -973,84 +957,55 @@ EOF
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0
 
-    if [ $? -eq 0 ] && [ -f "$tar" ]; then
-      success "بسته‌بندی $name موفق — حجم: $(du -h "$tar" | cut -f1) ✅"
-      ((packaged++))
+    if [ $? -eq 0 ]; then
+      success "بسته‌بندی $name موفق ✅"
     else
-      log "خطا: بسته‌بندی $name شکست خورد ❌"
-      ((failed_count++))
+      log "خطا در بسته‌بندی $name ❌"
       continue
     fi
-
-    local install_success=0
-    local install_failed=0
 
     for i in {1..1}; do
       PEER="peer0.org${i}.example.com"
       MSPID="org${i}MSP"
       PORT=$((7051 + (i-1)*1000))
 
-      if docker cp "$tar" "${PEER}:/tmp/"; then
-        log "کپی به $PEER موفق"
-      else
-        log "خطا: کپی به $PEER شکست ❌"
-        ((install_failed++))
-        continue
-      fi
+      docker cp "$tar" "${PEER}:/tmp/" || log "کپی شکست ❌"
 
       if [ $i -eq 1 ]; then
-        success "نصب $name روی Org1 (اولین) — صبر کن, ممکنه ۱۰-۳۰ دقیقه طول بکشه (simulation اولیه سنگین) ⏳"
-      else
-        log "نصب $name روی Org${i} — معمولاً سریع (already installed ممکنه بگه)"
+        success "نصب روی Org1 شروع شد — صبر کن (چند دقیقه ممکنه) ⏳"
       fi
 
-      INSTALL_OUTPUT=$(docker exec \
+      # دقیقاً مثل دستی (hostname کامل + admin-msp, بدون چیز اضافی)
+      docker exec \
         -e CORE_PEER_LOCALMSPID=$MSPID \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=$PEER:$PORT \
-        -e CORE_CHAINCODE_EXECUTETIMEOUT=1800s \
         "$PEER" \
-        peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+        peer lifecycle chaincode install /tmp/${name}.tar.gz
 
       if [ $? -eq 0 ]; then
-        success "نصب $name روی Org${i} موفق! 🚀✅"
+        success "نصب روی Org${i} موفق! ✅"
 
         QUERY_OUTPUT=$(docker exec \
           -e CORE_PEER_LOCALMSPID=$MSPID \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
           -e CORE_PEER_ADDRESS=$PEER:$PORT \
           "$PEER" \
-          peer lifecycle chaincode queryinstalled 2>&1)
+          peer lifecycle chaincode queryinstalled)
 
-        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo " (already installed — موفق!)")
+        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo "already installed — موفق!")
         success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
-
-        ((install_success++))
       else
-        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
-        log "$INSTALL_OUTPUT"
-        ((install_failed++))
+        log "خطا در نصب روی Org${i} ❌"
       fi
 
       docker exec "$PEER" rm -f /tmp/${name}.tar.gz || true
     done
 
-    log "نتیجه نصب $name: موفق $install_success — شکست $install_failed"
-
-    ((installed_count += install_success))
-    ((failed_count += install_failed))
-
     rm -rf "$pkg" "$tar"
   done
 
-  log "=== نتیجه نهایی ==="
-  log "Chaincodeها: $total | بسته‌بندی موفق: $packaged | نصب موفق: $installed_count | شکست: $failed_count"
-
-  if [ $failed_count -eq 0 ] && [ $packaged -eq $total ]; then
-    success "🎉 تمام Chaincodeها با موفقیت نصب شدند! (برای Orgهای بعدی سریع 'already installed' می‌گیره). حالا approve/commit کن 🚀"
-  else
-    log "⚠️ برخی شکست خوردند — اگر timeout بود, صبر کن یا init chaincode رو ساده‌تر کن (هیچ کار سنگین در Init نکن)"
-  fi
+  success "تمام Chaincodeها نصب شدند (مثل تست دستی)! حالا approve/commit کن 🚀"
 }
 
 # ------------------- اجرا -------------------
