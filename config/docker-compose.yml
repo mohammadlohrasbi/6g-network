@@ -21,7 +21,7 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/bundled-tls-ca.pem]
+      - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/bundled-tls-ca.pem
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
     volumes:
@@ -60,7 +60,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org1MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp                # <<< اجباری
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp                # <<< اجباری
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -102,7 +102,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org2MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -144,7 +144,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org3MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -186,7 +186,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org4MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -228,7 +228,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org5MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -270,7 +270,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org6MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -312,7 +312,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org7MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
@@ -354,7 +354,7 @@ services:
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false
       - CORE_PEER_LOCALMSPID=org8MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
