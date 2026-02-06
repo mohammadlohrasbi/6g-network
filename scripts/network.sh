@@ -812,7 +812,7 @@ create_and_join_channels() {
     # ایجاد کانال از peer0.org1
     if docker exec peer0.org1.example.com bash -c "
       export CORE_PEER_LOCALMSPID=org1MSP
-      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       export CORE_PEER_TLS_ENABLED=true
       export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
