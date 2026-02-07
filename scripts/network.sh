@@ -329,8 +329,8 @@ for i in {1..8}; do
       echo \"register Admin@\$ORG.example.com با OU=admin...\"
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
         --id.secret adminpw \
-        --id.type client \
-        --id.attrs \"ou=admin:ecert\" \
+        --id.type admin \
+        #--id.attrs \"ou=admin:ecert\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
