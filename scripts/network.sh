@@ -322,6 +322,8 @@ for i in {1..8}; do
       PORT=\$((7054 + $i * 100))
       TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
+      ls /crypto-config/peerOrganizations/$ORG.example.com/rca/tls-msp/cacerts
+
       echo 'enroll bootstrap admin (admin:adminpw)...'
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
@@ -329,8 +331,8 @@ for i in {1..8}; do
       echo \"register Admin@\$ORG.example.com با OU=admin...\"
       fabric-ca-client register --id.name Admin@\$ORG.example.com \
         --id.secret adminpw \
-        --id.type client \
-        --id.attrs \"ou=admin:ecert\" \
+        --id.type admin \
+        #--id.attrs \"ou=admin:ecert\" \
         -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
 
