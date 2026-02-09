@@ -281,8 +281,8 @@ docker run --rm \
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
-      --id.type admin \
-      #--id.attrs \"ou=admin:ecert\" \
+      --id.type client \
+      --id.attrs \"ou=admin:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
