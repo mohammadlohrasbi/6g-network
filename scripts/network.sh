@@ -320,9 +320,12 @@ for i in {1..8}; do
       ORG=org$i
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
-      TLS_CERT=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
 
-      ls /crypto-config/peerOrganizations/$ORG.example.com/rca/tls-msp/cacerts
+      TLS_CERT_FILE=$(ls /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/tls-ca-\$ORG-*.pem | head -n 1)
+      if [ -z "\$TLS_CERT_FILE" ]; then
+        echo "خطا: TLS CA file پیدا نشد برای \$ORG"
+        exit 1
+      fi
 
       echo 'enroll bootstrap admin (admin:adminpw)...'
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
