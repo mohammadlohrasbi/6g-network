@@ -321,7 +321,7 @@ for i in {1..8}; do
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
       
-      echo "لیست فایل‌های TLS CA برای \$ORG:"
+      echo "لیست فایل‌های TLS CA برای \$ORG " 
       ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts || echo "پوشه خالی یا وجود ندارد"
 
       # دقیق‌ترین فایل CA را انتخاب کن
