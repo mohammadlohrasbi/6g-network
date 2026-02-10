@@ -324,12 +324,12 @@ for i in {1..8}; do
       ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts 
 
       # دقیق‌ترین فایل CA را انتخاب کن
-      TLS_CERT_FILE=\$(ls /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem 2>/dev/null | head -n 1)
-      if [ -z "\$TLS_CERT_FILE" ]; then
+      TLS_CERT=\$(ls /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem 2>/dev/null | head -n 1)
+      if [ -z "\$TLS_CERT" ]; then
         echo \"خطا: هیچ فایل TLS CA پیدا نشد برای \$ORG\"
         exit 1
       fi
-      echo \"استفاده از TLS CA: \$TLS_CERT_FILE\"
+      echo \"استفاده از TLS CA: \$TLS_CERT\"
 
       
       echo \"enroll bootstrap admin (admin:adminpw)...\"
