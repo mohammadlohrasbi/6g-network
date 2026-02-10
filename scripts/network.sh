@@ -321,15 +321,9 @@ for i in {1..8}; do
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
       
-      ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts 
-
-      # دقیق‌ترین فایل CA را انتخاب کن
-      TLS_CERT=\$(ls /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem 2>/dev/null | head -n 1)
-      if [ -z "\$TLS_CERT" ]; then
-        echo \"خطا: هیچ فایل TLS CA پیدا نشد برای \$ORG\"
-        exit 1
-      fi
-      echo \"استفاده از TLS CA: \$TLS_CERT\"
+      unset FABRIC_CA_CLIENT_HOME
+      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-admin
+      mkdir -p /tmp/ca-client-admin
 
       
       echo \"enroll bootstrap admin (admin:adminpw)...\"
