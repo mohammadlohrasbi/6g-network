@@ -321,19 +321,18 @@ for i in {1..8}; do
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
       
-      echo 'لیست فایل‌ها TLS CA برای \$ORG ' 
-      ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts || echo 'پوشه خالی یا وجود ندار'
+      ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts 
 
       # دقیق‌ترین فایل CA را انتخاب کن
       TLS_CERT_FILE=\$(ls /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem 2>/dev/null | head -n 1)
       if [ -z "\$TLS_CERT_FILE" ]; then
-        echo 'خطا: هیچ فایل TLS CA پیدا نشد برای \$ORG'
+        echo \"خطا: هیچ فایل TLS CA پیدا نشد برای \$ORG\"
         exit 1
       fi
-      echo 'استفاده از TLS CA: \$TLS_CERT_FILE'
+      echo \"استفاده از TLS CA: \$TLS_CERT_FILE\"
 
       
-      echo 'enroll bootstrap admin (admin:adminpw)...'
+      echo \"enroll bootstrap admin (admin:adminpw)...\"
       fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
         --tls.certfiles \$TLS_CERT
       
