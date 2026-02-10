@@ -167,11 +167,11 @@ registry:
   identities:
     - name: admin
       pass: adminpw
-      type: client
+      type: admin
       affiliation: ""
       attrs:
-        hf.Registrar.Roles: "client,peer,orderer,user"
-        hf.Registrar.DelegateRoles: "client,peer,orderer,user"
+        hf.Registrar.Roles: "client,peer,orderer,admin,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
         hf.Revoker: true
         hf.IntermediateCA: true
         hf.GenCRL: true
@@ -212,17 +212,17 @@ csr:
 
 tls:
   enabled: true
-
+  
 registry:
   maxenrollments: -1
   identities:
     - name: admin
       pass: adminpw
-      type: client
+      type: admin
       affiliation: ""
       attrs:
-        hf.Registrar.Roles: "client,peer,orderer,user"
-        hf.Registrar.DelegateRoles: "client,peer,orderer,user"
+        hf.Registrar.Roles: "client,peer,orderer,admin,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
         hf.Revoker: true
         hf.IntermediateCA: true
         hf.GenCRL: true
