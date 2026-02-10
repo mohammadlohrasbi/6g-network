@@ -279,9 +279,6 @@ docker run --rm \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-admin-orderer
-    mkdir -p "\$FABRIC_CA_CLIENT_HOME"  
-
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
