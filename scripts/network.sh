@@ -270,6 +270,7 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
+    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
     # مسیر دقیق گواهی TLS CA داخل container
     TLS_CERT=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem\"
@@ -278,11 +279,14 @@ docker run --rm \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-admin-orderer
+    mkdir -p "\$FABRIC_CA_CLIENT_HOME"  
+
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
-      --id.type client \
-      --id.attrs \"ou=admin:ecert\" \
+      --id.type admin \
+      #--id.attrs \"ou=admin:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
@@ -295,7 +299,7 @@ docker run --rm \
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
-      --id.attrs \"ou=orderer:ecert\" \
+      #--id.attrs \"ou=orderer:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
