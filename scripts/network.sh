@@ -268,49 +268,50 @@ docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
-  /bin/bash <<EOF
-    set -e
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
-    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
-
-    TLS_CA_FILE="/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem"
-    if [ ! -f "\$TLS_CA_FILE" ]; then
-      echo "خطا: TLS CA seed پیدا نشد"
-      exit 1
-    fi
-    echo "TLS CA استفاده‌شده: \$TLS_CA_FILE"
-
-    echo "enroll bootstrap admin..."
+  /bin/bash -c "\
+    set -e; \
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer; \
+    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
+    \
+    TLS_CA_FILE=\"/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem\"; \
+    if [ ! -f \"\$TLS_CA_FILE\" ]; then \
+      echo 'خطا: فایل TLS CA seed پیدا نشد'; \
+      ls -l /crypto-config/ordererOrganizations/example.com/tlsca/; \
+      exit 1; \
+    fi; \
+    echo 'TLS CA استفاده‌شده: '\$TLS_CA_FILE; \
+    \
+    echo 'enroll bootstrap admin...'; \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CA_FILE"
-
-    echo "register Admin@example.com با type=admin..."
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'register Admin@example.com با type=admin...'; \
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
       --id.type admin \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CA_FILE"
-
-    echo "enroll Admin@example.com..."
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'enroll Admin@example.com...'; \
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CA_FILE" \
-      -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
-
-    echo "register orderer.example.com با type=orderer..."
+      --tls.certfiles \"\$TLS_CA_FILE\" \
+      -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp; \
+    \
+    echo 'register orderer.example.com با type=orderer...'; \
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CA_FILE"
-
-    echo "enroll orderer.example.com..."
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'enroll orderer.example.com...'; \
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CA_FILE" \
+      --tls.certfiles \"\$TLS_CA_FILE\" \
       --csr.hosts 'orderer.example.com,localhost,127.0.0.1' \
-      -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-
-    echo "Orderer با موفقیت تولید شد"
-EOF
+      -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp; \
+    \
+    echo 'Orderer با موفقیت تولید شد'; \
+  "
 
 echo "هویت Orderer کاملاً اصولی و با OU classification تولید شد!"
 for i in {1..8}; do
