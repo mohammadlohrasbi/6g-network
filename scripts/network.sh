@@ -273,11 +273,11 @@ docker run --rm \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
     # مسیر دقیق گواهی TLS CA داخل container
-    TLS_CERT="/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem\"
+    TLS_CERT=\"/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem\"
 
     echo 'enroll bootstrap admin (admin:adminpw)...'
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CERT"
+      --tls.certfiles \$TLS_CERT
 
     echo 'register Admin@example.com با OU=admin...'
     fabric-ca-client register --id.name Admin@example.com \
@@ -285,11 +285,11 @@ docker run --rm \
       --id.type admin \
       #--id.attrs \"ou=admin:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CERT"
+      --tls.certfiles \$TLS_CERT
 
     echo 'enroll Admin@example.com...'
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CERT"
+      --tls.certfiles \$TLS_CERT
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo 'register orderer.example.com با OU=orderer...'
@@ -298,11 +298,11 @@ docker run --rm \
       --id.type orderer \
       #--id.attrs \"ou=orderer:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CERT"
+      --tls.certfiles \$TLS_CERT
 
     echo 'enroll orderer.example.com...'
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles "\$TLS_CERT"
+      --tls.certfiles \$TLS_CERT
       --csr.hosts 'orderer.example.com,localhost,127.0.0.1' \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
