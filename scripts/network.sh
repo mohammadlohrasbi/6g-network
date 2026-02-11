@@ -263,7 +263,7 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
 log "تولید گواهی‌های نهایی با Enrollment CA"
 
 log "تولید هویت Orderer با OU classification (نسخه نهایی و بدون خطا)"
-
+# بخش Orderer (اولین docker run)
 docker run --rm \
   --network config_6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
@@ -273,7 +273,14 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer; \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
     \
-    TLS_CA_FILE=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem\"; \
+    CACERTS_DIR=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts\"; \
+    TLS_CA_FILE=\$(ls \"\$CACERTS_DIR\"/*.pem 2>/dev/null | head -n 1); \
+    if [ -z \"\$TLS_CA_FILE\" ]; then \
+      echo 'خطا: هیچ فایل .pem در '\$CACERTS_DIR' پیدا نشد'; \
+      ls -l \"\$CACERTS_DIR\"; \
+      exit 1; \
+    fi; \
+    echo 'TLS CA استفاده‌شده: '\$TLS_CA_FILE; \
     \
     echo 'enroll bootstrap admin...'; \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
@@ -306,52 +313,59 @@ docker run --rm \
     \
     echo 'Orderer با موفقیت تولید شد'; \
   "
-
 echo "هویت Orderer کاملاً اصولی و با OU classification تولید شد!"
-   
+
+# حلقه برای org1 تا org8
 for i in {1..8}; do
-docker run --rm \
-  --network config_6g-network \
-  -v "$PROJECT_DIR/crypto-config":/crypto-config \
-  hyperledger/fabric-ca-tools:latest \
-  /bin/bash -c "\
-    set -e; \
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i; \
-    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
-    \
-    TLS_CA_FILE=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"; \
-    \
-    echo 'enroll bootstrap admin...'; \
-    fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
-    \
-    echo 'register Admin@org$i.example.com با type=admin...'; \
-    fabric-ca-client register --id.name Admin@org$i.example.com \
-      --id.secret adminpw \
-      --id.type admin \
-      -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
-    \
-    echo 'enroll Admin@org$i.example.com...'; \
-    fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:$((7054 + $i * 100)) \
-      --tls.certfiles \"\$TLS_CA_FILE\" \
-      -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp; \
-    \
-    echo 'register peer0.org$i.example.com با type=peer...'; \
-    fabric-ca-client register --id.name peer0.org$i.example.com \
-      --id.secret peerpw \
-      --id.type peer \
-      -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
-    \
-    echo 'enroll peer0.org$i.example.com...'; \
-    fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:$((7054 + $i * 100)) \
-      --tls.certfiles \"\$TLS_CA_FILE\" \
-      --csr.hosts 'peer0.org$i.example.com,localhost,127.0.0.1' \
-      -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp; \
-    \
-    echo 'org$i با موفقیت تولید شد'; \
-  "
+  docker run --rm \
+    --network config_6g-network \
+    -v "$PROJECT_DIR/crypto-config":/crypto-config \
+    hyperledger/fabric-ca-tools:latest \
+    /bin/bash -c "\
+      set -e; \
+      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i; \
+      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
+      \
+      CACERTS_DIR=\"/crypto-config/peerOrganizations/org$i.example.com/rca/tls-msp/cacerts\"; \
+      TLS_CA_FILE=\$(ls \"\$CACERTS_DIR\"/*.pem 2>/dev/null | head -n 1); \
+      if [ -z \"\$TLS_CA_FILE\" ]; then \
+        echo 'خطا: هیچ فایل .pem در '\$CACERTS_DIR' پیدا نشد'; \
+        ls -l \"\$CACERTS_DIR\"; \
+        exit 1; \
+      fi; \
+      echo 'TLS CA برای org$i: '\$TLS_CA_FILE; \
+      \
+      echo 'enroll bootstrap admin...'; \
+      fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+        --tls.certfiles \"\$TLS_CA_FILE\"; \
+      \
+      echo 'register Admin@org$i.example.com با type=admin...'; \
+      fabric-ca-client register --id.name Admin@org$i.example.com \
+        --id.secret adminpw \
+        --id.type admin \
+        -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+        --tls.certfiles \"\$TLS_CA_FILE\"; \
+      \
+      echo 'enroll Admin@org$i.example.com...'; \
+      fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:$((7054 + $i * 100)) \
+        --tls.certfiles \"\$TLS_CA_FILE\" \
+        -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp; \
+      \
+      echo 'register peer0.org$i.example.com با type=peer...'; \
+      fabric-ca-client register --id.name peer0.org$i.example.com \
+        --id.secret peerpw \
+        --id.type peer \
+        -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+        --tls.certfiles \"\$TLS_CA_FILE\"; \
+      \
+      echo 'enroll peer0.org$i.example.com...'; \
+      fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:$((7054 + $i * 100)) \
+        --tls.certfiles \"\$TLS_CA_FILE\" \
+        --csr.hosts 'peer0.org$i.example.com,localhost,127.0.0.1' \
+        -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp; \
+      \
+      echo 'org$i با موفقیت تولید شد'; \
+    "
 done
 
 echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
