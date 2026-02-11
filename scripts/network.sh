@@ -276,7 +276,7 @@ docker run --rm \
     TLS_CA_FILE=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem\"; \
     if [ ! -f \"\$TLS_CA_FILE\" ]; then \
       echo 'خطا: فایل TLS CA seed پیدا نشد'; \
-      ls -l /crypto-config/ordererOrganizations/example.com/tlsca/; \
+      ls -l /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/; \
       exit 1; \
     fi; \
     echo 'TLS CA استفاده‌شده: '\$TLS_CA_FILE; \
@@ -328,7 +328,7 @@ docker run --rm \
     TLS_CA_FILE=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"; \
     if [ ! -f \"\$TLS_CA_FILE\" ]; then \
       echo 'خطا: فایل TLS CA seed برای org$i پیدا نشد'; \
-      ls -l /crypto-config/peerOrganizations/org$i.example.com/tlsca/; \
+      ls -l /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/; \
       exit 1; \
     fi; \
     echo 'TLS CA برای org$i: '\$TLS_CA_FILE; \
