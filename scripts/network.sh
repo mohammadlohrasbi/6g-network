@@ -273,7 +273,6 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer; \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
     \
-    #TLS_CA_FILE=\"/crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem\"; \
     TLS_CA_FILE=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem\"; \
     if [ ! -f \"\$TLS_CA_FILE\" ]; then \
       echo 'خطا: فایل TLS CA seed پیدا نشد'; \
@@ -326,7 +325,6 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i; \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
     \
-    #TLS_CA_FILE=\"/crypto-config/peerOrganizations/org$i.example.com/tlsca/tlsca-org$i.org$i.example.com-cert.pem\"; \
     TLS_CA_FILE=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"; \
     if [ ! -f \"\$TLS_CA_FILE\" ]; then \
       echo 'خطا: فایل TLS CA seed برای org$i پیدا نشد'; \
