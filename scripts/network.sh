@@ -296,7 +296,7 @@ docker run --rm \
     fabric-ca-client register --id.name orderer.example.com \
       --id.secret ordererpw \
       --id.type orderer \
-      #--id.attrs \"ou=orderer:ecert\" \
+      --id.attrs \"ou=orderer:ecert\" \
       -u https://admin:adminpw@rca-orderer:7054 \
       --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
 
