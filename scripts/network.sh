@@ -314,56 +314,56 @@ docker run --rm \
   "
 
 echo "هویت Orderer کاملاً اصولی و با OU classification تولید شد!"
+   
 for i in {1..8}; do
-  docker run --rm \
-    --network config_6g-network \
-    -v "$PROJECT_DIR/crypto-config":/crypto-config \
-    hyperledger/fabric-ca-tools:latest \
-    /bin/bash -c "
-      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-empty
-
-      ORG=org$i
-      RCA_NAME=rca-org$i
-      PORT=\$((7054 + $i * 100))
-      
-      unset FABRIC_CA_CLIENT_HOME
-      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-admin
-      mkdir -p /tmp/ca-client-admin
-
-      
-      echo \"enroll bootstrap admin (admin:adminpw)...\"
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_CERT
-      
-      echo \"register Admin@\$ORG.example.com با OU=admin...\"
-      fabric-ca-client register --id.name Admin@\$ORG.example.com \
-        --id.secret adminpw \
-        --id.type admin \
-        #--id.attrs \"ou=admin:ecert\" \
-        -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_CERT
-
-      echo \"enroll Admin@\$ORG.example.com...\"
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_CERT \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/users/Admin@\$ORG.example.com/msp
-      
-      echo \"register peer0.\$ORG.example.com با OU=peer...\"
-      fabric-ca-client register --id.name peer0.\$ORG.example.com \
-        --id.secret peerpw \
-        --id.type peer \
-        --id.attrs \"ou=peer:ecert\" \
-        -u https://admin:adminpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_CERT
-
-      echo \"enroll peer0.\$ORG.example.com...\"
-      fabric-ca-client enroll -u https://peer0.\$ORG.example.com:peerpw@\$RCA_NAME:\$PORT \
-        --tls.certfiles \$TLS_CERT \
-        --csr.hosts 'peer0.\$ORG.example.com,localhost,127.0.0.1' \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/peers/peer0.\$ORG.example.com/msp
-
-      echo \"\$ORG با موفقیت تولید شد (با OU=peer در گواهی)\"
-    "
+docker run --rm \
+  --network config_6g-network \
+  -v "$PROJECT_DIR/crypto-config":/crypto-config \
+  hyperledger/fabric-ca-tools:latest \
+  /bin/bash -c "\
+    set -e; \
+    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i; \
+    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
+    \
+    TLS_CA_FILE=\"/crypto-config/peerOrganizations/org$i.example.com/tlsca/tlsca-org$i.org$i.example.com-cert.pem\"; \
+    if [ ! -f \"\$TLS_CA_FILE\" ]; then \
+      echo 'خطا: فایل TLS CA seed برای org$i پیدا نشد'; \
+      ls -l /crypto-config/peerOrganizations/org$i.example.com/tlsca/; \
+      exit 1; \
+    fi; \
+    echo 'TLS CA برای org$i: '\$TLS_CA_FILE; \
+    \
+    echo 'enroll bootstrap admin...'; \
+    fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'register Admin@org$i.example.com با type=admin...'; \
+    fabric-ca-client register --id.name Admin@org$i.example.com \
+      --id.secret adminpw \
+      --id.type admin \
+      -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'enroll Admin@org$i.example.com...'; \
+    fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:$((7054 + $i * 100)) \
+      --tls.certfiles \"\$TLS_CA_FILE\" \
+      -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp; \
+    \
+    echo 'register peer0.org$i.example.com با type=peer...'; \
+    fabric-ca-client register --id.name peer0.org$i.example.com \
+      --id.secret peerpw \
+      --id.type peer \
+      -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
+      --tls.certfiles \"\$TLS_CA_FILE\"; \
+    \
+    echo 'enroll peer0.org$i.example.com...'; \
+    fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:$((7054 + $i * 100)) \
+      --tls.certfiles \"\$TLS_CA_FILE\" \
+      --csr.hosts 'peer0.org$i.example.com,localhost,127.0.0.1' \
+      -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp; \
+    \
+    echo 'org$i با موفقیت تولید شد'; \
+  "
 done
 
 echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
