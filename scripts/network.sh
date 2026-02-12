@@ -684,7 +684,7 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 }
 
 generate_bundled_certs() {
-  echo "در حال ساخت bundled certها برای TLS و MSP (برای حل gossip و authentication در multi-org)..."
+  echo "در حال ساخت bundled certها برای TLS و MSP..."
   cd "$PROJECT_DIR" || return 1
 
   local tls_bundled="$CONFIG_DIR/bundled-tls-ca.pem"
@@ -696,10 +696,9 @@ generate_bundled_certs() {
   local tls_count=0
   local msp_count=0
 
-  # TLS bundled — root CAهای TLS نهایی (از tls-msp/cacerts)
   echo "TLS bundled (از tls-msp/cacerts):"
 
-  # Orderer TLS root
+  # Orderer TLS root (از tls-msp/cacerts rca-orderer)
   local orderer_tls_dir="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts"
   local orderer_tls_file=$(ls "$orderer_tls_dir"/*.pem 2>/dev/null | head -n 1)
   if [ -f "$orderer_tls_file" ]; then
@@ -712,7 +711,7 @@ generate_bundled_certs() {
     return 1
   fi
 
-  # Peer orgها TLS root
+  # Peer orgها TLS root (از tls-msp/cacerts هر org)
   for i in {1..8}; do
     local org="org$i"
     local peer_tls_dir="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/rca/tls-msp/cacerts"
@@ -728,21 +727,19 @@ generate_bundled_certs() {
     fi
   done
 
-  # MSP bundled — root CAهای MSP (identity)
+  # MSP bundled (از msp/cacerts — identity CA)
   echo "MSP bundled (از msp/cacerts):"
 
-  # Orderer MSP root
   local orderer_msp_root="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem"
   if [ -f "$orderer_msp_root" ]; then
     cat "$orderer_msp_root" >> "$msp_bundled"
     echo "  اضافه شد: orderer ($orderer_msp_root)"
     ((msp_count++))
   else
-    echo "خطا: MSP root orderer یافت نشد: $orderer_msp_root"
+    echo "خطا: MSP root orderer یافت نشد"
     return 1
   fi
 
-  # Peer orgها MSP root
   for i in {1..8}; do
     local org="org$i"
     local peer_msp_root="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/msp/cacerts/rca-$org-*.pem"
@@ -752,7 +749,7 @@ generate_bundled_certs() {
       echo "  اضافه شد: $org ($peer_msp_file)"
       ((msp_count++))
     else
-      echo "خطا: MSP root برای $org یافت نشد: $peer_msp_root"
+      echo "خطا: MSP root برای $org یافت نشد"
       return 1
     fi
   done
@@ -762,14 +759,22 @@ generate_bundled_certs() {
   echo ""
   echo "bundled-tls-ca.pem ساخته شد ($tls_total cert) → $tls_bundled"
   echo "bundled-msp-ca.pem ساخته شد ($msp_total cert) → $msp_bundled"
-  echo ""
+
   if [ "$tls_total" -eq 9 ] && [ "$msp_total" -eq 9 ]; then
-    echo "✅ هر دو bundled کامل ساخته شدند (9 cert هر کدام)"
+    echo "✅ هر دو bundled کامل ساخته شدند (۹ cert)"
   else
-    echo "⚠️ تعداد certها نادرست است (TLS: $tls_total, MSP: $msp_total — انتظار 9 داشتیم)"
+    echo "⚠️ تعداد certها نادرست است (TLS: $tls_total, MSP: $msp_total)"
     return 1
-  fi 
-}   
+  fi
+
+  echo "اقدامات بعدی:"
+  echo "در docker-compose.yml:"
+  echo "  - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro برای peerها"
+  echo "  - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem"
+  echo "  - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro برای orderer"
+  echo "  - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/bundled-tls-ca.pem"
+  echo "شبکه را ری‌استارت کنید و لاگ orderer را چک کنید."
+}
    
 # اگر می‌خواهی تابع خودکار اجرا شود، این خط را بدون # بگذار:
 # generate_bundled_certs
