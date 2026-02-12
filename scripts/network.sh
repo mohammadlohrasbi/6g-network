@@ -598,51 +598,66 @@ done
 
 log "تولید دوباره genesis.block و channel artifacts"
 
-export FABRIC_CFG_PATH="$PROJECT_DIR"
+# تنظیم دقیق FABRIC_CFG_PATH (مسیر پوشه‌ای که configtx.yaml داخل آن است)
+export FABRIC_CFG_PATH="/root/6g-network/config"   # اگر configtx.yaml در این پوشه است
 
 echo "FABRIC_CFG_PATH تنظیم شد روی: $FABRIC_CFG_PATH"
 echo "محتویات دایرکتوری:"
-ls -la "$FABRIC_CFG_PATH"/configtx.yaml || echo "configtx.yaml پیدا نشد!"
+ls -la "$FABRIC_CFG_PATH/configtx.yaml" || echo "configtx.yaml پیدا نشد!"
+
+# مطمئن شو پوشه خروجی وجود دارد
+mkdir -p "$CHANNEL_ARTIFACTS"
 
 # ۱. genesis.block
+echo "در حال ساخت genesis.block..."
 configtxgen -profile OrdererGenesis \
-            -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
-            -channelID system-channel
+  -outputBlock "$CHANNEL_ARTIFACTS/genesis.block" \
+  -channelID system-channel 2>&1 | tee genesis.log
 
 if [ $? -ne 0 ]; then
-  echo "خطا در تولید genesis.block — پروفایل OrdererGenesis وجود ندارد؟"
+  echo "خطا در تولید genesis.block — لاگ را چک کن:"
+  cat genesis.log
+  echo "پروفایل OrdererGenesis وجود ندارد یا configtx.yaml اشتباه است؟"
   exit 1
 fi
 echo "genesis.block با موفقیت ساخته شد"
 
 # ۲. channel creation tx
 for ch in networkchannel resourcechannel; do
+  echo "در حال ساخت ${ch}.tx..."
   configtxgen -profile ApplicationChannel \
-              -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" \
-              -channelID "$ch"
+    -outputCreateChannelTx "$CHANNEL_ARTIFACTS/${ch}.tx" \
+    -channelID "$ch" 2>&1 | tee ${ch}.log
 
   if [ $? -ne 0 ]; then
-    echo "خطا در تولید ${ch}.tx"
+    echo "خطا در تولید ${ch}.tx — لاگ:"
+    cat ${ch}.log
     exit 1
   fi
   echo "${ch}.tx ساخته شد"
 done
 
-# ۳. anchor peers update
+# ۳. anchor peers update 
 for ch in networkchannel resourcechannel; do
   for i in {1..8}; do
+    ORG_NAME="org${i}MSP"   # حرف کوچک o — با configtx.yaml هماهنگ
+    echo "در حال ساخت anchor update برای ${ORG_NAME} در $ch..."
     configtxgen -profile ApplicationChannel \
-                -outputAnchorPeersUpdate "$CHANNEL_ARTIFACTS/${ch}_Org${i}_anchors.tx" \
-                -channelID "$ch" \
-                -asOrg Org${i}MSP
+      -outputAnchorPeersUpdate "$CHANNEL_ARTIFACTS/${ch}_${ORG_NAME}_anchors.tx" \
+      -channelID "$ch" \
+      -asOrg "${ORG_NAME}" 2>&1 | tee anchor_${ch}_${i}.log
 
     if [ $? -ne 0 ]; then
-      echo "خطا در anchor update برای Org${i} در $ch"
+      echo "خطا در anchor update برای ${ORG_NAME} در $ch — لاگ:"
+      cat anchor_${ch}_${i}.log
       exit 1
     fi
-    echo "Anchor update برای Org${i}MSP در $ch ساخته شد"
+    echo "Anchor update برای ${ORG_NAME} در $ch ساخته شد"
   done
-done
+done  
+
+echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
+ls -l "$CHANNEL_ARTIFACTS"/*.block "$CHANNEL_ARTIFACTS"/*.tx 2>/dev/null || echo "هیچ فایلی ساخته نشد!"
 
 # <<< اصلاح انتها — ایمن و بدون خطا >>>
 echo "تمام فایل‌های channel artifacts با موفقیت تولید شدند!"
