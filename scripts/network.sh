@@ -953,10 +953,10 @@ EOF
 
     docker run --rm --memory=8g \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/msp \
+      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/admin-msp \
       -v /tmp:/tmp \
       -e CORE_PEER_LOCALMSPID=org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0
@@ -1018,7 +1018,7 @@ main() {
   start_network
   create_and_join_channels
   generate_chaincode_modules
-  # package_and_install_chaincode
+  package_and_install_chaincode
 }
 
 main
