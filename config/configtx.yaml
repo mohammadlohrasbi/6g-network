@@ -13,6 +13,8 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('OrdererMSP.member')"
+    OrdererEndpoints:
+      - orderer.example.com:7050
 
   - &Org1
     Name: Org1MSP
@@ -28,6 +30,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
+        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org1.example.com
         Port: 7051
@@ -46,6 +61,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
+        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org2.example.com
         Port: 8051
@@ -64,6 +92,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
+        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org3.example.com
         Port: 9051
@@ -82,6 +123,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
+        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org4.example.com
         Port: 10051
@@ -100,6 +154,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
+        OrganizationalUnitIdentifier: peer   
     AnchorPeers:
       - Host: peer0.org5.example.com
         Port: 11051
@@ -118,6 +185,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
+        OrganizationalUnitIdentifier: peer  
     AnchorPeers:
       - Host: peer0.org6.example.com
         Port: 12051
@@ -136,6 +216,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
+        OrganizationalUnitIdentifier: peer   
     AnchorPeers:
       - Host: peer0.org7.example.com
         Port: 13051
@@ -154,6 +247,19 @@ Organizations:
       Admins:
         Type: ImplicitMeta
         Rule: "ANY Admins"
+      LifecycleEndorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+      Endorsement:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Endorsement"
+    OUs:
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
+        OrganizationalUnitIdentifier: admin
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
+        OrganizationalUnitIdentifier: client
+      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
+        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
