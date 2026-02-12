@@ -1,6 +1,6 @@
 Organizations:
   - &OrdererOrg
-    Name: OrdererOrg
+    Name: OrdererMSP
     ID: OrdererMSP
     MSPDir: ./crypto-config/ordererOrganizations/example.com/msp
     Policies:
@@ -17,8 +17,8 @@ Organizations:
       - orderer.example.com:7050
 
   - &Org1
-    Name: Org1MSP
-    ID: Org1MSP
+    Name: org1MSP
+    ID: org1MSP
     MSPDir: ./crypto-config/peerOrganizations/org1.example.com/msp
     Policies:
       Readers:
@@ -36,20 +36,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org1.example.com/msp/cacerts/rca-org1-7154.pem
-        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org1.example.com
         Port: 7051
 
   - &Org2
-    Name: Org2MSP
-    ID: Org2MSP
+    Name: org2MSP
+    ID: org2MSP
     MSPDir: ./crypto-config/peerOrganizations/org2.example.com/msp
     Policies:
       Readers:
@@ -67,20 +60,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org2.example.com/msp/cacerts/rca-org2-7254.pem
-        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org2.example.com
         Port: 8051
 
   - &Org3
-    Name: Org3MSP
-    ID: Org3MSP
+    Name: org3MSP
+    ID: org3MSP
     MSPDir: ./crypto-config/peerOrganizations/org3.example.com/msp
     Policies:
       Readers:
@@ -98,20 +84,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org3.example.com/msp/cacerts/rca-org3-7354.pem
-        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org3.example.com
         Port: 9051
 
   - &Org4
-    Name: Org4MSP
-    ID: Org4MSP
+    Name: org4MSP
+    ID: org4MSP
     MSPDir: ./crypto-config/peerOrganizations/org4.example.com/msp
     Policies:
       Readers:
@@ -129,20 +108,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org4.example.com/msp/cacerts/rca-org4-7454.pem
-        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org4.example.com
         Port: 10051
 
   - &Org5
-    Name: Org5MSP
-    ID: Org5MSP
+    Name: org5MSP
+    ID: org5MSP
     MSPDir: ./crypto-config/peerOrganizations/org5.example.com/msp
     Policies:
       Readers:
@@ -160,20 +132,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org5.example.com/msp/cacerts/rca-org5-7554.pem
-        OrganizationalUnitIdentifier: peer   
     AnchorPeers:
       - Host: peer0.org5.example.com
         Port: 11051
 
   - &Org6
-    Name: Org6MSP
-    ID: Org6MSP
+    Name: org6MSP
+    ID: org6MSP
     MSPDir: ./crypto-config/peerOrganizations/org6.example.com/msp
     Policies:
       Readers:
@@ -191,20 +156,13 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org6.example.com/msp/cacerts/rca-org6-7654.pem
-        OrganizationalUnitIdentifier: peer  
     AnchorPeers:
       - Host: peer0.org6.example.com
         Port: 12051
 
   - &Org7
-    Name: Org7MSP
-    ID: Org7MSP
+    Name: org7MSP
+    ID: org7MSP
     MSPDir: ./crypto-config/peerOrganizations/org7.example.com/msp
     Policies:
       Readers:
@@ -221,21 +179,14 @@ Organizations:
         Rule: "MAJORITY Endorsement"
       Endorsement:
         Type: ImplicitMeta
-        Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org7.example.com/msp/cacerts/rca-org7-7754.pem
-        OrganizationalUnitIdentifier: peer   
+        Rule: "MAJORITY Endorsement" 
     AnchorPeers:
       - Host: peer0.org7.example.com
         Port: 13051
 
   - &Org8
-    Name: Org8MSP
-    ID: Org8MSP
+    Name: org8MSP
+    ID: org8MSP
     MSPDir: ./crypto-config/peerOrganizations/org8.example.com/msp
     Policies:
       Readers:
@@ -253,13 +204,6 @@ Organizations:
       Endorsement:
         Type: ImplicitMeta
         Rule: "MAJORITY Endorsement"
-    OUs:
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
-        OrganizationalUnitIdentifier: admin
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
-        OrganizationalUnitIdentifier: client
-      - Certificate: /root/6g-network/config/crypto-config/peerOrganizations/org8.example.com/msp/cacerts/rca-org8-7854.pem
-        OrganizationalUnitIdentifier: peer
     AnchorPeers:
       - Host: peer0.org8.example.com
         Port: 14051
