@@ -24,13 +24,16 @@ services:
       - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/bundled-tls-ca.pem
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
+      - ORDERER_GENERAL_BCCSP_DEFAULT=SW
+      - ORDERER_GENERAL_BCCSP_SW_SECURITY=256
+      - ORDERER_GENERAL_BCCSP_SW_HASH=SHA2
     volumes:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp:rw
       - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
-      - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
+      # - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
       - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
     ports:
@@ -74,6 +77,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -81,7 +92,7 @@ services:
       - ./crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org1.example.com:/var/hyperledger/production
@@ -123,6 +134,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -130,7 +149,7 @@ services:
       - ./crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org2.example.com:/var/hyperledger/production
@@ -172,6 +191,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -179,7 +206,7 @@ services:
       - ./crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org3.example.com:/var/hyperledger/production
@@ -221,6 +248,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -228,7 +263,7 @@ services:
       - ./crypto-config/peerOrganizations/org4.example.com/users/Admin@org4.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org4.example.com:/var/hyperledger/production
@@ -270,6 +305,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -277,7 +320,7 @@ services:
       - ./crypto-config/peerOrganizations/org5.example.com/users/Admin@org5.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org5.example.com:/var/hyperledger/production
@@ -319,6 +362,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -326,7 +377,7 @@ services:
       - ./crypto-config/peerOrganizations/org6.example.com/users/Admin@org6.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org6.example.com:/var/hyperledger/production
@@ -368,6 +419,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -375,7 +434,7 @@ services:
       - ./crypto-config/peerOrganizations/org7.example.com/users/Admin@org7.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org7.example.com:/var/hyperledger/production
@@ -417,6 +476,14 @@ services:
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
       - CORE_CHAINCODE_EXECUTETIMEOUT=600s
       - CORE_CHAINCODE_STARTUPTIMEOUT=600s
+      - CORE_PEER_BCCSP_DEFAULT=SW
+      - CORE_PEER_BCCSP_SW_SECURITY=256
+      - CORE_PEER_BCCSP_SW_HASH=SHA2
+      - CORE_PEER_GOSSIP_MAXCONNECTIONATTEMPTS=120
+      - CORE_PEER_GOSSIP_ALIVEEXPIRATIONTIMEOUT=25s
+      - CORE_PEER_GOSSIP_ALIVETIMEINTERVAL=5s
+      - CORE_PEER_GOSSIP_PULLINTERVAL=4s
+      - CORE_PEER_GOSSIP_PULLPEERNUM=3
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -424,7 +491,7 @@ services:
       - ./crypto-config/peerOrganizations/org8.example.com/users/Admin@org8.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
-      - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
       - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
       - peer0.org8.example.com:/var/hyperledger/production
