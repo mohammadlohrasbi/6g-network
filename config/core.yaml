@@ -1,0 +1,11 @@
+peer:
+  tls:
+    enabled: true
+    rootcert:
+      file: /etc/hyperledger/fabric/bundled-tls-ca.pem
+  gossip:
+    dialtimeout: 60s
+    conn_timeout: 60s
+chaincode:
+  executetimeout: 600s
+  startuptimeout: 600s
