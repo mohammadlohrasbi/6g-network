@@ -67,6 +67,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt     # گواهی TLS peer
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem    # RCA سازمان خودش
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -109,6 +116,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -151,6 +165,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -193,6 +214,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org4.example.com/peers/peer0.org4.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -235,6 +263,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org5.example.com/peers/peer0.org5.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -277,6 +312,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org6.example.com/peers/peer0.org6.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -319,6 +361,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org7.example.com/peers/peer0.org7.example.com/msp:/etc/hyperledger/fabric/msp:rw
@@ -361,6 +410,13 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
+      - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
+      - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
+      - CORE_CHAINCODE_EXECUTETIMEOUT=600s
+      - CORE_CHAINCODE_STARTUPTIMEOUT=600s
     volumes:
       - /var/run/:/host/var/run/
       - ./crypto-config/peerOrganizations/org8.example.com/peers/peer0.org8.example.com/msp:/etc/hyperledger/fabric/msp:rw
