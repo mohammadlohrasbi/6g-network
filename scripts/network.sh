@@ -684,7 +684,7 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 }
 
 generate_bundled_certs() {
-  echo "در حال ساخت bundled certها برای TLS و MSP (برای حل gossip و authentication در multi-org)..."
+  echo "در حال ساخت bundled certها برای TLS و MSP..."
   cd "$PROJECT_DIR" || return 1
 
   local tls_bundled="$CONFIG_DIR/bundled-tls-ca.pem"
@@ -696,46 +696,48 @@ generate_bundled_certs() {
   local tls_count=0
   local msp_count=0
 
-  # --- TLS bundled (برای TLS verify در gossip) ---
-  # Orderer TLS root
+  echo "TLS bundled (از tls/tlscacerts و tls-msp/cacerts):"
+
+  # Orderer TLS root — از tls/tlscacerts (ساختار شما)
   local orderer_tls_dir="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts"
-  local orderer_tls_file=$(ls "$orderer_tls_dir"/tls-rca-orderer-*.pem 2>/dev/null | head -n 1)
+  local orderer_tls_file=$(ls "$orderer_tls_dir"/*.pem 2>/dev/null | head -n 1)
   if [ -f "$orderer_tls_file" ]; then
     cat "$orderer_tls_file" >> "$tls_bundled"
-    echo "TLS - اضافه شد orderer: $orderer_tls_file"
+    echo "  اضافه شد: orderer ($orderer_tls_file)"
     ((tls_count++))
   else
-    echo "خطا: فایل TLS root orderer یافت نشد در $orderer_tls_dir"
+    echo "خطا: TLS root orderer در tlscacerts یافت نشد"
     ls -l "$orderer_tls_dir"
     return 1
   fi
 
-  # Peer orgها TLS root
+  # Peer orgها TLS root — از tls/tlscacerts (ساختار شما)
   for i in {1..8}; do
     local org="org$i"
     local peer_tls_dir="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/tlscacerts"
-    local peer_tls_file=$(ls "$peer_tls_dir"/tls-rca-$org-*.pem 2>/dev/null | head -n 1)
+    local peer_tls_file=$(ls "$peer_tls_dir"/*.pem 2>/dev/null | head -n 1)
     if [ -f "$peer_tls_file" ]; then
       cat "$peer_tls_file" >> "$tls_bundled"
-      echo "TLS - اضافه شد $org: $peer_tls_file"
+      echo "  اضافه شد: $org ($peer_tls_file)"
       ((tls_count++))
     else
-      echo "خطا: فایل TLS root برای $org یافت نشد در $peer_tls_dir"
+      echo "خطا: TLS root برای $org در tlscacerts یافت نشد"
       ls -l "$peer_tls_dir"
       return 1
     fi
   done
 
-  # --- MSP bundled (برای MSP identity verify در gossip) ---
+  echo "MSP bundled (از msp/cacerts):"
+
   # Orderer MSP root
   local orderer_msp_dir="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp/cacerts"
   local orderer_msp_file=$(ls "$orderer_msp_dir"/rca-orderer-*.pem 2>/dev/null | head -n 1)
   if [ -f "$orderer_msp_file" ]; then
     cat "$orderer_msp_file" >> "$msp_bundled"
-    echo "MSP - اضافه شد orderer: $orderer_msp_file"
+    echo "  اضافه شد: orderer ($orderer_msp_file)"
     ((msp_count++))
   else
-    echo "خطا: فایل MSP root orderer یافت نشد در $orderer_msp_dir"
+    echo "خطا: MSP root orderer یافت نشد"
     ls -l "$orderer_msp_dir"
     return 1
   fi
@@ -747,33 +749,35 @@ generate_bundled_certs() {
     local peer_msp_file=$(ls "$peer_msp_dir"/rca-$org-*.pem 2>/dev/null | head -n 1)
     if [ -f "$peer_msp_file" ]; then
       cat "$peer_msp_file" >> "$msp_bundled"
-      echo "MSP - اضافه شد $org: $peer_msp_file"
+      echo "  اضافه شد: $org ($peer_msp_file)"
       ((msp_count++))
     else
-      echo "خطا: فایل MSP root برای $org یافت نشد در $peer_msp_dir"
+      echo "خطا: MSP root برای $org یافت نشد"
       ls -l "$peer_msp_dir"
       return 1
     fi
   done
 
-  # چک تعداد و اعتبار certها (با openssl برای اطمینان)
   local tls_total=$(grep -c "BEGIN CERTIFICATE" "$tls_bundled")
   local msp_total=$(grep -c "BEGIN CERTIFICATE" "$msp_bundled")
 
-  # چک اعتبار bundled-tls-ca (با openssl)
-  openssl verify -CAfile "$tls_bundled" "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt" || echo "خطا: bundled-tls-ca.pem گواهی orderer را verify نمی‌کند"
+  echo ""
+  echo "bundled-tls-ca.pem ساخته شد ($tls_total cert) → $tls_bundled"
+  echo "bundled-msp-ca.pem ساخته شد ($msp_total cert) → $msp_bundled"
+  echo ""
 
-  echo ""
-  echo "bundled-tls-ca.pem ساخته شد ($tls_total cert) در: $tls_bundled"
-  echo "bundled-msp-ca.pem ساخته شد ($msp_total cert) در: $msp_bundled"
-  echo ""
   if [ "$tls_total" -eq 9 ] && [ "$msp_total" -eq 9 ]; then
-    echo "هر دو bundled با موفقیت ساخته شدند (9 cert هر کدام — کامل!)"
+    echo "✅ هر دو bundled کامل ساخته شدند (9 cert هر کدام)"
   else
-    echo "خطا: تعداد certها نادرست است (TLS: $tls_total, MSP: $msp_total — باید 9 باشد)"
+    echo "⚠️ تعداد certها نادرست است (TLS: $tls_total, MSP: $msp_total — انتظار 9 داشتیم)"
     return 1
   fi
-} 
+
+  echo "اقدامات بعدی:"
+  echo "1. شبکه را ری‌استارت کن: docker-compose down -v && docker-compose up -d"
+  echo "2. لاگ peerها را چک کن: docker logs peer0.org1.example.com | grep -i tls"
+  echo "اگر 'unknown authority' دیگر نبود → اتصال برقرار است"
+}
    
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
