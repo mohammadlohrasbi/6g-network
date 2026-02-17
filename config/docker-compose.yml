@@ -35,7 +35,7 @@ services:
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       # - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
       - ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:rw
     ports:
       - "7050:7050"
     dns:
@@ -94,7 +94,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
       - "7051:7051"
@@ -151,7 +151,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
       - "8051:8051"
@@ -208,7 +208,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
       - "9051:9051"
@@ -265,7 +265,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
       - "10051:10051"
@@ -322,7 +322,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
       - "11051:11051"
@@ -379,7 +379,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
       - "12051:12051"
@@ -436,7 +436,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
       - "13051:13051"
@@ -493,7 +493,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:rw
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
       - "14051:14051"
