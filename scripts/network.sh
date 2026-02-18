@@ -768,25 +768,33 @@ create_and_join_channels() {
 }
 
 update_anchor_peers() {
-  log "تنظیم Anchor Peer برای همه سازمان‌ها..."
+  log "تنظیم Anchor Peer برای همه سازمان‌ها در هر دو کانال..."
 
   for ch in networkchannel resourcechannel; do
+    log "تنظیم Anchor Peer برای کانال $ch ..."
+
     for i in {1..8}; do
-      ORG=Org${i}MSP
-      ANCHOR_TX="$CONFIG_DIR/channel-artifacts/${ch}_${ORG}_anchors.tx"
+      ORG="Org${i}MSP"
+      ANCHOR_TX="$CHANNEL_ARTIFACTS/${ch}_${ORG}_anchors.tx"
 
-      docker exec peer0.org1.example.com configtxgen -profile ApplicationChannel \
+      # مهم: configtxgen را از HOST اجرا کن (نه داخل کانتینر)
+      configtxgen -profile ApplicationChannel \
         -outputAnchorPeersUpdate "$ANCHOR_TX" \
-        -channelID "$ch" -asOrg "$ORG"
+        -channelID "$ch" \
+        -asOrg "$ORG"
 
+      # حالا update را از peer0.org1 ارسال کن
       docker exec peer0.org1.example.com peer channel update \
-        -o orderer.example.com:7050 -c "$ch" \
+        -o orderer.example.com:7050 \
+        -c "$ch" \
         -f "$ANCHOR_TX" \
         --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
+
+      success "Anchor Peer برای $ORG در $ch تنظیم شد"
     done
   done
 
-  success "Anchor Peerها برای همه سازمان‌ها تنظیم شدند"
+  success "تمام Anchor Peerها برای هر دو کانال تنظیم شدند!"
 }
 
 generate_chaincode_modules() {
