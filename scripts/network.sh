@@ -863,7 +863,7 @@ package_and_install_chaincode() {
     return 0
   fi
 
-  success "شروع بسته‌بندی و نصب تمام Chaincodeها..."
+  success "شروع بسته‌بندی و نصب تمام Chaincodeها (نسخه نهایی و سریع)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -877,10 +877,10 @@ package_and_install_chaincode() {
     rm -rf "$pkg" "$tar"
     mkdir -p "$pkg"
 
-    # کپی کد chaincode
+    # کپی کد
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
 
-    # فایل‌های لازم برای packaging
+    # فایل‌های metadata
     cat > "$pkg/metadata.json" <<EOF
 {"type":"golang","label":"${name}_1.0"}
 EOF
@@ -889,12 +889,12 @@ EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    # بسته‌بندی (یک بار کافی است)
+    # بسته‌بندی (یک بار)
     log "بسته‌بندی $name ..."
     if docker run --rm --memory=6g \
       -v "$pkg":/chaincode \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package /tmp/${name}.tar.gz \
+      peer lifecycle chaincode package "$tar" \
         --path /chaincode --lang golang --label ${name}_1.0; then
       success "بسته‌بندی $name موفق شد"
     else
@@ -911,8 +911,13 @@ EOF
 
       log "نصب $name روی $ORG ..."
 
-      # کپی فایل tar به peer
-      docker cp "$tar" "${PEER}:/tmp/" || { log "کپی فایل شکست خورد برای $ORG"; continue; }
+      # کپی فایل tar به peer (هر بار تازه کپی می‌شود)
+      if docker cp "$tar" "${PEER}:/tmp/"; then
+        log "کپی فایل به $PEER موفق"
+      else
+        log "کپی فایل به $PEER شکست خورد"
+        continue
+      fi
 
       # نصب
       if docker exec \
@@ -922,9 +927,9 @@ EOF
         -e CORE_PEER_TLS_ENABLED=true \
         -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
         "$PEER" \
-        peer lifecycle chaincode install /tmp/${name}.tar.gz; then
+        peer lifecycle chaincode install "/tmp/${name}.tar.gz"; then
 
-        success "نصب $name روی $ORG موفق بود"
+        success "نصب $name روی $ORG موفق بود ✅"
 
         # گرفتن Package ID
         QUERY_OUTPUT=$(docker exec \
@@ -940,23 +945,21 @@ EOF
 
         if [ -n "$PACKAGE_ID" ]; then
           success "Package ID روی $ORG: $PACKAGE_ID"
-        else
-          log "Package ID روی $ORG پیدا نشد (اما نصب موفق بود)"
         fi
 
       else
-        log "خطا در نصب $name روی $ORG"
+        log "خطا در نصب $name روی $ORG ❌"
       fi
 
-      # پاک کردن فایل موقت
+      # پاک کردن فایل موقت داخل peer
       docker exec "$PEER" rm -f "/tmp/${name}.tar.gz" 2>/dev/null || true
     done
 
-    # پاک کردن فایل‌های موقتی
+    # پاک کردن فایل‌های موقتی روی host
     rm -rf "$pkg" "$tar"
   done
 
-  success "تمام Chaincodeها روی همه سازمان‌ها نصب شدند!"
+  success "تمام Chaincodeها روی همه ۸ سازمان نصب شدند!"
   success "حالا می‌توانی approve و commit کنی 🚀"
 }
 
