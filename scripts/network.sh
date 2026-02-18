@@ -774,16 +774,16 @@ update_anchor_peers() {
     log "تنظیم Anchor Peer برای کانال $ch ..."
 
     for i in {1..8}; do
-      ORG="Org${i}MSP"
+      ORG="org${i}MSP"          # ← مهم: حرف o کوچک (مطابق configtx.yaml)
       ANCHOR_TX="$CHANNEL_ARTIFACTS/${ch}_${ORG}_anchors.tx"
 
-      # مهم: configtxgen را از HOST اجرا کن (نه داخل کانتینر)
+      # ساخت فایل Anchor update از روی host
       configtxgen -profile ApplicationChannel \
         -outputAnchorPeersUpdate "$ANCHOR_TX" \
         -channelID "$ch" \
         -asOrg "$ORG"
 
-      # حالا update را از peer0.org1 ارسال کن
+      # ارسال آپدیت به کانال
       docker exec peer0.org1.example.com peer channel update \
         -o orderer.example.com:7050 \
         -c "$ch" \
