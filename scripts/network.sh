@@ -910,7 +910,7 @@ EOF
     fi
 
     # نصب روی همه ۸ سازمان
-    for i in {1..8}; do
+    for i in {1..2}; do
       ORG="org$i"
       PEER="peer0.${ORG}.example.com"
       MSPID="${ORG}MSP"
