@@ -859,13 +859,11 @@ EOF
 # ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
 package_and_install_chaincode() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    log "هیچ chaincode وجود ندارد — این مرحله رد شد"
+    log "هیچ chaincode پیدا نشد — این مرحله رد شد"
     return 0
   fi
 
-  success "شروع بسته‌بندی و نصب — مثل تست دستی موفق (سریع) ✅"
-
-  local total=$(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
+  success "شروع بسته‌بندی و نصب تمام Chaincodeها..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -875,10 +873,14 @@ package_and_install_chaincode() {
 
     pkg="/tmp/pkg_$name"
     tar="/tmp/${name}.tar.gz"
+
     rm -rf "$pkg" "$tar"
     mkdir -p "$pkg"
-    cp -r "$dir"/* "$pkg/" 2>/dev/null
 
+    # کپی کد chaincode
+    cp -r "$dir"/* "$pkg/" 2>/dev/null || true
+
+    # فایل‌های لازم برای packaging
     cat > "$pkg/metadata.json" <<EOF
 {"type":"golang","label":"${name}_1.0"}
 EOF
@@ -887,63 +889,75 @@ EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    docker run --rm --memory=8g \
+    # بسته‌بندی (یک بار کافی است)
+    log "بسته‌بندی $name ..."
+    if docker run --rm --memory=6g \
       -v "$pkg":/chaincode \
-      -v "$CRYPTO_DIR/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp":/etc/hyperledger/fabric/admin-msp \
-      -v /tmp:/tmp \
-      -e CORE_PEER_LOCALMSPID=org1MSP \
-      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /tmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0
-
-    if [ $? -eq 0 ]; then
-      success "بسته‌بندی $name موفق ✅"
+        --path /chaincode --lang golang --label ${name}_1.0; then
+      success "بسته‌بندی $name موفق شد"
     else
-      log "خطا در بسته‌بندی $name ❌"
+      error "خطا در بسته‌بندی $name"
       continue
     fi
 
-    for i in {1..1}; do
-      PEER="peer0.org${i}.example.com"
-      MSPID="org${i}MSP"
+    # نصب روی همه ۸ سازمان
+    for i in {1..8}; do
+      ORG="org$i"
+      PEER="peer0.${ORG}.example.com"
+      MSPID="${ORG}MSP"
       PORT=$((7051 + (i-1)*1000))
 
-      docker cp "$tar" "${PEER}:/tmp/" || log "کپی شکست ❌"
+      log "نصب $name روی $ORG ..."
 
-      log "نصب $name روی Org${i}..."
+      # کپی فایل tar به peer
+      docker cp "$tar" "${PEER}:/tmp/" || { log "کپی فایل شکست خورد برای $ORG"; continue; }
 
-      INSTALL_OUTPUT=$(docker exec \
+      # نصب
+      if docker exec \
         -e CORE_PEER_LOCALMSPID=$MSPID \
         -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
         -e CORE_PEER_ADDRESS=$PEER:$PORT \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
         "$PEER" \
-        peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+        peer lifecycle chaincode install /tmp/${name}.tar.gz; then
 
-      if [ $? -eq 0 ]; then
-        success "نصب $name روی Org${i} موفق! ✅"
+        success "نصب $name روی $ORG موفق بود"
 
+        # گرفتن Package ID
         QUERY_OUTPUT=$(docker exec \
           -e CORE_PEER_LOCALMSPID=$MSPID \
           -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
           -e CORE_PEER_ADDRESS=$PEER:$PORT \
+          -e CORE_PEER_TLS_ENABLED=true \
+          -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
           "$PEER" \
           peer lifecycle chaincode queryinstalled 2>&1)
 
-        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -1 || echo "already installed — موفق!")
-        success "تاییدیه Package ID روی Org${i}: $PACKAGE_ID 🎉"
+        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+
+        if [ -n "$PACKAGE_ID" ]; then
+          success "Package ID روی $ORG: $PACKAGE_ID"
+        else
+          log "Package ID روی $ORG پیدا نشد (اما نصب موفق بود)"
+        fi
+
       else
-        log "خطا در نصب روی Org${i} ❌ — جزئیات:"
-        log "$INSTALL_OUTPUT"
+        log "خطا در نصب $name روی $ORG"
       fi
 
-      docker exec "$PEER" rm -f /tmp/${name}.tar.gz || true
+      # پاک کردن فایل موقت
+      docker exec "$PEER" rm -f "/tmp/${name}.tar.gz" 2>/dev/null || true
     done
 
+    # پاک کردن فایل‌های موقتی
     rm -rf "$pkg" "$tar"
   done
 
-  success "تمام Chaincodeها نصب شدند! حالا approve/commit کن 🚀"
+  success "تمام Chaincodeها روی همه سازمان‌ها نصب شدند!"
+  success "حالا می‌توانی approve و commit کنی 🚀"
 }
 
 # ------------------- اجرا -------------------
@@ -955,7 +969,7 @@ main() {
   create_and_join_channels
   update_anchor_peers
   generate_chaincode_modules
-  #package_and_install_chaincode
+  package_and_install_chaincode
 }
 
 main
