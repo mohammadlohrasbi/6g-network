@@ -684,198 +684,110 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 } 
 
 generate_bundled_certs() {
-  echo "در حال ساخت bundled certها برای TLS و MSP..."
-  cd "$PROJECT_DIR" || { echo "خطا: نمی‌توان به PROJECT_DIR رفت"; return 1; }
+  log "ساخت bundled-tls-ca.pem و bundled-msp-ca.pem..."
+  cd "$CONFIG_DIR"
 
-  local tls_bundled="$CONFIG_DIR/bundled-tls-ca.pem"
-  local msp_bundled="$CONFIG_DIR/bundled-msp-ca.pem"
+  > bundled-tls-ca.pem
+  > bundled-msp-ca.pem
 
-  : > "$tls_bundled"
-  : > "$msp_bundled"
-
-  local tls_count=0
-  local msp_count=0
-
-  echo "=== TLS bundled (از ca.crt تولیدشده توسط rca) ==="
-
-  # Orderer
-  local orderer_tls="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
-  if [ -f "$orderer_tls" ]; then
-    cat "$orderer_tls" >> "$tls_bundled"
-    echo "  ✓ اضافه شد: orderer"
-    ((tls_count++))
-  else
-    echo "خطا: ca.crt orderer یافت نشد!"
-    ls -l "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls"
-    return 1
-  fi
-
-  # Peerها
+  # TLS bundled (از ca.crt واقعی)
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem
   for i in {1..8}; do
-    local org="org$i"
-    local peer_tls="$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls/ca.crt"
-    if [ -f "$peer_tls" ]; then
-      cat "$peer_tls" >> "$tls_bundled"
-      echo "  ✓ اضافه شد: $org"
-      ((tls_count++))
-    else
-      echo "خطا: ca.crt برای $org یافت نشد!"
-      ls -l "$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/peers/peer0.$org.example.com/tls"
-      return 1
-    fi
+    cat crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/tls/ca.crt >> bundled-tls-ca.pem
   done
 
-  echo "=== MSP bundled ==="
-
-  # Orderer MSP
-  local orderer_msp="$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem"
-  if [ -f "$orderer_msp" ]; then
-    cat "$orderer_msp" >> "$msp_bundled"
-    echo "  ✓ اضافه شد: orderer MSP"
-    ((msp_count++))
-  else
-    echo "خطا: MSP root orderer یافت نشد!"
-    return 1
-  fi
-
-  # Peer MSP
+  # MSP bundled
+  cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem
   for i in {1..8}; do
-    local org="org$i"
-    local peer_msp_file=$(ls "$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/msp/cacerts/rca-$org-*.pem" 2>/dev/null | head -n 1)
-    if [ -f "$peer_msp_file" ]; then
-      cat "$peer_msp_file" >> "$msp_bundled"
-      echo "  ✓ اضافه شد: $org MSP"
-      ((msp_count++))
-    else
-      echo "خطا: MSP root برای $org یافت نشد!"
-      ls -l "$PROJECT_DIR/crypto-config/peerOrganizations/$org.example.com/msp/cacerts"
-      return 1
-    fi
+    ls crypto-config/peerOrganizations/org$i.example.com/msp/cacerts/rca-org$i-*.pem 2>/dev/null | head -n1 | xargs cat >> bundled-msp-ca.pem
   done
 
-  local tls_total=$(grep -c "BEGIN CERTIFICATE" "$tls_bundled")
-  local msp_total=$(grep -c "BEGIN CERTIFICATE" "$msp_bundled")
+  local tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem)
+  local msp_count=$(grep -c "BEGIN CERTIFICATE" bundled-msp-ca.pem)
 
-  echo ""
-  echo "bundled-tls-ca.pem ساخته شد ($tls_total cert)"
-  echo "bundled-msp-ca.pem ساخته شد ($msp_total cert)"
-  echo ""
-
-  if [ "$tls_total" -eq 9 ] && [ "$msp_total" -eq 9 ]; then
-    echo "✅ هر دو bundled کامل ساخته شدند (۹ cert)"
-    echo "در حال چک verify TLS orderer..."
-    openssl verify -CAfile "$tls_bundled" \
-      "$PROJECT_DIR/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt" && echo "✅ Verify موفق" || echo "❌ Verify fail"
+  if [ "$tls_count" -eq 9 ] && [ "$msp_count" -eq 9 ]; then
+    success "bundled-tls-ca.pem و bundled-msp-ca.pem ساخته شدند ($tls_count / $msp_count)"
   else
-    echo "❌ تعداد نادرست است (TLS: $tls_total, MSP: $msp_total)"
-    return 1
+    error "تعداد certها اشتباه است (TLS: $tls_count, MSP: $msp_count)"
   fi
 }
    
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
-  log "راه‌اندازی شبکه (نسخه نهایی و ۱۰۰٪ سالم)..."
-
-  # ۱. شبکه داکر را بساز (اگر وجود نداشته باشد)
-  # docker network create config_6g-network 2>/dev/null || true
-
-  # ۲. کاملاً همه کانتینرها را پاک کن (این خط حیاتی است!)
-  # docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" down -v --remove-orphans 
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" down -v 
-
-  docker pull hyperledger/fabric-peer:2.5
-  docker pull hyperledger/fabric-orderer:2.5
-  docker pull hyperledger/fabric-ca:1.5
-
-  # ۳. بالا آوردن CAها
-  # docker-compose -f "$CONFIG_DIR/docker-compose-ca.yml" up -d --remove-orphans
-  if [ $? -ne 0 ]; then
-    error "راه‌اندازی CAها شکست خورد"
-  fi
-  log "CAها بالا آمدند"
-  sleep 20
-
-  # ۴. بالا آوردن Orderer و Peerها با --force-recreate (این خط تمام مشکلات قبلی را حل می‌کند!)
-  docker-compose -f "$CONFIG_DIR/docker-compose.yml" up -d
-  if [ $? -ne 0 ]; then
-    error "راه‌اندازی Peerها و Orderer شکست خورد"
-  fi
-
-  # log "صبر ۲۰ ثانیه برای بالا آمدن کامل و پایدار شدن شبکه..."
-  # sleep 20
-
-  success "شبکه با موفقیت و به صورت کاملاً سالم راه‌اندازی شد"
+  log "راه‌اندازی شبکه..."
+  docker-compose down -v --remove-orphans
+  docker-compose up -d
+  sleep 90
+  success "شبکه بالا آمد"
   docker ps
 }
 
 # ------------------- ایجاد و join کانال‌ها -------------------
 create_and_join_channels() {
-  log "ایجاد کانال‌ها و join همه peerها (TLS کاملاً فعال با bundled-tls-ca.pem)"
+  log "ایجاد کانال‌ها و تنظیم Anchor Peer..."
 
-  CHANNEL_ARTIFACTS="/root/6g-network/config/channel-blocks"
+  CHANNEL_ARTIFACTS="$CONFIG_DIR/channel-blocks"
   mkdir -p "$CHANNEL_ARTIFACTS"
 
   for ch in networkchannel resourcechannel; do
-    log "در حال ایجاد کانال $ch ..."
+    log "ایجاد کانال $ch ..."
 
-    # پاک کردن block قدیمی
-    docker exec peer0.org1.example.com rm -f /tmp/${ch}.block 2>/dev/null || true
-
-    # ایجاد کانال از peer0.org1
-    if docker exec peer0.org1.example.com bash -c "
+    docker exec peer0.org1.example.com bash -c "
       export CORE_PEER_LOCALMSPID=org1MSP
       export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       export CORE_PEER_TLS_ENABLED=true
       export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-
-      peer channel create \
-        -o orderer.example.com:7050 \
-        -c $ch \
+      peer channel create -o orderer.example.com:7050 -c $ch \
         -f /etc/hyperledger/configtx/${ch}.tx \
         --outputBlock /tmp/${ch}.block \
-        --tls \
-        --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
-    "; then
-      success "کانال $ch با موفقیت ساخته شد"
+        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
+    "
 
-      # کپی block به host
-      docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/${ch}.block"
+    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/"
 
-      log "کپی block به همه peerها و join به $ch..."
+    for i in {1..8}; do
+      ORG=org$i
+      PEER=peer0.${ORG}.example.com
+      PORT=$((7051 + (i-1)*1000))
 
-      for i in {1..8}; do
-        ORG=org$i
-        PEER=peer0.${ORG}.example.com
-        MSPID=org${i}MSP
-        PORT=$((7051 + (i-1)*1000))
+      docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
 
-        # کپی block به peer
-        docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
-
-        # join
-        docker exec $PEER bash -c "
-          export CORE_PEER_LOCALMSPID=${MSPID}
-          export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
-          export CORE_PEER_ADDRESS=peer0.${ORG}.example.com:${PORT}
-          export CORE_PEER_TLS_ENABLED=true
-          export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
-
-          peer channel join -b /tmp/${ch}.block && echo 'join موفق برای $PEER به $ch' || echo 'join قبلاً انجام شده یا خطا'
-        " && success "peer0.${ORG} به $ch join شد" || log "join قبلاً انجام شده یا خطا برای peer0.${ORG}"
-      done
-    else
-      log "خطا در ایجاد کانال $ch — لاگ peer0.org1 را چک کنید"
-    fi
-
-    echo "--------------------------------------------------"
+      docker exec $PEER bash -c "
+        export CORE_PEER_LOCALMSPID=org${i}MSP
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+        export CORE_PEER_ADDRESS=peer0.${ORG}.example.com:${PORT}
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+        peer channel join -b /tmp/${ch}.block
+      " && success "$PEER به $ch join شد"
+    done
   done
 
-  success "تمام کانال‌ها ساخته و همه peerها join شدند!"
-
-  success "تابع create_and_join_channels کامل شد!"
+  success "کانال‌ها ساخته و join شدند"
 }
 
+update_anchor_peers() {
+  log "تنظیم Anchor Peer برای همه سازمان‌ها..."
+
+  for ch in networkchannel resourcechannel; do
+    for i in {1..8}; do
+      ORG=Org${i}MSP
+      ANCHOR_TX="$CONFIG_DIR/channel-artifacts/${ch}_${ORG}_anchors.tx"
+
+      docker exec peer0.org1.example.com configtxgen -profile ApplicationChannel \
+        -outputAnchorPeersUpdate "$ANCHOR_TX" \
+        -channelID "$ch" -asOrg "$ORG"
+
+      docker exec peer0.org1.example.com peer channel update \
+        -o orderer.example.com:7050 -c "$ch" \
+        -f "$ANCHOR_TX" \
+        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
+    done
+  done
+
+  success "Anchor Peerها برای همه سازمان‌ها تنظیم شدند"
+}
 
 generate_chaincode_modules() {
   if [ ! -d "$CHAINCODE_DIR" ]; then
@@ -1024,6 +936,7 @@ main() {
   generate_bundled_certs
   start_network
   create_and_join_channels
+  update_anchor_peers
   generate_chaincode_modules
   #package_and_install_chaincode
 }
