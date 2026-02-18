@@ -863,7 +863,7 @@ package_and_install_chaincode() {
     return 0
   fi
 
-  success "شروع بسته‌بندی و نصب تمام Chaincodeها (نسخه نهایی و سریع)..."
+  success "شروع بسته‌بندی و نصب تمام Chaincodeها (نسخه نهایی و پایدار)..."
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -872,12 +872,12 @@ package_and_install_chaincode() {
     log "=== پردازش Chaincode: $name ==="
 
     pkg="/tmp/pkg_$name"
-    tar="/tmp/${name}.tar.gz"
+    tar_host="/tmp/${name}.tar.gz"
 
-    rm -rf "$pkg" "$tar"
+    rm -rf "$pkg" "$tar_host"
     mkdir -p "$pkg"
 
-    # کپی کد
+    # کپی کد chaincode
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
 
     # فایل‌های metadata
@@ -889,21 +889,28 @@ EOF
 {"address":"${name}:7052","dial_timeout":"10s","tls_required":false}
 EOF
 
-    # بسته‌بندی (یک بار)
+    # بسته‌بندی — خروجی مستقیم روی host
     log "بسته‌بندی $name ..."
     if docker run --rm --memory=6g \
       -v "$pkg":/chaincode \
+      -v /tmp:/hosttmp \
       hyperledger/fabric-tools:2.5 \
-      peer lifecycle chaincode package "$tar" \
+      peer lifecycle chaincode package /hosttmp/${name}.tar.gz \
         --path /chaincode --lang golang --label ${name}_1.0; then
-      success "بسته‌بندی $name موفق شد"
+      
+      if [ -f "$tar_host" ]; then
+        success "بسته‌بندی $name موفق شد (فایل روی host ایجاد شد)"
+      else
+        error "فایل tar روی host ایجاد نشد!"
+        continue
+      fi
     else
       error "خطا در بسته‌بندی $name"
       continue
     fi
 
     # نصب روی همه ۸ سازمان
-    for i in {1..2}; do
+    for i in {1..8}; do
       ORG="org$i"
       PEER="peer0.${ORG}.example.com"
       MSPID="${ORG}MSP"
@@ -911,8 +918,8 @@ EOF
 
       log "نصب $name روی $ORG ..."
 
-      # کپی فایل tar به peer (هر بار تازه کپی می‌شود)
-      if docker cp "$tar" "${PEER}:/tmp/"; then
+      # کپی فایل از host به peer
+      if docker cp "$tar_host" "${PEER}:/tmp/"; then
         log "کپی فایل به $PEER موفق"
       else
         log "کپی فایل به $PEER شکست خورد"
@@ -956,7 +963,7 @@ EOF
     done
 
     # پاک کردن فایل‌های موقتی روی host
-    rm -rf "$pkg" "$tar"
+    rm -rf "$pkg" "$tar_host"
   done
 
   success "تمام Chaincodeها روی همه ۸ سازمان نصب شدند!"
