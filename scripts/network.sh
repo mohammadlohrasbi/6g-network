@@ -774,27 +774,36 @@ update_anchor_peers() {
     log "تنظیم Anchor Peer برای کانال $ch ..."
 
     for i in {1..8}; do
-      ORG="org${i}MSP"          # ← مهم: حرف o کوچک (مطابق configtx.yaml)
-      ANCHOR_TX="$CHANNEL_ARTIFACTS/${ch}_${ORG}_anchors.tx"
+      ORG="org${i}MSP"
+      ANCHOR_TX_HOST="$CHANNEL_ARTIFACTS/${ch}_${ORG}_anchors.tx"
+      ANCHOR_TX_CONTAINER="/tmp/${ch}_${ORG}_anchors.tx"
 
-      # ساخت فایل Anchor update از روی host
+      # ساخت فایل Anchor update روی host
       configtxgen -profile ApplicationChannel \
-        -outputAnchorPeersUpdate "$ANCHOR_TX" \
+        -outputAnchorPeersUpdate "$ANCHOR_TX_HOST" \
         -channelID "$ch" \
         -asOrg "$ORG"
 
-      # ارسال آپدیت به کانال
-      docker exec peer0.org1.example.com peer channel update \
+      # کپی فایل به داخل peer0.org1 (تا بتواند update کند)
+      docker cp "$ANCHOR_TX_HOST" peer0.org1.example.com:"$ANCHOR_TX_CONTAINER"
+
+      # ارسال آپدیت از داخل peer0.org1
+      if docker exec peer0.org1.example.com peer channel update \
         -o orderer.example.com:7050 \
         -c "$ch" \
-        -f "$ANCHOR_TX" \
-        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
+        -f "$ANCHOR_TX_CONTAINER" \
+        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem; then
+        success "Anchor Peer برای $ORG در $ch تنظیم شد"
+      else
+        error "تنظیم Anchor Peer برای $ORG در $ch شکست خورد"
+      fi
 
-      success "Anchor Peer برای $ORG در $ch تنظیم شد"
+      # پاک کردن فایل موقتی داخل کانتینر
+      docker exec peer0.org1.example.com rm -f "$ANCHOR_TX_CONTAINER" 2>/dev/null || true
     done
   done
 
-  success "تمام Anchor Peerها برای هر دو کانال تنظیم شدند!"
+  success "تمام Anchor Peerها برای هر دو کانال با موفقیت تنظیم شدند!"
 }
 
 generate_chaincode_modules() {
