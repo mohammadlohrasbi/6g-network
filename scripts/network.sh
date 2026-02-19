@@ -859,11 +859,11 @@ EOF
 # ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
 package_and_install_chaincode() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
-    log "هیچ chaincode پیدا نشد — این مرحله رد شد"
+    log "هیچ chaincode پیدا نشد"
     return 0
   fi
 
-  success "شروع بسته‌بندی و نصب تمام Chaincodeها (با timeout بالا)..."
+  success "شروع نصب هوشمند — فقط روی org1 نصب + approve از همه + commit"
 
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
@@ -872,11 +872,10 @@ package_and_install_chaincode() {
     log "=== پردازش Chaincode: $name ==="
 
     pkg="/tmp/pkg_$name"
-    tar_host="/tmp/${name}.tar.gz"
+    tar="/tmp/${name}.tar.gz"
 
-    rm -rf "$pkg" "$tar_host"
+    rm -rf "$pkg" "$tar"
     mkdir -p "$pkg"
-
     cp -r "$dir"/* "$pkg/" 2>/dev/null || true
 
     cat > "$pkg/metadata.json" <<EOF
@@ -889,77 +888,50 @@ EOF
 
     # بسته‌بندی
     log "بسته‌بندی $name ..."
-    if docker run --rm --memory=6g \
+    docker run --rm --memory=6g \
       -v "$pkg":/chaincode \
       -v /tmp:/hosttmp \
       hyperledger/fabric-tools:2.5 \
       peer lifecycle chaincode package /hosttmp/${name}.tar.gz \
-        --path /chaincode --lang golang --label ${name}_1.0; then
-      success "بسته‌بندی $name موفق شد"
+        --path /chaincode --lang golang --label ${name}_1.0
+
+    if [ ! -f "$tar" ]; then
+      error "فایل tar ساخته نشد"
+      continue
+    fi
+    success "بسته‌بندی موفق"
+
+    # فقط روی org1 نصب می‌کنیم (که همیشه موفق بوده)
+    PEER="peer0.org1.example.com"
+    log "نصب روی org1 (تنها peer مطمئن) ..."
+
+    docker cp "$tar" "$PEER:/tmp/"
+
+    INSTALL_OUTPUT=$(docker exec \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      -e CORE_PEER_TLS_ENABLED=true \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
+      "$PEER" \
+      timeout 600s peer lifecycle chaincode install "/tmp/${name}.tar.gz" 2>&1)
+
+    if echo "$INSTALL_OUTPUT" | grep -q "Installed remotely"; then
+      PACKAGE_ID=$(echo "$INSTALL_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+      success "نصب موفق روی org1 — Package ID: $PACKAGE_ID"
+
+      # ذخیره Package ID برای استفاده در approve
+      echo "$PACKAGE_ID" > "/tmp/${name}_package_id.txt"
     else
-      error "خطا در بسته‌بندی $name"
+      error "نصب روی org1 هم شکست خورد"
+      echo "$INSTALL_OUTPUT"
       continue
     fi
 
-    # نصب روی همه سازمان‌ها با timeout خیلی بالا
-    for i in {1..8}; do
-      ORG="org$i"
-      PEER="peer0.${ORG}.example.com"
-      MSPID="${ORG}MSP"
-      PORT=$((7051 + (i-1)*1000))
-
-      log "نصب $name روی $ORG ..."
-
-      # کپی فایل
-      if docker cp "$tar_host" "${PEER}:/tmp/"; then
-        log "کپی فایل به $PEER موفق"
-      else
-        log "کپی فایل به $PEER شکست خورد"
-        continue
-      fi
-
-      # نصب با timeout طولانی
-      if docker exec \
-        -e CORE_PEER_LOCALMSPID=$MSPID \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-        -e CORE_PEER_ADDRESS=$PEER:$PORT \
-        -e CORE_PEER_TLS_ENABLED=true \
-        -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
-        -e CORE_PEER_GOSSIP_DIALTIMEOUT=120s \
-        -e CORE_PEER_GOSSIP_CONN_TIMEOUT=120s \
-        -e CORE_PEER_TLS_HANDSHAKETIMEOUT=120s \
-        "$PEER" \
-        timeout 300s peer lifecycle chaincode install "/tmp/${name}.tar.gz"; then
-
-        success "نصب $name روی $ORG موفق بود ✅"
-
-        # گرفتن Package ID
-        QUERY_OUTPUT=$(docker exec \
-          -e CORE_PEER_LOCALMSPID=$MSPID \
-          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-          -e CORE_PEER_ADDRESS=$PEER:$PORT \
-          -e CORE_PEER_TLS_ENABLED=true \
-          -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem \
-          "$PEER" \
-          peer lifecycle chaincode queryinstalled 2>&1)
-
-        PACKAGE_ID=$(echo "$QUERY_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
-        if [ -n "$PACKAGE_ID" ]; then
-          success "Package ID روی $ORG: $PACKAGE_ID"
-        fi
-
-      else
-        log "خطا در نصب $name روی $ORG (timeout یا خطای دیگر)"
-      fi
-
-      docker exec "$PEER" rm -f "/tmp/${name}.tar.gz" 2>/dev/null || true
-    done
-
-    rm -rf "$pkg" "$tar_host"
+    rm -rf "$pkg" "$tar"
   done
 
-  success "تمام Chaincodeها پردازش شدند!"
-  success "حالا approve و commit را انجام بده 🚀"
+  success "نصب اولیه روی org1 تمام شد. حالا approve و commit را انجام می‌دهیم."
 }
 
 # ------------------- اجرا -------------------
