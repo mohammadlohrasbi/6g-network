@@ -898,8 +898,99 @@ EOF
   success "تمام $count chaincode آماده شدند — واقعاً تموم شد!"
 }
 
-# ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
 package_and_install_chaincode() {
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode پیدا نشد"
+    return 0
+  fi
+
+  success "شروع نصب هوشمند — فقط روی org1 نصب + approve از همه + commit"
+
+  for dir in "$CHAINCODE_DIR"/*/; do
+    [ ! -d "$dir" ] && continue
+    name=$(basename "$dir")
+    log "=== پردازش Chaincode: $name ==="
+
+    pkg="/tmp/pkg_$name"
+    tar="/tmp/${name}.tar.gz"
+    rm -rf "$pkg" "$tar"
+    mkdir -p "$pkg"
+
+    cp -r "$dir"/* "$pkg/" 2>/dev/null || true
+
+    cat > "$pkg/metadata.json" <<EOF
+{"type":"golang","label":"${name}_1.0"}
+EOF
+
+    # === مرحله جدید: چک کنیم قبلاً نصب شده یا نه ===
+    log "چک نصب قبلی..."
+    INSTALLED=$(docker exec peer0.org1.example.com bash -c '
+      export CORE_PEER_LOCALMSPID=org1MSP
+      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      export CORE_PEER_ADDRESS=localhost:7051
+      export CORE_PEER_TLS_ENABLED=true
+      export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      peer lifecycle chaincode queryinstalled --output json
+    ' 2>/dev/null | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+
+    if [ -n "$INSTALLED" ]; then
+      PACKAGE_ID="$INSTALLED"
+      success "Chaincode قبلاً نصب شده — Package ID: $PACKAGE_ID"
+      echo "$PACKAGE_ID" > "/tmp/${name}_package_id.txt"
+      continue
+    fi
+
+    # === بسته‌بندی ===
+    log "بسته‌بندی $name ..."
+    docker run --rm --memory=6g \
+      -v "$pkg":/chaincode \
+      -v /tmp:/hosttmp \
+      hyperledger/fabric-tools:2.5 \
+      peer lifecycle chaincode package /hosttmp/${name}.tar.gz \
+        --path /chaincode --lang golang --label ${name}_1.0
+
+    if [ ! -f "$tar" ]; then
+      error "فایل tar ساخته نشد"
+      continue
+    fi
+    success "بسته‌بندی موفق"
+
+    # === نصب ===
+    PEER="peer0.org1.example.com"
+    log "نصب روی org1 ..."
+    docker cp "$tar" "$PEER:/tmp/"
+
+    INSTALL_OUTPUT=$(docker exec \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=localhost:7051 \
+      -e CORE_PEER_TLS_ENABLED=true \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
+      "$PEER" \
+      timeout 600s peer lifecycle chaincode install "/tmp/${name}.tar.gz" 2>&1)
+
+    if echo "$INSTALL_OUTPUT" | grep -qE "Installed remotely|already successfully installed"; then
+      # استخراج Package ID (اگر قبلاً نصب شده بود هم کار می‌کند)
+      PACKAGE_ID=$(echo "$INSTALL_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+      if [ -z "$PACKAGE_ID" ]; then
+        PACKAGE_ID=$(docker exec "$PEER" peer lifecycle chaincode queryinstalled | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+      fi
+      success "نصب موفق روی org1 — Package ID: $PACKAGE_ID"
+      echo "$PACKAGE_ID" > "/tmp/${name}_package_id.txt"
+    else
+      error "نصب روی org1 شکست خورد"
+      echo "$INSTALL_OUTPUT"
+      continue
+    fi
+
+    rm -rf "$pkg" "$tar"
+  done
+
+  success "نصب اولیه روی org1 تمام شد. حالا approve و commit را انجام می‌دهیم."
+}
+
+# ------------------- تابع بسته‌بندی و نصب Chaincode (روش نهایی و ۱۰۰٪ کارکردی) -------------------
+package_and_install_chaincodde() {
   if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
     log "هیچ chaincode پیدا نشد"
     return 0
