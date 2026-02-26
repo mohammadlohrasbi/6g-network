@@ -906,6 +906,10 @@ package_and_install_chaincode() {
 
   success "شروع نصب هوشمند — فقط روی org1 نصب + approve از همه + commit"
 
+  # دانلود ccenv یک بار (مشکل اصلی تو همین بود)
+  log "دانلود تصویر fabric-ccenv:2.5 (در صورت نیاز)..."
+  docker pull hyperledger/fabric-ccenv:2.5 > /dev/null 2>&1 || true
+
   for dir in "$CHAINCODE_DIR"/*/; do
     [ ! -d "$dir" ] && continue
     name=$(basename "$dir")
@@ -922,6 +926,7 @@ package_and_install_chaincode() {
 {"type":"golang","label":"${name}_1.0"}
 EOF
 
+    # بسته‌بندی
     log "بسته‌بندی $name ..."
     docker run --rm --memory=6g \
       -v "$pkg":/chaincode \
@@ -936,6 +941,7 @@ EOF
     fi
     success "بسته‌بندی موفق"
 
+    # نصب روی org1
     PEER="peer0.org1.example.com"
     log "نصب روی org1 ..."
 
@@ -961,6 +967,7 @@ EOF
       echo "$PACKAGE_ID" > "/tmp/${name}_package_id.txt"
     else
       error "نصب روی org1 شکست خورد"
+      echo "$INSTALL_OUTPUT"
       continue
     fi
 
