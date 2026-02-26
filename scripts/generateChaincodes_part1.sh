@@ -2,7 +2,7 @@
 # generateChaincodes_part1.sh — نسخه نهایی، کامل، بدون حذف هیچ تابع
 # تمام ۹ قرارداد شما با تمام توابع اصلی (بدون تغییر در ماهیت) + رفع خطای simulation timeout
 
-set -e
+# set -e
 
 CHAINCODE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/chaincode"
 mkdir -p "$CHAINCODE_DIR"
