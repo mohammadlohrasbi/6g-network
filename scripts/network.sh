@@ -808,6 +808,48 @@ update_anchor_peers() {
 
 generate_chaincode_modules() {
   if [ ! -d "$CHAINCODE_DIR" ]; then
+    log "پوشه CHAINCODE_DIR وجود ندارد — این مرحله رد شد"
+    return 0
+  fi
+  if [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "پوشه CHAINCODE_DIR خالی است — این مرحله رد شد"
+    return 0
+  fi
+
+  log "شروع ساخت go.mod + go.sum برای تمام chaincodeها (با Go 1.18)..."
+
+  local count=0
+  while IFS= read -r d; do
+    name=$(basename "$d")
+    if [ ! -f "$d/chaincode.go" ]; then
+      log "فایل chaincode.go برای $name وجود ندارد — رد شد"
+      continue
+    fi
+
+    log "در حال آماده‌سازی Chaincode $name ..."
+
+    (
+      cd "$d"
+      rm -f go.mod go.sum
+
+      cat > go.mod <<EOF
+module $name
+go 1.18
+require github.com/hyperledger/fabric-contract-api-go v1.2.2
+EOF
+
+      go mod tidy
+      success "Chaincode $name آماده شد"
+    ) || log "خطا در $name"
+
+    ((count++))
+  done < <(find "$CHAINCODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+
+  success "تمام $count chaincode آماده شدند!"
+}
+
+generate_chaincode_modules1() {
+  if [ ! -d "$CHAINCODE_DIR" ]; then
     log "پوشه CHAINCODE_DIR وجود ندارد: $CHAINCODE_DIR — این مرحله رد شد"
     return 0
   fi
