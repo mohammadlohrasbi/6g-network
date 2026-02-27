@@ -731,6 +731,19 @@ generate_bundled_certs() {
 
   success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگزین شد — TLS حالا کاملاً درست کار می‌کند!"
   ls -l bundled-tls-ca.pem
+
+    # ==================== فیکس نهایی: جایگزینی ca.crt همه نودها ====================
+  log "جایگزینی bundled-tls-ca.pem به عنوان ca.crt همه نودها (روی هاست)..."
+
+  # Orderer
+  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
+  # همه Peerها
+  for i in {1..8}; do
+    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+  done
+
+  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگزین شد — TLS حالا کاملاً درست کار می‌کند!"
 }
 
 generate_bundled_cert() {
