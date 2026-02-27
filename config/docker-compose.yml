@@ -21,7 +21,7 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/bundled-tls-ca.pem
+      - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/ca.crt
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
       - ORDERER_GENERAL_BCCSP_DEFAULT=SW
@@ -31,11 +31,11 @@ services:
       - ./channel-artifacts/genesis.block:/etc/hyperledger/fabric/genesis.block:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls:ro
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp:rw
-      - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp
+      - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/var/hyperledger/orderer/admin-msp:ro
       #  - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro
       # - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml:ro
       #- ./bundled-msp-ca.pem:/var/hyperledger/orderer/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/var/hyperledger/orderer/tls/ca.crt:ro
     ports:
       - "7050:7050"
     dns:
@@ -69,10 +69,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt     # گواهی TLS peer
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem    # RCA سازمان خودش
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt    # RCA سازمان خودش
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -95,7 +95,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      # - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org1.example.com:/var/hyperledger/production
     ports:
       - "7051:7051"
@@ -127,10 +128,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -153,7 +154,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org2.example.com:/var/hyperledger/production
     ports:
       - "8051:8051"
@@ -185,10 +187,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -211,7 +213,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org3.example.com:/var/hyperledger/production
     ports:
       - "9051:9051"
@@ -243,10 +246,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -269,7 +272,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org4.example.com:/var/hyperledger/production
     ports:
       - "10051:10051"
@@ -301,10 +305,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -327,7 +331,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org5.example.com:/var/hyperledger/production
     ports:
       - "11051:11051"
@@ -359,10 +364,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -385,7 +390,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org6.example.com:/var/hyperledger/production
     ports:
       - "12051:12051"
@@ -417,10 +423,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -443,7 +449,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org7.example.com:/var/hyperledger/production
     ports:
       - "13051:13051"
@@ -475,10 +482,10 @@ services:
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      - CORE_PEER_TLS_CLIENTROOTCAS=/etc/hyperledger/fabric/ca.crt
       - CORE_PEER_GOSSIP_DIALTIMEOUT=60s
       - CORE_PEER_GOSSIP_CONN_TIMEOUT=60s
       - CORE_PEER_TLS_HANDSHAKETIMEOUT=60s
@@ -501,7 +508,8 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx:ro
       # - ./core.yaml:/etc/hyperledger/fabric/core.yaml:ro
       # - ./bundled-msp-ca.pem:/etc/hyperledger/fabric/msp/cacerts/ca.crt:ro
-      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      #- ./bundled-tls-ca.pem:/etc/hyperledger/fabric/bundled-tls-ca.pem:ro
+      - ./bundled-tls-ca.pem:/etc/hyperledger/fabric/tls/ca.crt:ro
       - peer0.org8.example.com:/var/hyperledger/production
     ports:
       - "14051:14051"
