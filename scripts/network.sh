@@ -699,9 +699,11 @@ generate_bundled_certs() {
 
   # 2. Root از tlsca (برای اطمینان بیشتر)
   log "اضافه کردن Root از tlsca ..."
-  cat crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+ # Orderer
+  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+  # همه ۸ Peer Org
   for i in {1..8}; do
-    cat crypto-config/peerOrganizations/org${i}.example.com/tlsca/tlsca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
   # 3. Leaf ca.crt همه نودها
