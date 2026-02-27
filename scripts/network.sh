@@ -841,11 +841,11 @@ create_and_join_channels() {
       export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       export CORE_PEER_TLS_ENABLED=true
-      export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+      export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       peer channel create -o orderer.example.com:7050 -c $ch \
         -f /etc/hyperledger/configtx/${ch}.tx \
         --outputBlock /tmp/${ch}.block \
-        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem
+        --tls --cafile /etc/hyperledger/fabric/tls/ca.crt
     "
 
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/"
@@ -862,7 +862,7 @@ create_and_join_channels() {
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
         export CORE_PEER_ADDRESS=peer0.${ORG}.example.com:${PORT}
         export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/bundled-tls-ca.pem
+        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
         peer channel join -b /tmp/${ch}.block
       " && success "$PEER به $ch join شد"
     done
@@ -896,7 +896,7 @@ update_anchor_peers() {
         -o orderer.example.com:7050 \
         -c "$ch" \
         -f "$ANCHOR_TX_CONTAINER" \
-        --tls --cafile /etc/hyperledger/fabric/bundled-tls-ca.pem; then
+        --tls --cafile /etc/hyperledger/fabric/tls/ca.crt; then
         success "Anchor Peer برای $ORG در $ch تنظیم شد"
       else
         error "تنظیم Anchor Peer برای $ORG در $ch شکست خورد"
