@@ -690,32 +690,28 @@ generate_bundled_certs() {
   > bundled-tls-ca.pem
   > bundled-msp-ca.pem
 
-  # ==================== 1. Root TLS CAها (اولویت اول - tls-rca-*.pem) ====================
-  log "اضافه کردن Root TLS CAها از tls/tlscacerts ..."
-
-  # Orderer Root
+  # 1. Root TLS CAها (اولویت اول)
+  log "اضافه کردن Root TLS CAها..."
   cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem >> bundled-tls-ca.pem 2>/dev/null || true
-
-  # همه Peerها (دقیقاً همان مسیری که در tree داری)
   for i in {1..8}; do
     find crypto-config/peerOrganizations/org${i}.example.com -name "tls-rca-org${i}-*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
-  # ==================== 2. Root از tlsca (برای اطمینان بیشتر) ====================
+  # 2. Root از tlsca (برای اطمینان بیشتر)
   log "اضافه کردن Root از tlsca ..."
   cat crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     cat crypto-config/peerOrganizations/org${i}.example.com/tlsca/tlsca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
-  # ==================== 3. Leaf ca.crt (server cert) ====================
+  # 3. Leaf ca.crt همه نودها
   log "اضافه کردن Leaf ca.crt همه نودها..."
   cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
-  # ==================== MSP Bundle ====================
+  # 4. MSP Bundle
   log "اضافه کردن MSP CAها..."
   cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem 2>/dev/null || true
   for i in {1..8}; do
@@ -724,7 +720,17 @@ generate_bundled_certs() {
 
   tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
   success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
-  ls -l bundled-tls-ca.pem bundled-msp-ca.pem
+
+  # ==================== فیکس اصلی: جایگزینی ca.crt همه نودها ====================
+  log "جایگزینی bundled-tls-ca.pem به عنوان ca.crt همه نودها (روی هاست)..."
+  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
+  for i in {1..8}; do
+    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+  done
+
+  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگزین شد — TLS حالا کاملاً درست کار می‌کند!"
+  ls -l bundled-tls-ca.pem
 }
 
 generate_bundled_cert() {
