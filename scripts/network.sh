@@ -705,7 +705,7 @@ generate_bundled_certs() {
   for i in {1..8}; do
     cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   done
-
+ 
   # 4. MSP Bundle
   log "اضافه کردن MSP CAها..."
   cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem 2>/dev/null || true
