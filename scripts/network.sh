@@ -690,6 +690,50 @@ generate_bundled_certs() {
   > bundled-tls-ca.pem
   > bundled-msp-ca.pem
 
+  # ==================== 1. Root TLS CAها (اولویت اول - tls-rca-*.pem) ====================
+  log "اضافه کردن Root TLS CAها از tls/tlscacerts ..."
+
+  # Orderer Root
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/tls-rca-orderer-7054.pem >> bundled-tls-ca.pem 2>/dev/null || true
+
+  # همه Peerها (دقیقاً همان مسیری که در tree داری)
+  for i in {1..8}; do
+    find crypto-config/peerOrganizations/org${i}.example.com -name "tls-rca-org${i}-*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+  done
+
+  # ==================== 2. Root از tlsca (برای اطمینان بیشتر) ====================
+  log "اضافه کردن Root از tlsca ..."
+  cat crypto-config/ordererOrganizations/example.com/tlsca/tlsca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  for i in {1..8}; do
+    cat crypto-config/peerOrganizations/org${i}.example.com/tlsca/tlsca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  done
+
+  # ==================== 3. Leaf ca.crt (server cert) ====================
+  log "اضافه کردن Leaf ca.crt همه نودها..."
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
+  for i in {1..8}; do
+    cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
+  done
+
+  # ==================== MSP Bundle ====================
+  log "اضافه کردن MSP CAها..."
+  cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem 2>/dev/null || true
+  for i in {1..8}; do
+    ls crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts/rca-org${i}-*.pem 2>/dev/null | head -n1 | xargs cat >> bundled-msp-ca.pem 2>/dev/null || true
+  done
+
+  tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
+  success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
+  ls -l bundled-tls-ca.pem bundled-msp-ca.pem
+}
+
+generate_bundled_cert() {
+  log "ساخت bundled-tls-ca.pem (ترکیب کامل Root + Leaf بر اساس tree واقعی تو)..."
+  cd "$CONFIG_DIR"
+  
+  > bundled-tls-ca.pem
+  > bundled-msp-ca.pem
+
   # ==================== 1. Root TLS CAها (مهم‌ترین بخش) ====================
   log "اضافه کردن تمام Root TLS CAها..."
 
