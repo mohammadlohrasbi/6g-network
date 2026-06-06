@@ -733,24 +733,27 @@ generate_bundled_certts() {
 }
 
 generate_bundled_certs() {
-  log "ساخت bundled-tls-ca.pem (ترکیب کامل)..."
+  log "ساخت bundled-tls-ca.pem (ترکیب کامل و مرتب)..."
 
   cd "$CONFIG_DIR"
   > bundled-tls-ca.pem
 
-  # Root CAهای TLS
+  # ۱. Root CAهای TLS (اولویت اول)
+  log "اضافه کردن Root CAهای TLS..."
   for i in {1..8}; do
     find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
   find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
 
-  # Leaf ca.crt نودها
+  # ۲. Leaf ca.crt همه نودها
+  log "اضافه کردن Leaf ca.crt نودها..."
   cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
-  # MSP CAها
+  # ۳. MSP CAها برای کامل بودن
+  log "اضافه کردن MSP CAها..."
   for i in {1..8}; do
     find crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
@@ -760,19 +763,21 @@ generate_bundled_certs() {
   success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
 
   # ==================== کپی به همه مسیرهای مهم ====================
-  log "جایگزینی ca.crt در مسیرهای Peer و Orderer..."
+  log "جایگزینی ca.crt در تمام مسیرهای Peer و Orderer..."
 
   # Peerها
   for i in {1..8}; do
     cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
 
-  # Orderer (دو مسیر رایج)
+  # Orderer - مسیر اصلی
   cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
+  # Orderer - مسیر mount شده در docker-compose
   mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls
   cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
-  success "✅ فایل ca.crt برای Peerها و Orderer (هر دو مسیر) اعمال شد!"
+  success "✅ فایل ca.crt برای همه Peerها و Orderer (هر دو مسیر) اعمال شد!"
 }
 
 generate_bundled_certss() {
