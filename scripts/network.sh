@@ -729,7 +729,7 @@ generate_bundled_certts() {
     cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
 
-  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگزین شد — TLS حالا کاملاً درست کار می‌کند!"
+  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگ  زین شد — TLS حالا کاملاً درست کار می‌کند!"
 }
 
 generate_bundled_certs() {
