@@ -733,51 +733,47 @@ generate_bundled_certts() {
 }
 
 generate_bundled_certs() {
-  log "ساخت bundled-tls-ca.pem (ترکیب کامل و مرتب)..."
+  log "ساخت bundled-tls-ca.pem (نسخه نهایی و قوی)..."
 
   cd "$CONFIG_DIR"
   > bundled-tls-ca.pem
 
-  # ۱. Root CAهای TLS (اولویت اول)
+  # Root CAهای TLS (اولویت بالا)
   log "اضافه کردن Root CAهای TLS..."
+  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
-  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
 
-  # ۲. Leaf ca.crt همه نودها
+  # Leaf ca.crt همه نودها
   log "اضافه کردن Leaf ca.crt نودها..."
   cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
-  # ۳. MSP CAها برای کامل بودن
+  # MSP CAها
   log "اضافه کردن MSP CAها..."
+  find crypto-config/ordererOrganizations/example.com/msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
     find crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
-  find crypto-config/ordererOrganizations/example.com/msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
 
   tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
-  success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
+  success "bundled-tls-ca.pem ساخته شد (تعداد: $tls_count)"
 
-  # ==================== کپی به همه مسیرهای مهم ====================
-  log "جایگزینی ca.crt در تمام مسیرهای Peer و Orderer..."
+  # کپی به تمام مسیرهای مهم
+  log "جایگزینی ca.crt در تمام مسیرها..."
 
   # Peerها
   for i in {1..8}; do
     cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
 
-  # Orderer - مسیر اصلی
+  # Orderer - مسیر اصلی mount
   cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
-  # Orderer - مسیر mount شده در docker-compose
-  mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls
-  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
-
-  success "✅ فایل ca.crt برای همه Peerها و Orderer (هر دو مسیر) اعمال شد!"
+  success "✅ bundled کامل برای Peer و Orderer اعمال شد!"
 }
 
 generate_bundled_certss() {
