@@ -52,6 +52,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
   # 2. کپی seed برای TLS CA و Enrollment CA
   log "کپی seed برای TLS CA و Enrollment CA"
+  tree
 
   # Orderer TLS CA
   mkdir -p "$CRYPTO_DIR/ordererOrganizations/example.com/tlsca"
