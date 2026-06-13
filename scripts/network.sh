@@ -826,16 +826,18 @@ create_and_join_channels() {
   for ch in networkchannel resourcechannel; do
     log "ایجاد کانال $ch ..."
 
+    docker cp /root/6g-network/config/bundled-tls-ca.pem peer0.org1.example.com:/tmp/bundled-tls-ca.pem
+
     docker exec peer0.org1.example.com bash -c "
       export CORE_PEER_LOCALMSPID=org1MSP
       export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       export CORE_PEER_TLS_ENABLED=true
-      export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
       peer channel create -o orderer.example.com:7050 -c $ch \
         -f /etc/hyperledger/configtx/${ch}.tx \
         --outputBlock /tmp/${ch}.block \
-        --tls --cafile /etc/hyperledger/fabric/tls/ca.crt
+        --tls --cafile /tmp/bundled-tls-ca.pem
     "
 
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/"
@@ -852,7 +854,7 @@ create_and_join_channels() {
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
         export CORE_PEER_ADDRESS=peer0.${ORG}.example.com:${PORT}
         export CORE_PEER_TLS_ENABLED=true
-        export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+        export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
         peer channel join -b /tmp/${ch}.block
       " && success "$PEER به $ch join شد"
     done
@@ -861,7 +863,7 @@ create_and_join_channels() {
   success "کانال‌ها ساخته و join شدند"
 }
 
-update_anchor_peers() {
+update_anchor_peerss() {
   log "تنظیم Anchor Peer برای همه سازمان‌ها در هر دو کانال..."
 
   for ch in networkchannel resourcechannel; do
@@ -897,6 +899,48 @@ update_anchor_peers() {
     done
   done
 
+  success "تمام Anchor Peerها برای هر دو کانال با موفقیت تنظیم شدند!"
+}
+
+# ------------------- تنظیم Anchor Peer -------------------
+update_anchor_peers() {
+  log "تنظیم Anchor Peer برای همه سازمان‌ها در هر دو کانال..."
+
+  for ch in networkchannel resourcechannel; do
+    log "تنظیم Anchor Peer برای کانال $ch ..."
+
+    for i in {1..8}; do
+      ORG="org${i}MSP"
+      ANCHOR_TX_HOST="$CHANNEL_ARTIFACTS/${ch}_${ORG}_anchors.tx"
+      ANCHOR_TX_CONTAINER="/tmp/${ch}_${ORG}_anchors.tx"
+
+      configtxgen -profile ApplicationChannel \
+        -outputAnchorPeersUpdate "$ANCHOR_TX_HOST" \
+        -channelID "$ch" \
+        -asOrg "$ORG"
+
+      docker cp "$ANCHOR_TX_HOST" peer0.org1.example.com:"$ANCHOR_TX_CONTAINER"
+
+      # کپی bundled برای peer0.org1
+      docker cp /root/6g-network/config/bundled-tls-ca.pem peer0.org1.example.com:/tmp/bundled-tls-ca.pem
+
+      if docker exec peer0.org1.example.com bash -c "
+        export CORE_PEER_LOCALMSPID=org1MSP
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+        export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
+        peer channel update -o orderer.example.com:7050 -c $ch -f $ANCHOR_TX_CONTAINER \
+          --tls --cafile /tmp/bundled-tls-ca.pem
+      "; then
+        success "Anchor Peer برای $ORG در $ch تنظیم شد"
+      else
+        error "تنظیم Anchor Peer برای $ORG در $ch شکست خورد"
+      fi
+
+      docker exec peer0.org1.example.com rm -f "$ANCHOR_TX_CONTAINER" 2>/dev/null || true
+    done
+  done
   success "تمام Anchor Peerها برای هر دو کانال با موفقیت تنظیم شدند!"
 }
 
