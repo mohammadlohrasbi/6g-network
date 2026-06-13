@@ -849,6 +849,8 @@ create_and_join_channels() {
 
       docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
 
+      docker cp /root/6g-network/config/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+
       docker exec $PEER bash -c "
         export CORE_PEER_LOCALMSPID=org${i}MSP
         export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
