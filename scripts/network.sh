@@ -767,12 +767,12 @@ generate_bundled_certs() {
   log "جایگزینی ca.crt در تمام مسیرها..."
 
   # Peerها
-  for i in {1..8}; do
-    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
-  done
+  #for i in {1..8}; do
+  #  cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+  #done
 
   # Orderer - مسیر اصلی mount
-  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+  #cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
   success "✅ bundled کامل برای Peer و Orderer اعمال شد!"
 }
@@ -1075,7 +1075,7 @@ EOF
 main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
-  #generate_bundled_certs
+  generate_bundled_certs
   start_network
   create_and_join_channels
   update_anchor_peers
