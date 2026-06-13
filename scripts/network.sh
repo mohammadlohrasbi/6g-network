@@ -1075,7 +1075,7 @@ EOF
 main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
-  generate_bundled_certs
+  #generate_bundled_certs
   start_network
   create_and_join_channels
   update_anchor_peers
