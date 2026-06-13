@@ -396,7 +396,7 @@ docker run --rm \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
     cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/keystore/*_sk \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
-    cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/* \
+    cp /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
     echo "TLS گواهی orderer ساخته شد"
@@ -433,7 +433,7 @@ for i in {1..8}; do
       cp /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/keystore/*_sk \
          /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/server.key
 
-      cp /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/tlscacerts/* \
+      cp /crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem \
          /crypto-config/peerOrganizations/\$ORG.example.com/peers/\$PEER_NAME/tls/ca.crt
 
       echo \"TLS گواهی \$PEER_NAME با موفقیت ساخته شد\"
