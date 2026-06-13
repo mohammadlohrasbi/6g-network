@@ -1083,6 +1083,9 @@ EOF
 
     # نصب روی org1
     PEER="peer0.org1.example.com"
+
+    docker cp /root/6g-network/config/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+    
     log "نصب روی org1 ..."
 
     docker cp "$tar" "$PEER:/tmp/"
@@ -1092,7 +1095,7 @@ EOF
       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       -e CORE_PEER_ADDRESS=localhost:7051 \
       -e CORE_PEER_TLS_ENABLED=true \
-      -e CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
       "$PEER" \
       timeout 600s peer lifecycle chaincode install "/tmp/${name}.tar.gz" 2>&1)
 
@@ -1117,6 +1120,100 @@ EOF
   success "نصب اولیه روی org1 تمام شد. حالا approve و commit را انجام می‌دهیم."
 }
 
+approve_and_commit_chaincode() {
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode برای approve/commit پیدا نشد"
+    return 0
+  fi
+
+  success "شروع approve و commit زنجیره‌های هوشمند (از org1)"
+
+  for dir in "$CHAINCODE_DIR"/*/; do
+    [ ! -d "$dir" ] && continue
+    name=$(basename "$dir")
+
+    # پیدا کردن Package ID
+    PACKAGE_ID_FILE="/tmp/${name}_package_id.txt"
+    if [ ! -f "$PACKAGE_ID_FILE" ]; then
+      log "Package ID برای $name پیدا نشد — رد شد"
+      continue
+    fi
+
+    PACKAGE_ID=$(cat "$PACKAGE_ID_FILE")
+    if [ -z "$PACKAGE_ID" ]; then
+      error "Package ID خالی است برای $name"
+      continue
+    fi
+
+    log "=== Approve و Commit برای Chaincode: $name ==="
+
+    PEER="peer0.org1.example.com"
+
+    # کپی bundled برای verify
+    docker cp /root/6g-network/config/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+
+    # ===================== APPROVE =====================
+    log "Approve کردن $name از org1 ..."
+    APPROVE_OUTPUT=$(docker exec \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      -e CORE_PEER_TLS_ENABLED=true \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+      "$PEER" \
+      peer lifecycle chaincode approveformyorg \
+        --channelID networkchannel \
+        --name "$name" \
+        --version 1.0 \
+        --package-id "$PACKAGE_ID" \
+        --sequence 1 \
+        --orderer orderer.example.com:7050 \
+        --ordererTLSHostnameOverride orderer.example.com \
+        --tls \
+        --cafile /tmp/bundled-tls-ca.pem \
+        --connTimeout 180s 2>&1)
+
+    echo "$APPROVE_OUTPUT"
+
+    if echo "$APPROVE_OUTPUT" | grep -q "Successfully approved"; then
+      success "Approve موفق برای $name"
+    else
+      error "Approve شکست خورد برای $name"
+      continue
+    fi
+
+    # ===================== COMMIT =====================
+    log "Commit کردن $name ..."
+    COMMIT_OUTPUT=$(docker exec \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      -e CORE_PEER_TLS_ENABLED=true \
+      -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+      "$PEER" \
+      peer lifecycle chaincode commit \
+        --channelID networkchannel \
+        --name "$name" \
+        --version 1.0 \
+        --sequence 1 \
+        --orderer orderer.example.com:7050 \
+        --ordererTLSHostnameOverride orderer.example.com \
+        --tls \
+        --cafile /tmp/bundled-tls-ca.pem \
+        --connTimeout 180s 2>&1)
+
+    echo "$COMMIT_OUTPUT"
+
+    if echo "$COMMIT_OUTPUT" | grep -q "Successfully committed"; then
+      success "Commit موفق برای $name"
+    else
+      error "Commit شکست خورد برای $name"
+    fi
+  done
+
+  success "عملیات approve و commit برای تمام chaincodeها تمام شد"
+}
+
 # ------------------- اجرا -------------------
 main() {
   cleanup
@@ -1127,6 +1224,7 @@ main() {
   update_anchor_peers
   generate_chaincode_modules
   package_and_install_chaincode
+  approve_and_commit_chaincode
 }
 
 main
