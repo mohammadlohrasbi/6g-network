@@ -685,44 +685,30 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 } 
 
 generate_bundled_certs() {
-  log "ساخت bundled-tls-ca.pem (نسخه نهایی و پایدار)..."
+  log "ساخت bundled-tls-ca.pem (شامل TLS CA + Enrollment CA)..."
 
   cd "$CONFIG_DIR"
-
-  # پاک کردن فایل قبلی
   > bundled-tls-ca.pem
 
-  # =====================================================
-  # منبع اصلی: Root CAهای TLS از rca/tls-msp/cacerts
-  # =====================================================
-  log "اضافه کردن تمام Root CAهای TLS..."
-
-  # Orderer
-  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts \
-    -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
-
-  # همه سازمان‌ها (org1 تا org8)
+  # TLS CAها (از rca/tls-msp)
+  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   for i in {1..8}; do
-    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts \
-      -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+  done
+
+  # Enrollment CAها (از rca)
+  cat crypto-config/ordererOrganizations/example.com/rca/ca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  for i in {1..8}; do
+    cat crypto-config/peerOrganizations/org${i}.example.com/rca/ca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
   tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
   success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
 
-  # =====================================================
-  # اعمال bundled به عنوان ca.crt همه نودها
-  # =====================================================
-  log "تنظیم bundled-tls-ca.pem به عنوان ca.crt همه نودها..."
-
-  # Orderer
-  cp bundled-tls-ca.pem \
-     crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
-
-  # همه Peerها
+  # اعمال به عنوان ca.crt
+  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
   for i in {1..8}; do
-    cp bundled-tls-ca.pem \
-       crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
 
   success "✅ bundled-tls-ca.pem به عنوان ca.crt همه نودها تنظیم شد"
