@@ -1205,7 +1205,7 @@ main() {
   update_anchor_peers
   generate_chaincode_modules
   package_and_install_chaincode
-  approve_and_commit_chaincode
+  #approve_and_commit_chaincode
 }
 
 main
