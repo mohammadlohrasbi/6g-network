@@ -684,56 +684,51 @@ echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — ge
 echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
 } 
 
-generate_bundled_certts() {
-  log "ساخت bundled-tls-ca.pem (ترکیب کامل Root + Leaf بر اساس tree واقعی تو)..."
+generate_bundled_certs() {
+  log "ساخت bundled-tls-ca.pem (نسخه نهایی و پایدار)..."
+
   cd "$CONFIG_DIR"
-  
+
+  # پاک کردن فایل قبلی
   > bundled-tls-ca.pem
-  > bundled-msp-ca.pem
 
-  # 2. Root از tlsca (برای اطمینان بیشتر)
-  log "اضافه کردن Root از tlsca ..."
- # Orderer
-  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
-  # همه ۸ Peer Org
-  for i in {1..8}; do
-    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -type f -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
-  done
+  # =====================================================
+  # منبع اصلی: Root CAهای TLS از rca/tls-msp/cacerts
+  # =====================================================
+  log "اضافه کردن تمام Root CAهای TLS..."
 
-  # 3. Leaf ca.crt همه نودها
-  log "اضافه کردن Leaf ca.crt همه نودها..."
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
+  # Orderer
+  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts \
+    -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+
+  # همه سازمان‌ها (org1 تا org8)
   for i in {1..8}; do
-    cat crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt >> bundled-tls-ca.pem 2>/dev/null || true
-  done
- 
-  # 4. MSP Bundle
-  log "اضافه کردن MSP CAها..."
-  cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem 2>/dev/null || true
-  for i in {1..8}; do
-    ls crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts/rca-org${i}-*.pem 2>/dev/null | head -n1 | xargs cat >> bundled-msp-ca.pem 2>/dev/null || true
+    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts \
+      -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
   done
 
   tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
   success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
 
-  ls -l bundled-tls-ca.pem
-
-    # ==================== فیکس نهایی: جایگزینی ca.crt همه نودها ====================
-  log "جایگزینی bundled-tls-ca.pem به عنوان ca.crt همه نودها (روی هاست)..."
+  # =====================================================
+  # اعمال bundled به عنوان ca.crt همه نودها
+  # =====================================================
+  log "تنظیم bundled-tls-ca.pem به عنوان ca.crt همه نودها..."
 
   # Orderer
-  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+  cp bundled-tls-ca.pem \
+     crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
   # همه Peerها
   for i in {1..8}; do
-    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+    cp bundled-tls-ca.pem \
+       crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
 
-  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه ۹ نود جایگ  زین شد — TLS حالا کاملاً درست کار می‌کند!"
+  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه نودها تنظیم شد"
 }
 
-generate_bundled_certs() {
+generate_bundled_certts() {
   log "ساخت bundled-tls-ca.pem (نسخه نهایی و قوی)..."
 
   cd "$CONFIG_DIR"
@@ -1219,12 +1214,12 @@ main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
   generate_bundled_certs
-  start_network
-  create_and_join_channels
-  update_anchor_peers
-  generate_chaincode_modules
-  package_and_install_chaincode
-  approve_and_commit_chaincode
+  #start_network
+  #create_and_join_channels
+  #update_anchor_peers
+  #generate_chaincode_modules
+  #package_and_install_chaincode
+  #approve_and_commit_chaincode
 }
 
 main
