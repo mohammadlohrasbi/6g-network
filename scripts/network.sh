@@ -685,37 +685,62 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 } 
 
 generate_bundled_certs() {
-  log "ساخت bundled-tls-ca.pem (شامل TLS CA + Enrollment CA)..."
-
+  log "ساخت bundled-tls-ca.pem (TLS CA + Enrollment CA + Admin Certificate)..."
   cd "$CONFIG_DIR"
   > bundled-tls-ca.pem
 
-  # TLS CA اصلی
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem >> bundled-tls-ca.pem
+  # ===================== Orderer =====================
+  log "اضافه کردن گواهی‌های Orderer..."
+
+  # TLS CA
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
 
   # Enrollment CA
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem >> bundled-tls-ca.pem
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
 
-    # ===================== همه Peerها =====================
+  # Admin Certificate
+  cat crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
+
+  # ===================== همه Peerها (org1 تا org8) =====================
   for i in {1..8}; do
-      log "اضافه کردن گواهی‌های org${i}..."
+    log "اضافه کردن گواهی‌های org${i}..."
 
-        PEER_TLS_DIR="crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls"
-        PEER_MSP_DIR="crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+    PEER_DIR="crypto-config/peerOrganizations/org${i}.example.com"
+    PEER_TLS_DIR="$PEER_DIR/peers/peer0.org${i}.example.com/tls"
+    PEER_MSP_DIR="$PEER_DIR/peers/peer0.org${i}.example.com/msp"
+    ADMIN_MSP_DIR="$PEER_DIR/users/Admin@org${i}.example.com/msp"
 
-        # TLS CA اصلی (tlscacerts)
-        cat "$PEER_TLS_DIR/tlscacerts/"*.pem >> bundled-tls-ca.pem
+    # TLS CA اصلی (tlscacerts)
+    cat "$PEER_TLS_DIR/tlscacerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
 
-        # Enrollment CA (از msp/cacerts)
-        cat "$PEER_MSP_DIR/cacerts/"*.pem >> bundled-tls-ca.pem
-    done
+    # Enrollment CA (از msp/cacerts)
+    cat "$PEER_MSP_DIR/cacerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
+
+    # Admin Certificate
+    cat "$ADMIN_MSP_DIR/signcerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  done
+
+  # ===================== گواهی‌های اولیه rca (برای اطمینان کامل) =====================
+  log "اضافه کردن گواهی‌های اولیه از rca..."
+
+  # Orderer rca
+  cat crypto-config/ordererOrganizations/example.com/rca/ca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+
+  # همه Peerها rca
+  for i in {1..8}; do
+    cat crypto-config/peerOrganizations/org${i}.example.com/rca/ca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
+  done
 
 
   tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
   success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
 
-  # اعمال به عنوان ca.crt
+  # اعمال روی هاست (به عنوان ca.crt همه نودها)
+  log "اعمال bundled به عنوان ca.crt همه نودها..."
   cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
   for i in {1..8}; do
     cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
   done
