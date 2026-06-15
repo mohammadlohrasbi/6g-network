@@ -802,6 +802,12 @@ generate_bundled_certs() {
       find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
     done
 
+      # Enrollment CAها (از rca)
+    cat crypto-config/ordererOrganizations/example.com/rca/ca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+    for i in {1..8}; do
+      cat crypto-config/peerOrganizations/org${i}.example.com/rca/ca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
+    done
+
     # حذف گواهی‌های تکراری
     log "حذف گواهی‌های تکراری..."
     awk 'BEGIN {RS="-----END CERTIFICATE-----"} /BEGIN CERTIFICATE/ {print $0 "-----END CERTIFICATE-----"}' bundled-tls-ca.pem \
