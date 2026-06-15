@@ -684,7 +684,7 @@ echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — ge
 echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
 } 
 
-generate_bundled_certss() {
+generate_bundled_certs() {
   log "ساخت bundled-tls-ca.pem (شامل TLS CA + Enrollment CA)..."
 
   cd "$CONFIG_DIR"
@@ -758,7 +758,7 @@ generate_bundled_certts() {
   success "✅ bundled کامل برای Peer و Orderer اعمال شد!"
 }
 
-generate_bundled_certs() {
+generate_bundled_certss() {
     log "ساخت bundled-tls-ca.pem از فایل‌های اصلی (tlscacerts + cacerts)..."
 
     cd "$CONFIG_DIR"
