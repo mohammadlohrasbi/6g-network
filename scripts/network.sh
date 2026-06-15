@@ -684,7 +684,7 @@ echo "تمام MSPهای اصلی سازمان‌ها ساخته شدند — ge
 echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند — شبکه بدون crash بالا می‌آید!"
 } 
 
-generate_bundled_certs() {
+generate_bundled_certss() {
   log "ساخت bundled-tls-ca.pem (شامل TLS CA + Enrollment CA)..."
 
   cd "$CONFIG_DIR"
@@ -758,33 +758,61 @@ generate_bundled_certts() {
   success "✅ bundled کامل برای Peer و Orderer اعمال شد!"
 }
 
-generate_bundled_certss() {
-  log "ساخت bundled-tls-ca.pem و bundled-msp-ca.pem..."
-  cd "$CONFIG_DIR"
+generate_bundled_certs() {
+    log "ساخت bundled-tls-ca.pem از فایل‌های اصلی (tlscacerts + cacerts)..."
 
-  > bundled-tls-ca.pem
-  > bundled-msp-ca.pem
+    cd "$CONFIG_DIR"
+    > bundled-tls-ca.pem
 
-  # TLS bundled (از ca.crt واقعی)
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt >> bundled-tls-ca.pem
-  for i in {1..8}; do
-    cat crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/tls/ca.crt >> bundled-tls-ca.pem
-  done
+    # ===================== Orderer =====================
+    log "اضافه کردن گواهی‌های Orderer..."
 
-  # MSP bundled
-  cat crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-orderer-7054.pem >> bundled-msp-ca.pem
-  for i in {1..8}; do
-    ls crypto-config/peerOrganizations/org$i.example.com/msp/cacerts/rca-org$i-*.pem 2>/dev/null | head -n1 | xargs cat >> bundled-msp-ca.pem
-  done
+    # TLS CA اصلی
+    if ls crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem &>/dev/null; then
+        cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem >> bundled-tls-ca.pem
+    fi
 
-  local tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem)
-  local msp_count=$(grep -c "BEGIN CERTIFICATE" bundled-msp-ca.pem)
+    # Enrollment CA
+    if ls crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem &>/dev/null; then
+        cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem >> bundled-tls-ca.pem
+    fi
 
-  if [ "$tls_count" -eq 9 ] && [ "$msp_count" -eq 9 ]; then
-    success "bundled-tls-ca.pem و bundled-msp-ca.pem ساخته شدند ($tls_count / $msp_count)"
-  else
-    error "تعداد certها اشتباه است (TLS: $tls_count, MSP: $msp_count)"
-  fi
+    # ===================== همه Peerها =====================
+    for i in {1..8}; do
+        log "اضافه کردن گواهی‌های org${i}..."
+
+        PEER_TLS_DIR="crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls"
+        PEER_MSP_DIR="crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp"
+
+        # TLS CA اصلی (tlscacerts)
+        if ls "$PEER_TLS_DIR/tlscacerts/"*.pem &>/dev/null; then
+            cat "$PEER_TLS_DIR/tlscacerts/"*.pem >> bundled-tls-ca.pem
+        fi
+
+        # Enrollment CA (از msp/cacerts)
+        if ls "$PEER_MSP_DIR/cacerts/"*.pem &>/dev/null; then
+            cat "$PEER_MSP_DIR/cacerts/"*.pem >> bundled-tls-ca.pem
+        fi
+    done
+
+    # حذف گواهی‌های تکراری
+    log "حذف گواهی‌های تکراری..."
+    awk 'BEGIN {RS="-----END CERTIFICATE-----"} /BEGIN CERTIFICATE/ {print $0 "-----END CERTIFICATE-----"}' bundled-tls-ca.pem \
+        | sort | uniq > /tmp/final_bundled.pem
+    mv /tmp/final_bundled.pem bundled-tls-ca.pem
+
+    tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
+    success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
+
+    # اعمال روی هاست (کپی در مسیرهای مورد نیاز)
+    log "اعمال bundled روی هاست..."
+    cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
+    for i in {1..8}; do
+        cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
+    done
+
+    success "✅ bundled کامل از فایل‌های اصلی ساخته و اعمال شد"
 }
    
 # ------------------- راه‌اندازی شبکه -------------------
