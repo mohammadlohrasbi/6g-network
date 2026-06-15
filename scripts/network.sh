@@ -693,6 +693,8 @@ generate_bundled_certs() {
   # TLS CA اصلی
   cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem >> bundled-tls-ca.pem
 
+  # Enrollment CA
+  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem >> bundled-tls-ca.pem
 
     # ===================== همه Peerها =====================
   for i in {1..8}; do
@@ -704,6 +706,8 @@ generate_bundled_certs() {
         # TLS CA اصلی (tlscacerts)
         cat "$PEER_TLS_DIR/tlscacerts/"*.pem >> bundled-tls-ca.pem
 
+        # Enrollment CA (از msp/cacerts)
+        cat "$PEER_MSP_DIR/cacerts/"*.pem >> bundled-tls-ca.pem
     done
 
 
