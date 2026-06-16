@@ -162,6 +162,20 @@ csr:
 
 tls:
   enabled: true
+  
+signing:
+  default:
+    usage:
+      - digital signature
+    expiry: 8760h
+  profiles:
+    tls:
+      usage:
+        - signing
+        - key encipherment
+        - server auth
+        - client auth
+      expiry: 8760h
 
 registry:
   maxenrollments: -1
@@ -213,6 +227,20 @@ csr:
 
 tls:
   enabled: true
+
+signing:
+  default:
+    usage:
+      - digital signature
+    expiry: 8760h
+  profiles:
+    tls:
+      usage:
+        - signing
+        - key encipherment
+        - server auth
+        - client auth
+      expiry: 8760h
   
 registry:
   maxenrollments: -1
