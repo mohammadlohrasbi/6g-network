@@ -292,6 +292,8 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
   docker-compose -f docker-compose-rca.yml up -d
   sleep 60
 
+  docker ps
+  
   cd "$CRYPTO_DIR"
   tree
   cd "$PROJECT_DIR"
