@@ -320,12 +320,6 @@ docker run --rm \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
     \
     CACERTS_DIR=\"/crypto-config/root-ca/ca-cert.pem"; \
-    TLS_CA_FILE=\$(ls \"\$CACERTS_DIR\"/*.pem 2>/dev/null | head -n 1); \
-    if [ -z \"\$TLS_CA_FILE\" ]; then \
-      echo 'خطا: هیچ فایل .pem در '\$CACERTS_DIR' پیدا نشد'; \
-      ls -l \"\$CACERTS_DIR\"; \
-      exit 1; \
-    fi; \
     echo 'TLS CA استفاده‌شده: '\$TLS_CA_FILE; \
     \
     echo 'enroll bootstrap admin...'; \
