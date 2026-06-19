@@ -48,6 +48,17 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO" "$ROOT_CA"
 
   # =====================================================
+  # ایجاد شبکه Docker در صورت نیاز
+  # =====================================================
+  if ! docker network ls | grep -q "6g-network"; then
+      log "ایجاد شبکه 6g-network"
+      docker network create 6g-network
+      success "شبکه 6g-network ساخته شد"
+  else
+      log "شبکه 6g-network از قبل وجود دارد"
+  fi
+
+  # =====================================================
   # راه‌اندازی Root CA (اولین قدم)
   # =====================================================
   log "راه‌اندازی Root CA"
