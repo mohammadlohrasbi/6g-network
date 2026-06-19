@@ -310,7 +310,7 @@ log "تولید گواهی‌های نهایی با Enrollment CA"
 log "تولید هویت Orderer با OU classification (نسخه نهایی و بدون خطا)"
 # بخش Orderer (اولین docker run)
 docker run --rm \
-  --network config_6g-network \
+  --network 6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c "\
