@@ -148,7 +148,7 @@ fi
   cd "$CRYPTO_DIR"
   tree
   cd "$PROJECT_DIR"
-cd "$CRYPTO_DIR"
+cd "$PROJECT_DIR"
 
 echo "=== ساخت دایرکتوری‌ها و fabric-ca-server-config.yaml برای rca-*ها ==="
 
