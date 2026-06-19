@@ -287,6 +287,7 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
   
   # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
+  cd "$PROJECT_DIR"
   docker-compose -f docker-compose-rca.yml up -d
   sleep 60
 
