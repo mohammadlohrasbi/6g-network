@@ -150,13 +150,11 @@ fi
   cd "$PROJECT_DIR"
 cd "$CRYPTO_DIR"
 
-# =====================================================
-# ساخت fabric-ca-server-config.yaml برای rca-*ها
-# (با استفاده از گواهی Intermediate از Root CA)
-# =====================================================
+echo "=== ساخت دایرکتوری‌ها و fabric-ca-server-config.yaml برای rca-*ها ==="
 
-echo "ساخت fabric-ca-server-config.yaml برای rca-orderer ..."
-cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<EOF
+# rca-orderer
+mkdir -p crypto-config/ordererOrganizations/example.com/rca
+cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<'EOF'
 ou:
   enabled: true
   organizational_unit_identifiers:
@@ -213,16 +211,15 @@ affiliations:
 
 debug: true
 EOF
+echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد"
 
-# =====================================================
-# ساخت کانفیگ برای rca-org1 تا rca-org8
-# =====================================================
+# rca-org1 تا rca-org8
 for i in {1..8}; do
   ORG="org${i}"
   RCA_NAME="rca-org${i}"
   RCA_CN="rca-org${i}.org${i}.example.com"
 
-  echo "ساخت fabric-ca-server-config.yaml برای ${RCA_NAME} ..."
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/rca
 
   cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
@@ -281,7 +278,10 @@ affiliations:
 
 debug: true
 EOF
+  echo "fabric-ca-server-config.yaml برای ${RCA_NAME} ساخته شد"
 done
+
+echo "همه فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند"
 
 echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
   
