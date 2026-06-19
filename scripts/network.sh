@@ -66,8 +66,7 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" up -d
   sleep 35
   success "Root CA با موفقیت راه‌اندازی شد"
-
-  # =====================================================
+# =====================================================
 # 6. تبدیل rca-* به Intermediate CA واقعی از Root CA
 # =====================================================
 log "تبدیل rca-orderer و rca-orgها به Intermediate CA از Root CA"
@@ -76,59 +75,59 @@ docker run --rm \
   --network 6g-network \
   -v "$PROJECT_DIR/crypto-config":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
-  /bin/bash -c "
+  /bin/bash -c '
     set -e
     export FABRIC_CA_CLIENT_HOME=/tmp/root-ca-client
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-    ROOT_CA_ADDR=\"root-ca:7052\"
-    ROOT_CA_CERT=\"/crypto-config/root-ca/ca-cert.pem\"
+    ROOT_CA_ADDR="root-ca:7052"
+    ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
 
-    echo '=== Enroll admin روی Root CA ==='
-    fabric-ca-client enroll -u https://admin:adminpw@\$ROOT_CA_ADDR \
-      --tls.certfiles \$ROOT_CA_CERT \
+    echo "=== Enroll admin روی Root CA ==="
+    fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
+      --tls.certfiles $ROOT_CA_CERT \
       -M /tmp/root-ca-admin/msp
 
-    echo '=== Register Intermediate CA برای rca-orderer ==='
+    echo "=== Register Intermediate CA برای rca-orderer ==="
     fabric-ca-client register --id.name rca-orderer-intermediate \
       --id.secret intermediatepw \
       --id.type client \
-      --id.attrs 'hf.IntermediateCA=true:opt' \
-      -u https://admin:adminpw@\$ROOT_CA_ADDR \
-      --tls.certfiles \$ROOT_CA_CERT
+      --id.attrs hf.IntermediateCA=true \
+      -u https://admin:adminpw@$ROOT_CA_ADDR \
+      --tls.certfiles $ROOT_CA_CERT
 
-    echo '=== Enroll rca-orderer به عنوان Intermediate ==='
-    fabric-ca-client enroll -u https://rca-orderer-intermediate:intermediatepw@\$ROOT_CA_ADDR \
-      --tls.certfiles \$ROOT_CA_CERT \
+    echo "=== Enroll rca-orderer به عنوان Intermediate ==="
+    fabric-ca-client enroll -u https://rca-orderer-intermediate:intermediatepw@$ROOT_CA_ADDR \
+      --tls.certfiles $ROOT_CA_CERT \
       --enrollment.profile ca \
       -M /crypto-config/ordererOrganizations/example.com/rca/intermediate-msp
 
-    echo '=== Register Intermediate CA برای هر rca-org ==='
+    echo "=== Register و Enroll Intermediate CA برای rca-orgها ==="
     for i in {1..8}; do
-      ORG=\"org\$i\"
-      echo \"Register rca-org\$i-intermediate ...\"
-      fabric-ca-client register --id.name rca-org\$i-intermediate \
+      ORG="org$i"
+      echo "Register rca-$ORG-intermediate ..."
+      fabric-ca-client register --id.name rca-$ORG-intermediate \
         --id.secret intermediatepw \
         --id.type client \
-        --id.attrs 'hf.IntermediateCA=true:opt' \
-        -u https://admin:adminpw@\$ROOT_CA_ADDR \
-        --tls.certfiles \$ROOT_CA_CERT
-    done
+        --id.attrs hf.IntermediateCA=true \
+        -u https://admin:adminpw@$ROOT_CA_ADDR \
+        --tls.certfiles $ROOT_CA_CERT
 
-    echo '=== Enroll همه rca-orgها به عنوان Intermediate ==='
-    for i in {1..8}; do
-      ORG=\"org\$i\"
-      echo \"Enroll rca-org\$i ...\"
-      fabric-ca-client enroll -u https://rca-org\$i-intermediate:intermediatepw@\$ROOT_CA_ADDR \
-        --tls.certfiles \$ROOT_CA_CERT \
+      echo "Enroll rca-$ORG به عنوان Intermediate ..."
+      fabric-ca-client enroll -u https://rca-$ORG-intermediate:intermediatepw@$ROOT_CA_ADDR \
+        --tls.certfiles $ROOT_CA_CERT \
         --enrollment.profile ca \
-        -M /crypto-config/peerOrganizations/\$ORG.example.com/rca/intermediate-msp
+        -M /crypto-config/peerOrganizations/$ORG.example.com/rca/intermediate-msp
     done
 
-    echo 'همه rca-* با موفقیت به عنوان Intermediate CA از Root CA enroll شدند'
-  "
+    echo "همه rca-* با موفقیت به عنوان Intermediate CA از Root CA enroll شدند"
+  '
 
-success "تبدیل rca-* به Intermediate CA کامل شد"
+if [ $? -eq 0 ]; then
+    success "تبدیل rca-* به Intermediate CA با موفقیت انجام شد"
+else
+    error "خطا در تبدیل rca-* به Intermediate CA"
+fi
 
   # 1. تولید seed گواهی‌ها با cryptogen
   log "تولید seed گواهی‌ها با cryptogen"
