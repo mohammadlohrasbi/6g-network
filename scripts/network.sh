@@ -943,7 +943,7 @@ generate_bundled_certss() {
 # ------------------- راه‌اندازی شبکه -------------------
 start_network() {
   log "راه‌اندازی شبکه..."
-  docker-compose down -v --remove-orphans
+  # docker-compose down -v --remove-orphans
   docker-compose up -d
   sleep 90
   success "شبکه بالا آمد"
