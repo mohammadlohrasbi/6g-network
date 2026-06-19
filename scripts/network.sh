@@ -37,14 +37,24 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
   local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
   local TEMP_CRYPTO="$PROJECT_DIR/temp-seed-crypto"
+  local ROOT_CA="$CRYPTO_DIR/root-ca"
 
   # پاک کردن کامل قبلی
   docker-compose -f docker-compose-tls-ca.yml down -v --remove-orphans
   docker-compose -f docker-compose-rca.yml down -v --remove-orphans
   docker-compose down -v
   docker volume prune -f
-  rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
-  mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO"
+  rm -rf "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO" "$ROOT_CA"
+  mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS" "$TEMP_CRYPTO" "$ROOT_CA"
+
+  # =====================================================
+  # راه‌اندازی Root CA (اولین قدم)
+  # =====================================================
+  log "راه‌اندازی Root CA"
+  docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" down -v --remove-orphans || true
+  docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" up -d
+  sleep 35
+  success "Root CA با موفقیت راه‌اندازی شد"
 
   # 1. تولید seed گواهی‌ها با cryptogen
   log "تولید seed گواهی‌ها با cryptogen"
