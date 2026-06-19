@@ -96,6 +96,7 @@ EOF
   docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" down -v --remove-orphans || true
   docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" up -d
   sleep 35
+  tree
   success "Root CA با موفقیت راه‌اندازی شد"
 # =====================================================
 # 7. تبدیل rca-* به Intermediate CA واقعی از Root CA
