@@ -77,16 +77,16 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
     set -e
-    export FABRIC_CA_CLIENT_HOME=/tmp/root-ca-client
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
     ROOT_CA_ADDR="root-ca:7052"
     ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
+    ADMIN_MSP="/tmp/root-ca-admin/msp"
 
     echo "=== Enroll admin روی Root CA ==="
+    export FABRIC_CA_CLIENT_HOME="$ADMIN_MSP"
     fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
-      --tls.certfiles $ROOT_CA_CERT \
-      -M /tmp/root-ca-admin/msp
+      --tls.certfiles $ROOT_CA_CERT
 
     echo "=== Register Intermediate CA برای rca-orderer ==="
     fabric-ca-client register --id.name rca-orderer-intermediate \
@@ -102,7 +102,7 @@ docker run --rm \
       --enrollment.profile ca \
       -M /crypto-config/ordererOrganizations/example.com/rca/intermediate-msp
 
-    echo "=== Register و Enroll Intermediate CA برای rca-orgها ==="
+    echo "=== Register و Enroll Intermediate برای rca-orgها ==="
     for i in {1..8}; do
       ORG="org$i"
       echo "Register rca-$ORG-intermediate ..."
