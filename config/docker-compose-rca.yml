@@ -5,9 +5,6 @@ networks:
     external: true
 
 services:
-  # ============================================
-  # rca-orderer (Intermediate CA از Root CA)
-  # ============================================
   rca-orderer:
     image: hyperledger/fabric-ca:1.5.7
     container_name: rca-orderer
@@ -21,16 +18,13 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=orderer
     volumes:
       - ./crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7054:7054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
     networks:
       - 6g-network
 
-  # ============================================
-  # rca-org1 تا rca-org8
-  # ============================================
   rca-org1:
     image: hyperledger/fabric-ca:1.5.7
     container_name: rca-org1
@@ -44,7 +38,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org1.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org1.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org1.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7154:7154"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -64,7 +58,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org2.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org2.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org2.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7254:7254"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -84,7 +78,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org3.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org3.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org3.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7354:7354"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -104,7 +98,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org4.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org4.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org4.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7454:7454"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -124,7 +118,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org5.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org5.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org5.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7554:7554"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -144,7 +138,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org6.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org6.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org6.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7654:7654"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -164,7 +158,7 @@ services:
       - FABRIC_CA_SERVER_CSR_OU=peer
     volumes:
       - ./crypto-config/peerOrganizations/org7.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org7.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
+      - ./crypto-config/peerOrganizations/org7.example.com/rca/intermediate-msp/keystore/priv_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
     ports:
       - "7754:7754"
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
@@ -177,16 +171,4 @@ services:
     environment:
       - FABRIC_CA_SERVER_CA_NAME=rca-org8
       - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_PORT=7854
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/ca/priv_sk
-      - FABRIC_CA_SERVER_CSR_CN=rca-org8.org8.example.com
-      - FABRIC_CA_SERVER_CSR_OU=peer
-    volumes:
-      - ./crypto-config/peerOrganizations/org8.example.com/rca/intermediate-msp/signcerts/cert.pem:/etc/hyperledger/fabric-ca-server/ca/cert.pem
-      - ./crypto-config/peerOrganizations/org8.example.com/rca/intermediate-msp/keystore/*_sk:/etc/hyperledger/fabric-ca-server/ca/priv_sk
-    ports:
-      - "7854:7854"
-    command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 -d'
-    networks:
-      - 6g-network
+      - FABRIC_CA_SERVER_PORT=785
