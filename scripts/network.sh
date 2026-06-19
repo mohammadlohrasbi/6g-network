@@ -89,6 +89,20 @@ affiliations:
     - "."
 EOF
 
+echo "=== کپی کلیدها به priv_sk ==="
+
+# rca-orderer
+cp /root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/*_sk \
+   /root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/priv_sk
+
+# rca-orgها
+for i in {1..8}; do
+  cp /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca/intermediate-msp/keystore/*_sk \
+     /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca/intermediate-msp/keystore/priv_sk
+done
+
+echo "کلیدها با موفقیت به priv_sk کپی شدند"
+
   # =====================================================
   # راه‌اندازی Root CA (اولین قدم)
   # =====================================================
