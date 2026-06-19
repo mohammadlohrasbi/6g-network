@@ -148,27 +148,35 @@ fi
   cd "$CRYPTO_DIR"
   tree
   cd "$PROJECT_DIR"
-# برای rca-orderer
+cd "$CRYPTO_DIR"
+
+# =====================================================
+# ساخت fabric-ca-server-config.yaml برای rca-*ها
+# (با استفاده از گواهی Intermediate از Root CA)
+# =====================================================
+
+echo "ساخت fabric-ca-server-config.yaml برای rca-orderer ..."
 cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
     - organizational_unit_identifier: "orderer"
-      certificate: "ca/ca-orderer.example.com-cert.pem"
+      certificate: "ca/cert.pem"
     - organizational_unit_identifier: "admin"
-      certificate: "ca/ca-orderer.example.com-cert.pem"
+      certificate: "ca/cert.pem"
     - organizational_unit_identifier: "client"
-      certificate: "ca/ca-orderer.example.com-cert.pem"
+      certificate: "ca/cert.pem"
 
 csr:
   cn: rca-orderer.example.com
   hosts:
     - rca-orderer
     - localhost
+    - 127.0.0.1
 
 tls:
   enabled: true
-  
+
 signing:
   default:
     usage:
@@ -200,36 +208,39 @@ registry:
         hf.AffiliationMgr: true
 
 affiliations:
-  "": 
+  "":
     - "."
 
 debug: true
 EOF
-echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد (با bootstrap admin ثبت‌شده + OU classification کامل)"
 
-# برای هر rca-orgX
+# =====================================================
+# ساخت کانفیگ برای rca-org1 تا rca-org8
+# =====================================================
 for i in {1..8}; do
-  ORG=org$i
-  PORT=$((7054 + $i * 100))
+  ORG="org${i}"
   RCA_NAME="rca-org${i}"
   RCA_CN="rca-org${i}.org${i}.example.com"
-  
+
+  echo "ساخت fabric-ca-server-config.yaml برای ${RCA_NAME} ..."
+
   cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
 ou:
   enabled: true
   organizational_unit_identifiers:
     - organizational_unit_identifier: "peer"
-      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
+      certificate: "ca/cert.pem"
     - organizational_unit_identifier: "admin"
-      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
+      certificate: "ca/cert.pem"
     - organizational_unit_identifier: "client"
-      certificate: "ca/ca-org${i}.org${i}.example.com-cert.pem"
+      certificate: "ca/cert.pem"
 
 csr:
   cn: $RCA_CN
   hosts:
     - $RCA_NAME
     - localhost
+    - 127.0.0.1
 
 tls:
   enabled: true
@@ -247,7 +258,7 @@ signing:
         - server auth
         - client auth
       expiry: 8760h
-  
+
 registry:
   maxenrollments: -1
   identities:
@@ -265,16 +276,14 @@ registry:
         hf.AffiliationMgr: true
 
 affiliations:
-  "": 
+  "":
     - "."
 
 debug: true
 EOF
-  echo "fabric-ca-server-config.yaml برای rca-org${i} ساخته شد (با bootstrap admin ثبت‌شده + OU classification کامل)"
 done
 
-echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند — OU classification کامل فعال است و bootstrap admin در DB ثبت شد!"
-
+echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
   
   # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
