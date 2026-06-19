@@ -319,7 +319,7 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer; \
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
     \
-    CACERTS_DIR=\"/crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts\"; \
+    CACERTS_DIR=\"/crypto-config/root-ca/ca-cert.pem"; \
     TLS_CA_FILE=\$(ls \"\$CACERTS_DIR\"/*.pem 2>/dev/null | head -n 1); \
     if [ -z \"\$TLS_CA_FILE\" ]; then \
       echo 'خطا: هیچ فایل .pem در '\$CACERTS_DIR' پیدا نشد'; \
@@ -330,18 +330,18 @@ docker run --rm \
     \
     echo 'enroll bootstrap admin...'; \
     fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
+      --tls.certfiles \"\$CACERTS_DIR"; \
     \
     echo 'register Admin@example.com با type=admin...'; \
     fabric-ca-client register --id.name Admin@example.com \
       --id.secret adminpw \
       --id.type admin \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
+      --tls.certfiles \"\$CACERTS_DIR\"; \
     \
     echo 'enroll Admin@example.com...'; \
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CA_FILE\" \
+      --tls.certfiles \"\$CACERTS_DIR\" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp; \
     \
     echo 'register orderer.example.com با type=orderer...'; \
@@ -349,11 +349,11 @@ docker run --rm \
       --id.secret ordererpw \
       --id.type orderer \
       -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CA_FILE\"; \
+      --tls.certfiles \"\$CACERTS_DIR\"; \
     \
     echo 'enroll orderer.example.com...'; \
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles \"\$TLS_CA_FILE\" \
+      --tls.certfiles \"\$CACERTS_DIR\" \
       --csr.hosts 'orderer.example.com,localhost,127.0.0.1' \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp; \
     \
@@ -372,7 +372,7 @@ for i in {1..8}; do
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i; \
       export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true; \
       \
-      CACERTS_DIR=\"/crypto-config/peerOrganizations/org$i.example.com/rca/tls-msp/cacerts\"; \
+      CACERTS_DIR=\"/crypto-config/root-ca/ca-cert.pem\"; \
       TLS_CA_FILE=\$(ls \"\$CACERTS_DIR\"/*.pem 2>/dev/null | head -n 1); \
       if [ -z \"\$TLS_CA_FILE\" ]; then \
         echo 'خطا: هیچ فایل .pem در '\$CACERTS_DIR' پیدا نشد'; \
@@ -383,18 +383,18 @@ for i in {1..8}; do
       \
       echo 'enroll bootstrap admin...'; \
       fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-        --tls.certfiles \"\$TLS_CA_FILE\"; \
+        --tls.certfiles \"\$CACERTS_DIR\"; \
       \
       echo 'register Admin@org$i.example.com با type=admin...'; \
       fabric-ca-client register --id.name Admin@org$i.example.com \
         --id.secret adminpw \
         --id.type admin \
         -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-        --tls.certfiles \"\$TLS_CA_FILE\"; \
+        --tls.certfiles \"\$CACERTS_DIR\"; \
       \
       echo 'enroll Admin@org$i.example.com...'; \
       fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:$((7054 + $i * 100)) \
-        --tls.certfiles \"\$TLS_CA_FILE\" \
+        --tls.certfiles \"\$CACERTS_DIR\" \
         -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp; \
       \
       echo 'register peer0.org$i.example.com با type=peer...'; \
@@ -402,11 +402,11 @@ for i in {1..8}; do
         --id.secret peerpw \
         --id.type peer \
         -u https://admin:adminpw@rca-org$i:$((7054 + $i * 100)) \
-        --tls.certfiles \"\$TLS_CA_FILE\"; \
+        --tls.certfiles \"\$CACERTS_DIR\"; \
       \
       echo 'enroll peer0.org$i.example.com...'; \
       fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:$((7054 + $i * 100)) \
-        --tls.certfiles \"\$TLS_CA_FILE\" \
+        --tls.certfiles \"\$CACERTS_DIR\" \
         --csr.hosts 'peer0.org$i.example.com,localhost,127.0.0.1' \
         -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp; \
       \
@@ -430,7 +430,7 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-tls-orderer
 
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles /crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts/*.pem \
+      --tls.certfiles /crypto-config/root-ca/ca-cert.pem \
       --enrollment.profile tls \
       --csr.cn orderer.example.com \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
@@ -460,7 +460,7 @@ for i in {1..8}; do
       RCA_NAME=rca-org$i
       PORT=\$((7054 + $i * 100))
       PEER_NAME=peer0.\$ORG.example.com
-      TLS_CA_PATH=\"/crypto-config/peerOrganizations/\$ORG.example.com/rca/tls-msp/cacerts/*.pem\"
+      TLS_CA_PATH=\"/crypto-config/root-ca/ca-cert.pem\"
 
       echo \"در حال تولید TLS برای \$PEER_NAME (پورت \$PORT)...\"
 
