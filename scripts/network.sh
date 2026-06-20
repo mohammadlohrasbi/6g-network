@@ -298,66 +298,60 @@ EOF
   echo "fabric-ca-server-config.yaml برای ${RCA_NAME} ساخته شد"
 done
 
-echo "همه فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند"
 # =====================================================
-# تولید گواهی TLS رcaها با fabric-ca-client + Root CA
+# تولید گواهی TLS رcaها با openssl (روش پیشنهادی Fabric)
 # =====================================================
-log "تولید گواهی TLS سرورهای rca با fabric-ca-client (روش Fabric-native)"
+log "تولید گواهی‌های TLS سرورهای rca"
 
 ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
+ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
 
-generate_rca_tls_with_fabric() {
-    local RCA_NAME=$1          # rca-orderer یا rca-org1
+generate_rca_tls() {
+    local NAME=$1
     local CN=$2
-    local HOSTS=$3
-    local RCA_DIR=$4
+    local SAN=$3
+    local DIR=$4
 
-    mkdir -p "$RCA_DIR"
+    mkdir -p "$DIR"
 
-    echo "=== تولید گواهی TLS برای $RCA_NAME ==="
+    echo "=== تولید گواهی TLS برای $NAME ==="
 
-    # ثبت identity برای TLS
-    fabric-ca-client register \
-        --id.name ${RCA_NAME}-tls \
-        --id.secret tlssecret \
-        --id.type client \
-        --id.attrs "hf.Registrar.Roles=peer,client" \
-        -u https://admin:adminpw@rca-root:7052 \
-        --tls.certfiles "$ROOT_CA_CERT" || true
+    openssl ecparam -name prime256v1 -genkey -noout \
+        -out "$DIR/tls-key.pem" >/dev/null 2>&1
 
-    # Enroll با پروفایل tls
-    fabric-ca-client enroll \
-        -u https://${RCA_NAME}-tls:tlssecret@rca-root:7052 \
-        --tls.certfiles "$ROOT_CA_CERT" \
-        --enrollment.profile tls \
-        --csr.cn "$CN" \
-        --csr.hosts "$HOSTS" \
-        -M "$RCA_DIR/tls-msp"
+    openssl req -new -sha256 \
+        -key "$DIR/tls-key.pem" \
+        -out /tmp/$NAME.csr \
+        -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=$CN" \
+        -addext "subjectAltName = $SAN" >/dev/null 2>&1
 
-    # کپی به فرمت استاندارد
-    cp "$RCA_DIR/tls-msp/signcerts/"*.pem "$RCA_DIR/tls-cert.pem"
-    cp "$RCA_DIR/tls-msp/keystore/"*_sk "$RCA_DIR/tls-key.pem"
+    openssl x509 -req -sha256 -days 365 \
+        -in /tmp/$NAME.csr \
+        -CA "$ROOT_CA_CERT" \
+        -CAkey "$ROOT_CA_KEY" \
+        -CAcreateserial \
+        -out "$DIR/tls-cert.pem" \
+        -extfile <(printf "subjectAltName = $SAN") >/dev/null 2>&1
 
-    echo "✅ گواهی TLS $RCA_NAME ساخته شد"
+    rm -f /tmp/$NAME.csr
+    echo "✅ گواهی TLS $NAME ساخته شد"
 }
 
-# -------------------- rca-orderer --------------------
-generate_rca_tls_with_fabric \
-    "rca-orderer" \
+# rca-orderer
+generate_rca_tls "rca-orderer" \
     "rca-orderer.example.com" \
-    "rca-orderer.example.com,localhost,127.0.0.1" \
+    "DNS:rca-orderer.example.com, DNS:localhost, IP:127.0.0.1" \
     "/root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca"
 
-# -------------------- rca-org1 تا rca-org8 --------------------
+# rca-org1 تا rca-org8
 for i in {1..8}; do
-    generate_rca_tls_with_fabric \
-        "rca-org$i" \
+    generate_rca_tls "rca-org$i" \
         "rca-org$i.org$i.example.com" \
-        "rca-org$i.org$i.example.com,localhost,127.0.0.1" \
+        "DNS:rca-org$i.org$i.example.com, DNS:localhost, IP:127.0.0.1" \
         "/root/6g-network/config/crypto-config/peerOrganizations/org$i.example.com/rca"
 done
 
-success "تمام گواهی‌های TLS رcaها با fabric-ca-client ساخته شدند"
+success "تمام گواهی‌های TLS رcaها با موفقیت ساخته شدند"
 
 echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
 
