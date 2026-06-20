@@ -381,31 +381,22 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
   docker ps
   
 # =====================================================
-# استخراج ID کانتینرهای rca-*
+# استخراج ID کانتینرهای rca-* (اختیاری - فقط برای لاگ)
 # =====================================================
 log "استخراج ID کانتینرهای Enrollment CAها"
-
 RCA_ORDERER_ID=$(docker ps --filter "name=rca-orderer" --format "{{.ID}}")
-
 RCA_ORG_IDS=()
 for i in {1..8}; do
     id=$(docker ps --filter "name=rca-org${i}" --format "{{.ID}}")
     RCA_ORG_IDS+=("$id")
 done
-
-if [ -z "$RCA_ORDERER_ID" ]; then
-    error "کانتینر rca-orderer پیدا نشد! لطفاً ابتدا rcaها را راه‌اندازی کنید."
-fi
-
 success "ID rca-orderer: $RCA_ORDERER_ID"
 success "ID تمام rca-orgها استخراج شد"
 
 # =====================================================
-# تولید هویت Orderer و Orgها (با Container ID)
+# تولید هویت Orderer و Orgها (با tls-cert.pem هر rca)
 # =====================================================
-log "تولید هویت Orderer و Orgها"
-
-ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
+log "تولید هویت Orderer و Orgها با گواهی TLS اختصاصی"
 
 # ===================== Orderer =====================
 docker run --rm \
@@ -415,29 +406,28 @@ docker run --rm \
   /bin/bash -c '
     set -e
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
-    export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-    RCA_ADDR="'"$RCA_ORDERER_ID"':7054"
+    TLS_CERT="/crypto-config/ordererOrganizations/example.com/rca/tls-cert.pem"
 
     echo "=== Enroll admin روی rca-orderer ==="
-    fabric-ca-client enroll -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
+    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 --tls.certfiles "$TLS_CERT"
 
     echo "=== Register Admin@example.com ==="
     fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin \
-      -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
+      -u https://admin:adminpw@rca-orderer:7054 --tls.certfiles "$TLS_CERT"
 
     echo "=== Enroll Admin@example.com ==="
-    fabric-ca-client enroll -u https://Admin@example.com:adminpw@$RCA_ADDR \
-      --tls.certfiles "'"$ROOT_CA_CERT"'" \
+    fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
+      --tls.certfiles "$TLS_CERT" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo "=== Register orderer.example.com ==="
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-      -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
+      -u https://admin:adminpw@rca-orderer:7054 --tls.certfiles "$TLS_CERT"
 
     echo "=== Enroll orderer.example.com ==="
-    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@$RCA_ADDR \
-      --tls.certfiles "'"$ROOT_CA_CERT"'" \
+    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
+      --tls.certfiles "$TLS_CERT" \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -447,7 +437,6 @@ docker run --rm \
 # ===================== Orgها =====================
 for i in {1..8}; do
   PORT=$((7054 + $i * 100))
-  RCA_ID="${RCA_ORG_IDS[$((i-1))]}"
 
   docker run --rm \
     --network 6g-network \
@@ -456,29 +445,28 @@ for i in {1..8}; do
     /bin/bash -c "
       set -e
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i
-      export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-      RCA_ADDR=\"${RCA_ID}:${PORT}\"
+      TLS_CERT=\"/crypto-config/peerOrganizations/org${i}.example.com/rca/tls-cert.pem\"
 
       echo \"=== Enroll admin روی rca-org$i ===\"
-      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
+      fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:${PORT} --tls.certfiles \"\$TLS_CERT\"
 
       echo \"=== Register Admin@org$i.example.com ===\"
       fabric-ca-client register --id.name Admin@org$i.example.com --id.secret adminpw --id.type admin \
-        -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
+        -u https://admin:adminpw@rca-org$i:${PORT} --tls.certfiles \"\$TLS_CERT\"
 
       echo \"=== Enroll Admin@org$i.example.com ===\"
-      fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@\$RCA_ADDR \
-        --tls.certfiles \"${ROOT_CA_CERT}\" \
+      fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:${PORT} \
+        --tls.certfiles \"\$TLS_CERT\" \
         -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp
 
       echo \"=== Register peer0.org$i.example.com ===\"
       fabric-ca-client register --id.name peer0.org$i.example.com --id.secret peerpw --id.type peer \
-        -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
+        -u https://admin:adminpw@rca-org$i:${PORT} --tls.certfiles \"\$TLS_CERT\"
 
       echo \"=== Enroll peer0.org$i.example.com ===\"
-      fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@\$RCA_ADDR \
-        --tls.certfiles \"${ROOT_CA_CERT}\" \
+      fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:${PORT} \
+        --tls.certfiles \"\$TLS_CERT\" \
         --csr.hosts \"peer0.org$i.example.com,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp
 
