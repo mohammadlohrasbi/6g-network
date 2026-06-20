@@ -98,265 +98,151 @@ EOF
   docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" up -d
   sleep 35
   tree
-  success "Root CA با موفقیت راه‌اندازی شد"
+ # =====================================================
+# بخش بازسازی‌شده - گزینه A (فقط ۱ Intermediate CA)
 # =====================================================
-# 7. تبدیل rca-* به Intermediate CA واقعی از Root CA
-#    (با استفاده از enrollment.profile ca)
+
+log "شروع ساخت یک Intermediate CA تمیز (گزینه A)"
+
+# پاک کردن ساختار قبلی multi-rca (اختیاری اما توصیه می‌شود)
+rm -rf "$CRYPTO_DIR"/ordererOrganizations/example.com/rca
+rm -rf "$CRYPTO_DIR"/peerOrganizations/*/rca
+
+# ایجاد ساختار تمیز برای Intermediate CA
+INTERMEDIATE_DIR="$CRYPTO_DIR/intermediate-ca"
+mkdir -p "$INTERMEDIATE_DIR/tls"
+
 # =====================================================
-log "تبدیل rca-orderer و rca-orgها به Intermediate CA از Root CA"
+# 1. ساخت فایل fabric-ca-server-config.yaml برای Intermediate CA
+# =====================================================
+cat > "$INTERMEDIATE_DIR/fabric-ca-server-config.yaml" << 'EOF'
+port: 7054
+address: 0.0.0.0
+debug: true
+
+tls:
+  enabled: true
+  certfile: tls/server.crt
+  keyfile: tls/server.key
+  clientauth:
+    type: RequireAndVerifyClientCert
+    certfiles:
+      - tls/ca.crt
+
+registry:
+  maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: admin
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "*"
+        hf.Registrar.DelegateRoles: "*"
+        hf.Revoker: true
+        hf.IntermediateCA: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"
+        hf.AffiliationMgr: true
+
+affiliations:
+  "":
+    - "."
+
+signing:
+  default:
+    usage:
+      - digital signature
+    expiry: 8760h
+  profiles:
+    tls:
+      usage:
+        - signing
+        - key encipherment
+        - server auth
+        - client auth
+      expiry: 8760h
+    ca:
+      usage:
+        - signing
+        - digital signature
+        - key encipherment
+        - cert sign
+      expiry: 8760h
+
+csr:
+  cn: rca-main.example.com
+  hosts:
+    - rca-main
+    - localhost
+    - 127.0.0.1
+EOF
+
+success "فایل fabric-ca-server-config.yaml برای Intermediate CA ساخته شد"
+
+# =====================================================
+# 2. دریافت گواهی Intermediate CA از Root CA
+# =====================================================
+log "دریافت گواهی Intermediate CA از Root CA"
 
 docker run --rm \
   --network 6g-network \
-  -v "$PROJECT_DIR/crypto-config":/crypto-config \
+  -v "$CRYPTO_DIR":/crypto-config \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
     set -e
+    export FABRIC_CA_CLIENT_HOME=/tmp/intermediate-enroll
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
     ROOT_CA_ADDR="root-ca:7052"
     ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
 
     echo "=== Enroll admin روی Root CA ==="
-    export FABRIC_CA_CLIENT_HOME=/tmp/root-ca-admin
     fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
       --tls.certfiles $ROOT_CA_CERT
 
-    echo "=== Enroll rca-orderer به عنوان Intermediate ==="
+    echo "=== دریافت گواهی Intermediate CA ==="
     fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
       --tls.certfiles $ROOT_CA_CERT \
       --enrollment.profile ca \
-      -M /crypto-config/ordererOrganizations/example.com/rca/intermediate-msp
+      -M /crypto-config/intermediate-ca/msp
 
-    echo "=== Enroll rca-orgها به عنوان Intermediate ==="
-    for i in {1..8}; do
-      ORG="org$i"
-      echo "Enrolling rca-$ORG ..."
-      fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
-        --tls.certfiles $ROOT_CA_CERT \
-        --enrollment.profile ca \
-        -M /crypto-config/peerOrganizations/$ORG.example.com/rca/intermediate-msp
-    done
-
-    echo "همه rca-* با موفقیت به عنوان Intermediate CA از Root CA enroll شدند"
+    echo "Intermediate CA با موفقیت از Root CA دریافت شد"
   '
 
 if [ $? -eq 0 ]; then
-    success "تبدیل rca-* به Intermediate CA با موفقیت انجام شد"
+    success "گواهی Intermediate CA با موفقیت دریافت شد"
 else
-    error "خطا در تبدیل rca-* به Intermediate CA"
+    error "خطا در دریافت گواهی Intermediate CA"
 fi
 
-    
-  cd "$CRYPTO_DIR"
-  tree
-  cd "$PROJECT_DIR"
-cd "$PROJECT_DIR"
-
-
-echo "=== کپی کلیدها به priv_sk ==="
-
-# rca-orderer
-cp /root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/*_sk \
-   /root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca/intermediate-msp/keystore/priv_sk
-
-# rca-orgها
-for i in {1..8}; do
-  cp /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca/intermediate-msp/keystore/*_sk \
-     /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca/intermediate-msp/keystore/priv_sk
-done
-
-echo "کلیدها با موفقیت به priv_sk کپی شدند"
-
-echo "=== ساخت دایرکتوری‌ها و fabric-ca-server-config.yaml برای rca-*ها ==="
-
-# rca-orderer
-mkdir -p crypto-config/ordererOrganizations/example.com/rca
-cat > crypto-config/ordererOrganizations/example.com/rca/fabric-ca-server-config.yaml <<'EOF'
-ou:
-  enabled: true
-  organizational_unit_identifiers:
-    - organizational_unit_identifier: "orderer"
-      certificate: "ca/cert.pem"
-    - organizational_unit_identifier: "admin"
-      certificate: "ca/cert.pem"
-    - organizational_unit_identifier: "client"
-      certificate: "ca/cert.pem"
-
-csr:
-  cn: rca-orderer.example.com
-  hosts:
-    - rca-orderer
-    - localhost
-    - 127.0.0.1
-
-tls:
-  enabled: true
-
-signing:
-  default:
-    usage:
-      - digital signature
-    expiry: 8760h
-  profiles:
-    tls:
-      usage:
-        - signing
-        - key encipherment
-        - server auth
-        - client auth
-      expiry: 8760h
-
-registry:
-  maxenrollments: -1
-  identities:
-    - name: admin
-      pass: adminpw
-      type: admin
-      affiliation: ""
-      attrs:
-        hf.Registrar.Roles: "client,peer,orderer,admin,user"
-        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
-        hf.Revoker: true
-        hf.IntermediateCA: true
-        hf.GenCRL: true
-        hf.Registrar.Attributes: "*"
-        hf.AffiliationMgr: true
-
-affiliations:
-  "":
-    - "."
-
-debug: true
-EOF
-echo "fabric-ca-server-config.yaml برای rca-orderer ساخته شد"
-
-# rca-org1 تا rca-org8
-for i in {1..8}; do
-  ORG="org${i}"
-  RCA_NAME="rca-org${i}"
-  RCA_CN="rca-org${i}.org${i}.example.com"
-
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/rca
-
-  cat > crypto-config/peerOrganizations/$ORG.example.com/rca/fabric-ca-server-config.yaml <<EOF
-ou:
-  enabled: true
-  organizational_unit_identifiers:
-    - organizational_unit_identifier: "peer"
-      certificate: "ca/cert.pem"
-    - organizational_unit_identifier: "admin"
-      certificate: "ca/cert.pem"
-    - organizational_unit_identifier: "client"
-      certificate: "ca/cert.pem"
-
-csr:
-  cn: $RCA_CN
-  hosts:
-    - $RCA_NAME
-    - localhost
-    - 127.0.0.1
-
-tls:
-  enabled: true
-
-signing:
-  default:
-    usage:
-      - digital signature
-    expiry: 8760h
-  profiles:
-    tls:
-      usage:
-        - signing
-        - key encipherment
-        - server auth
-        - client auth
-      expiry: 8760h
-
-registry:
-  maxenrollments: -1
-  identities:
-    - name: admin
-      pass: adminpw
-      type: admin
-      affiliation: ""
-      attrs:
-        hf.Registrar.Roles: "client,peer,orderer,admin,user"
-        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
-        hf.Revoker: true
-        hf.IntermediateCA: true
-        hf.GenCRL: true
-        hf.Registrar.Attributes: "*"
-        hf.AffiliationMgr: true
-
-affiliations:
-  "":
-    - "."
-
-debug: true
-EOF
-  echo "fabric-ca-server-config.yaml برای ${RCA_NAME} ساخته شد"
-done
-# =====================================================
-# تولید گواهی TLS رcaها با openssl (روش پیشنهادی Fabric)
-# =====================================================
-log "تولید گواهی‌های TLS سرورهای rca"
-
-ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
-ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
-
-# بررسی وجود فایل‌های Root CA
-if [ ! -f "$ROOT_CA_CERT" ] || [ ! -f "$ROOT_CA_KEY" ]; then
-    error "فایل‌های Root CA پیدا نشدند! لطفاً ابتدا Root CA را بسازید."
-fi
+# کپی کلید خصوصی به priv_sk
+cp "$INTERMEDIATE_DIR/msp/keystore/"*_sk "$INTERMEDIATE_DIR/msp/keystore/priv_sk" 2>/dev/null || true
 
 # =====================================================
-# بخش بهبودیافته: تولید گواهی TLS سرور برای rcaها
+# 3. تولید گواهی TLS برای Intermediate CA
 # =====================================================
+log "تولید گواهی TLS برای Intermediate CA"
 
-log "تولید گواهی‌های TLS سرور برای کانتینرهای rca (Root CA + Intermediate)"
+ROOT_CA_CERT="$CRYPTO_DIR/root-ca/ca-cert.pem"
+ROOT_CA_KEY="$CRYPTO_DIR/root-ca/fabric-ca-server.key"
 
-ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
-ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
-
-# بررسی وجود Root CA
-if [ ! -f "$ROOT_CA_CERT" ] || [ ! -f "$ROOT_CA_KEY" ]; then
-    error "فایل‌های Root CA پیدا نشدند! ابتدا Root CA را راه‌اندازی کنید."
-fi
-
-# =====================================================
-# تولید گواهی TLS سرور برای rcaها (نسخه نهایی)
-# =====================================================
-
-log "تولید گواهی‌های TLS سرور برای کانتینرهای rca"
-
-ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
-ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
-
-docker ps
-
-generate_rca_tls() {
-    local NAME=$1
-    local CN=$2
-    local RCA_DIR=$3          # مسیر پوشه rca (مثلاً .../rca)
-    local TLS_DIR="$RCA_DIR/tls"
+generate_intermediate_tls() {
+    local NAME="rca-main"
+    local CN="rca-main.example.com"
+    local TLS_DIR="$INTERMEDIATE_DIR/tls"
 
     mkdir -p "$TLS_DIR"
 
-    log "در حال تولید گواهی TLS برای ${NAME} ..."
-
-    # تولید کلید خصوصی
     openssl ecparam -name prime256v1 -genkey -noout \
-        -out "$TLS_DIR/server.key" 2>/dev/null || error "خطا در ساخت کلید ${NAME}"
+        -out "$TLS_DIR/server.key" 2>/dev/null
 
-    # تولید CSR
     openssl req -new -sha256 \
         -key "$TLS_DIR/server.key" \
         -out /tmp/${NAME}.csr \
         -subj "/C=IR/ST=Tehran/O=6G-Project/OU=Fabric/CN=${CN}" \
         -addext "subjectAltName = DNS:${CN},DNS:localhost,IP:127.0.0.1" 2>/dev/null
 
-    # امضای گواهی توسط Root CA
     openssl x509 -req -sha256 -days 365 \
         -in /tmp/${NAME}.csr \
         -CA "$ROOT_CA_CERT" \
@@ -368,33 +254,22 @@ generate_rca_tls() {
     rm -f /tmp/${NAME}.csr
     cp "$TLS_DIR/server.crt" "$TLS_DIR/ca.crt"
 
-    # بررسی گواهی
     if openssl x509 -in "$TLS_DIR/server.crt" -text -noout | grep -q "Subject Alternative Name"; then
-        success "گواهی TLS برای ${NAME} ساخته شد → $TLS_DIR"
+        success "گواهی TLS Intermediate CA ساخته شد"
     else
-        error "ساخت گواهی TLS برای ${NAME} ناموفق بود"
+        error "ساخت گواهی TLS ناموفق بود"
     fi
 }
 
-# ===================== فراخوانی تابع =====================
+generate_intermediate_tls
 
-# rca-orderer
-generate_rca_tls \
-    "rca-orderer" \
-    "rca-orderer.example.com" \
-    "/root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca"
+# =====================================================
+# نمایش ساختار نهایی
+# =====================================================
+log "ساختار Intermediate CA:"
+tree "$INTERMEDIATE_DIR"
 
-# rca-org1 تا rca-org8
-for i in {1..8}; do
-    generate_rca_tls \
-        "rca-org${i}" \
-        "rca-org${i}.org${i}.example.com" \
-        "/root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca"
-done
-
-success "تمام گواهی‌های TLS رcaها با موفقیت ساخته شدند"
-
-echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
+success "Intermediate CA تمیز با موفقیت ساخته شد (گزینه A)"
 
   cd "$CRYPTO_DIR"
   tree
