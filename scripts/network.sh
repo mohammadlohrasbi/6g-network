@@ -216,46 +216,66 @@ else
     error "خطا در دریافت گواهی Intermediate CA"
 fi
 
+# =====================================================
 # کپی کلید خصوصی به priv_sk
+# =====================================================
 cp "$INTERMEDIATE_DIR/msp/keystore/"*_sk "$INTERMEDIATE_DIR/msp/keystore/priv_sk" 2>/dev/null || true
 
 # =====================================================
-# 3. تولید گواهی TLS برای Intermediate CA
+# 3. تولید گواهی TLS برای Intermediate CA (نسخه اصلاح‌شده و پایدار)
 # =====================================================
 log "تولید گواهی TLS برای Intermediate CA"
 
 ROOT_CA_CERT="$CRYPTO_DIR/root-ca/ca-cert.pem"
 ROOT_CA_KEY="$CRYPTO_DIR/root-ca/fabric-ca-server.key"
+INTERMEDIATE_DIR="/root/6g-network/config/crypto-config/intermediate-ca"
+TLS_DIR="$INTERMEDIATE_DIR/tls"
+
+mkdir -p "$TLS_DIR"
 
 generate_intermediate_tls() {
     local NAME="rca-main"
     local CN="rca-main.example.com"
-    local TLS_DIR="$INTERMEDIATE_DIR/tls"
 
-    mkdir -p "$TLS_DIR"
+    echo "=== در حال تولید گواهی TLS برای rca-main ==="
 
+    # 1. تولید کلید خصوصی
     openssl ecparam -name prime256v1 -genkey -noout \
-        -out "$TLS_DIR/server.key" 2>/dev/null
+        -out "$TLS_DIR/server.key"
+    if [ $? -ne 0 ]; then
+        error "خطا در تولید کلید خصوصی"
+    fi
 
+    # 2. تولید CSR
     openssl req -new -sha256 \
         -key "$TLS_DIR/server.key" \
         -out /tmp/${NAME}.csr \
         -subj "/C=IR/ST=Tehran/O=6G-Project/OU=Fabric/CN=${CN}" \
-        -addext "subjectAltName = DNS:${CN},DNS:localhost,IP:127.0.0.1" 2>/dev/null
+        -addext "subjectAltName = DNS:${CN},DNS:localhost,IP:127.0.0.1"
+    if [ $? -ne 0 ]; then
+        error "خطا در تولید CSR"
+    fi
 
+    # 3. امضای گواهی توسط Root CA
     openssl x509 -req -sha256 -days 365 \
         -in /tmp/${NAME}.csr \
         -CA "$ROOT_CA_CERT" \
         -CAkey "$ROOT_CA_KEY" \
         -CAcreateserial \
         -out "$TLS_DIR/server.crt" \
-        -extfile <(printf "subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1" "$CN") 2>/dev/null
+        -extfile <(printf "subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1" "$CN")
+    
+    if [ $? -ne 0 ] || [ ! -s "$TLS_DIR/server.crt" ]; then
+        error "خطا در امضای گواهی TLS"
+    fi
 
     rm -f /tmp/${NAME}.csr
     cp "$TLS_DIR/server.crt" "$TLS_DIR/ca.crt"
 
+    # بررسی نهایی گواهی
     if openssl x509 -in "$TLS_DIR/server.crt" -text -noout | grep -q "Subject Alternative Name"; then
-        success "گواهی TLS Intermediate CA ساخته شد"
+        success "گواهی TLS Intermediate CA با موفقیت ساخته شد"
+        ls -l "$TLS_DIR/"
     else
         error "ساخت گواهی TLS ناموفق بود"
     fi
