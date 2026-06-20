@@ -98,22 +98,22 @@ EOF
   docker-compose -f "$PROJECT_DIR/docker-compose-root-ca.yml" up -d
   sleep 35
   tree
- # =====================================================
-# بخش بازسازی‌شده - گزینه A (فقط ۱ Intermediate CA)
+# =====================================================
+# بخش جایگزین - گزینه A (فقط ۱ Intermediate CA تمیز)
 # =====================================================
 
-log "شروع ساخت یک Intermediate CA تمیز (گزینه A)"
+log "شروع ساخت Intermediate CA تمیز (گزینه A)"
 
-# پاک کردن ساختار قبلی multi-rca (اختیاری اما توصیه می‌شود)
+# پاک کردن ساختار قبلی multi-rca (در صورت وجود)
 rm -rf "$CRYPTO_DIR"/ordererOrganizations/example.com/rca
 rm -rf "$CRYPTO_DIR"/peerOrganizations/*/rca
 
-# ایجاد ساختار تمیز برای Intermediate CA
+# ایجاد ساختار تمیز
 INTERMEDIATE_DIR="$CRYPTO_DIR/intermediate-ca"
 mkdir -p "$INTERMEDIATE_DIR/tls"
 
 # =====================================================
-# 1. ساخت فایل fabric-ca-server-config.yaml برای Intermediate CA
+# 1. ساخت فایل fabric-ca-server-config.yaml
 # =====================================================
 cat > "$INTERMEDIATE_DIR/fabric-ca-server-config.yaml" << 'EOF'
 port: 7054
@@ -178,12 +178,12 @@ csr:
     - 127.0.0.1
 EOF
 
-success "فایل fabric-ca-server-config.yaml برای Intermediate CA ساخته شد"
+success "فایل config.yaml برای Intermediate CA ساخته شد"
 
 # =====================================================
 # 2. دریافت گواهی Intermediate CA از Root CA
 # =====================================================
-log "دریافت گواهی Intermediate CA از Root CA"
+log "دریافت گواهی Intermediate MSP از Root CA"
 
 docker run --rm \
   --network 6g-network \
@@ -191,102 +191,64 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
     set -e
-    export FABRIC_CA_CLIENT_HOME=/tmp/intermediate-enroll
+    export FABRIC_CA_CLIENT_HOME=/tmp/intermediate-msp
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-    ROOT_CA_ADDR="root-ca:7052"
-    ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
+    fabric-ca-client enroll \
+      -u https://admin:adminpw@root-ca:7052 \
+      --tls.certfiles /crypto-config/root-ca/ca-cert.pem
 
-    echo "=== Enroll admin روی Root CA ==="
-    fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
-      --tls.certfiles $ROOT_CA_CERT
-
-    echo "=== دریافت گواهی Intermediate CA ==="
-    fabric-ca-client enroll -u https://admin:adminpw@$ROOT_CA_ADDR \
-      --tls.certfiles $ROOT_CA_CERT \
+    fabric-ca-client enroll \
+      -u https://admin:adminpw@root-ca:7052 \
+      --tls.certfiles /crypto-config/root-ca/ca-cert.pem \
       --enrollment.profile ca \
       -M /crypto-config/intermediate-ca/msp
-
-    echo "Intermediate CA با موفقیت از Root CA دریافت شد"
   '
 
-if [ $? -eq 0 ]; then
-    success "گواهی Intermediate CA با موفقیت دریافت شد"
-else
-    error "خطا در دریافت گواهی Intermediate CA"
-fi
+success "گواهی Intermediate CA با موفقیت دریافت شد"
 
-# =====================================================
-# کپی کلید خصوصی به priv_sk
-# =====================================================
+# کپی کلید خصوصی
 cp "$INTERMEDIATE_DIR/msp/keystore/"*_sk "$INTERMEDIATE_DIR/msp/keystore/priv_sk" 2>/dev/null || true
 
 # =====================================================
-# 3. تولید گواهی TLS برای Intermediate CA (نسخه اصلاح‌شده و پایدار)
+# 3. دریافت گواهی TLS سرور با fabric-ca-client
 # =====================================================
-log "تولید گواهی TLS برای Intermediate CA"
+log "دریافت گواهی TLS سرور برای rca-main"
 
-ROOT_CA_CERT="$CRYPTO_DIR/root-ca/ca-cert.pem"
-ROOT_CA_KEY="$CRYPTO_DIR/root-ca/fabric-ca-server.key"
-INTERMEDIATE_DIR="/root/6g-network/config/crypto-config/intermediate-ca"
-TLS_DIR="$INTERMEDIATE_DIR/tls"
+docker run --rm \
+  --network 6g-network \
+  -v "$CRYPTO_DIR":/crypto-config \
+  hyperledger/fabric-ca-tools:latest \
+  /bin/bash -c '
+    set -e
+    export FABRIC_CA_CLIENT_HOME=/tmp/tls-enroll
 
-mkdir -p "$TLS_DIR"
+    fabric-ca-client enroll \
+      -u https://admin:adminpw@root-ca:7052 \
+      --tls.certfiles /crypto-config/root-ca/ca-cert.pem \
+      --enrollment.profile tls \
+      --csr.cn rca-main.example.com \
+      --csr.hosts "rca-main,localhost,127.0.0.1" \
+      -M /crypto-config/intermediate-ca/tls
+  '
 
-generate_intermediate_tls() {
-    local NAME="rca-main"
-    local CN="rca-main.example.com"
+success "گواهی TLS سرور با موفقیت دریافت شد"
 
-    echo "=== در حال تولید گواهی TLS برای rca-main ==="
+# =====================================================
+# 4. تغییر نام فایل‌های TLS به فرمت استاندارد
+# =====================================================
+INTERMEDIATE_TLS="$INTERMEDIATE_DIR/tls"
 
-    # 1. تولید کلید خصوصی
-    openssl ecparam -name prime256v1 -genkey -noout \
-        -out "$TLS_DIR/server.key"
-    if [ $? -ne 0 ]; then
-        error "خطا در تولید کلید خصوصی"
-    fi
+cp "$INTERMEDIATE_TLS/signcerts/cert.pem"     "$INTERMEDIATE_TLS/server.crt"
+cp "$INTERMEDIATE_TLS/keystore/"*_sk          "$INTERMEDIATE_TLS/server.key"
+cp "$INTERMEDIATE_TLS/tlscacerts/"*.pem       "$INTERMEDIATE_TLS/ca.crt"
 
-    # 2. تولید CSR
-    openssl req -new -sha256 \
-        -key "$TLS_DIR/server.key" \
-        -out /tmp/${NAME}.csr \
-        -subj "/C=IR/ST=Tehran/O=6G-Project/OU=Fabric/CN=${CN}" \
-        -addext "subjectAltName = DNS:${CN},DNS:localhost,IP:127.0.0.1"
-    if [ $? -ne 0 ]; then
-        error "خطا در تولید CSR"
-    fi
-
-    # 3. امضای گواهی توسط Root CA
-    openssl x509 -req -sha256 -days 365 \
-        -in /tmp/${NAME}.csr \
-        -CA "$ROOT_CA_CERT" \
-        -CAkey "$ROOT_CA_KEY" \
-        -CAcreateserial \
-        -out "$TLS_DIR/server.crt" \
-        -extfile <(printf "subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1" "$CN")
-    
-    if [ $? -ne 0 ] || [ ! -s "$TLS_DIR/server.crt" ]; then
-        error "خطا در امضای گواهی TLS"
-    fi
-
-    rm -f /tmp/${NAME}.csr
-    cp "$TLS_DIR/server.crt" "$TLS_DIR/ca.crt"
-
-    # بررسی نهایی گواهی
-    if openssl x509 -in "$TLS_DIR/server.crt" -text -noout | grep -q "Subject Alternative Name"; then
-        success "گواهی TLS Intermediate CA با موفقیت ساخته شد"
-        ls -l "$TLS_DIR/"
-    else
-        error "ساخت گواهی TLS ناموفق بود"
-    fi
-}
-
-generate_intermediate_tls
+success "فایل‌های TLS به فرمت استاندارد تغییر نام داده شدند"
 
 # =====================================================
 # نمایش ساختار نهایی
 # =====================================================
-log "ساختار Intermediate CA:"
+log "ساختار نهایی Intermediate CA:"
 tree "$INTERMEDIATE_DIR"
 
 success "Intermediate CA تمیز با موفقیت ساخته شد (گزینه A)"
