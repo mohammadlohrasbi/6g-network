@@ -297,7 +297,6 @@ debug: true
 EOF
   echo "fabric-ca-server-config.yaml برای ${RCA_NAME} ساخته شد"
 done
-
 # =====================================================
 # تولید گواهی TLS رcaها با openssl (روش پیشنهادی Fabric)
 # =====================================================
@@ -305,6 +304,11 @@ log "تولید گواهی‌های TLS سرورهای rca"
 
 ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
 ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
+
+# بررسی وجود فایل‌های Root CA
+if [ ! -f "$ROOT_CA_CERT" ] || [ ! -f "$ROOT_CA_KEY" ]; then
+    error "فایل‌های Root CA پیدا نشدند! لطفاً ابتدا Root CA را بسازید."
+fi
 
 generate_rca_tls() {
     local NAME=$1
@@ -316,34 +320,43 @@ generate_rca_tls() {
 
     echo "=== تولید گواهی TLS برای $NAME ==="
 
+    # تولید کلید خصوصی
     openssl ecparam -name prime256v1 -genkey -noout \
-        -out "$DIR/tls-key.pem" >/dev/null 2>&1
+        -out "$DIR/tls-key.pem"
 
+    # تولید CSR
     openssl req -new -sha256 \
         -key "$DIR/tls-key.pem" \
         -out /tmp/$NAME.csr \
         -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=$CN" \
-        -addext "subjectAltName = $SAN" >/dev/null 2>&1
+        -addext "subjectAltName = $SAN"
 
+    # امضای گواهی توسط Root CA
     openssl x509 -req -sha256 -days 365 \
         -in /tmp/$NAME.csr \
         -CA "$ROOT_CA_CERT" \
         -CAkey "$ROOT_CA_KEY" \
         -CAcreateserial \
         -out "$DIR/tls-cert.pem" \
-        -extfile <(printf "subjectAltName = $SAN") >/dev/null 2>&1
+        -extfile <(printf "subjectAltName = $SAN")
 
     rm -f /tmp/$NAME.csr
-    echo "✅ گواهی TLS $NAME ساخته شد"
+
+    # بررسی اینکه فایل خالی نباشد
+    if [ ! -s "$DIR/tls-cert.pem" ]; then
+        error "تولید گواهی TLS برای $NAME ناموفق بود (فایل خالی است)."
+    fi
+
+    echo "✅ گواهی TLS $NAME با موفقیت ساخته شد"
 }
 
-# rca-orderer
+# -------------------- rca-orderer --------------------
 generate_rca_tls "rca-orderer" \
     "rca-orderer.example.com" \
     "DNS:rca-orderer.example.com, DNS:localhost, IP:127.0.0.1" \
     "/root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca"
 
-# rca-org1 تا rca-org8
+# -------------------- rca-org1 تا rca-org8 --------------------
 for i in {1..8}; do
     generate_rca_tls "rca-org$i" \
         "rca-org$i.org$i.example.com" \
@@ -351,7 +364,7 @@ for i in {1..8}; do
         "/root/6g-network/config/crypto-config/peerOrganizations/org$i.example.com/rca"
 done
 
-success "تمام گواهی‌های TLS رcaها با موفقیت ساخته شدند"
+success "تمام گواهی‌های TLS سرورهای rca با موفقیت ساخته شدند"
 
 echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
 
