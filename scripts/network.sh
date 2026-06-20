@@ -313,7 +313,6 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
   cd "$CRYPTO_DIR"
   tree
   cd "$PROJECT_DIR"
-
 # =====================================================
 # استخراج ID کانتینرهای rca-*
 # =====================================================
@@ -333,11 +332,15 @@ fi
 
 success "ID rca-orderer: $RCA_ORDERER_ID"
 success "ID تمام rca-orgها استخراج شد"
+
 # =====================================================
-# تولید هویت Orderer و Orgها (نسخه نهایی)
+# تولید هویت Orderer و Orgها (با Container ID)
 # =====================================================
 log "تولید هویت Orderer و Orgها"
 
+ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
+
+# ===================== Orderer =====================
 docker run --rm \
   --network 6g-network \
   -v "/root/6g-network/config/crypto-config":/crypto-config \
@@ -347,36 +350,37 @@ docker run --rm \
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
     export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-    ROOT_CA_CERT="/crypto-config/root-ca/ca-cert.pem"
+    RCA_ADDR="'"$RCA_ORDERER_ID"':7054"
 
     echo "=== Enroll admin روی rca-orderer ==="
-    fabric-ca-client enroll -u https://admin:adminpw@rca-orderer:7054 \
-      --tls.certfiles "$ROOT_CA_CERT"
+    fabric-ca-client enroll -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
 
     echo "=== Register Admin@example.com ==="
     fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin \
-      -u https://admin:adminpw@rca-orderer:7054 --tls.certfiles "$ROOT_CA_CERT"
+      -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
 
     echo "=== Enroll Admin@example.com ==="
-    fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-orderer:7054 \
-      --tls.certfiles "$ROOT_CA_CERT" \
+    fabric-ca-client enroll -u https://Admin@example.com:adminpw@$RCA_ADDR \
+      --tls.certfiles "'"$ROOT_CA_CERT"'" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo "=== Register orderer.example.com ==="
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-      -u https://admin:adminpw@rca-orderer:7054 --tls.certfiles "$ROOT_CA_CERT"
+      -u https://admin:adminpw@$RCA_ADDR --tls.certfiles "'"$ROOT_CA_CERT"'"
 
     echo "=== Enroll orderer.example.com ==="
-    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-orderer:7054 \
-      --tls.certfiles "$ROOT_CA_CERT" \
+    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@$RCA_ADDR \
+      --tls.certfiles "'"$ROOT_CA_CERT"'" \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
     echo "هویت Orderer با موفقیت تولید شد"
   '
 
+# ===================== Orgها =====================
 for i in {1..8}; do
   PORT=$((7054 + $i * 100))
+  RCA_ID="${RCA_ORG_IDS[$((i-1))]}"
 
   docker run --rm \
     --network 6g-network \
@@ -387,34 +391,35 @@ for i in {1..8}; do
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org$i
       export FABRIC_CA_CLIENT_TLS_INSECURE_SKIP_VERIFY=true
 
-      ROOT_CA_CERT=\"/crypto-config/root-ca/ca-cert.pem\"
+      RCA_ADDR=\"${RCA_ID}:${PORT}\"
 
       echo \"=== Enroll admin روی rca-org$i ===\"
-      fabric-ca-client enroll -u https://admin:adminpw@rca-org$i:${PORT} \
-        --tls.certfiles \"\$ROOT_CA_CERT\"
+      fabric-ca-client enroll -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
 
       echo \"=== Register Admin@org$i.example.com ===\"
       fabric-ca-client register --id.name Admin@org$i.example.com --id.secret adminpw --id.type admin \
-        -u https://admin:adminpw@rca-org$i:${PORT} --tls.certfiles \"\$ROOT_CA_CERT\"
+        -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
 
       echo \"=== Enroll Admin@org$i.example.com ===\"
-      fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@rca-org$i:${PORT} \
-        --tls.certfiles \"\$ROOT_CA_CERT\" \
+      fabric-ca-client enroll -u https://Admin@org$i.example.com:adminpw@\$RCA_ADDR \
+        --tls.certfiles \"${ROOT_CA_CERT}\" \
         -M /crypto-config/peerOrganizations/org$i.example.com/users/Admin@org$i.example.com/msp
 
       echo \"=== Register peer0.org$i.example.com ===\"
       fabric-ca-client register --id.name peer0.org$i.example.com --id.secret peerpw --id.type peer \
-        -u https://admin:adminpw@rca-org$i:${PORT} --tls.certfiles \"\$ROOT_CA_CERT\"
+        -u https://admin:adminpw@\$RCA_ADDR --tls.certfiles \"${ROOT_CA_CERT}\"
 
       echo \"=== Enroll peer0.org$i.example.com ===\"
-      fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@rca-org$i:${PORT} \
-        --tls.certfiles \"\$ROOT_CA_CERT\" \
+      fabric-ca-client enroll -u https://peer0.org$i.example.com:peerpw@\$RCA_ADDR \
+        --tls.certfiles \"${ROOT_CA_CERT}\" \
         --csr.hosts \"peer0.org$i.example.com,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/org$i.example.com/peers/peer0.org$i.example.com/msp
 
       echo \"org$i با موفقیت تولید شد\"
     "
 done
+
+echo "تمام هویت‌ها با موفقیت تولید شدند"
 
 echo "تمام هویت‌ها با موفقیت تولید شدند"
 
