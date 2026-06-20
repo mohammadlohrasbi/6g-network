@@ -300,7 +300,77 @@ done
 
 echo "همه فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند"
 
+# =====================================================
+# تولید گواهی‌های TLS برای تمام rcaها (روش اصولی - داخل تابع اصلی)
+# =====================================================
+log "تولید گواهی‌های TLS سرورهای rca توسط Root CA"
+
+ROOT_CA_CERT="/root/6g-network/config/crypto-config/root-ca/ca-cert.pem"
+ROOT_CA_KEY="/root/6g-network/config/crypto-config/root-ca/fabric-ca-server.key"
+
+# -------------------- rca-orderer --------------------
+RCA_DIR="/root/6g-network/config/crypto-config/ordererOrganizations/example.com/rca"
+
+mkdir -p "$RCA_DIR"
+
+echo "=== تولید گواهی TLS برای rca-orderer ==="
+
+openssl ecparam -name prime256v1 -genkey -noout \
+    -out "$RCA_DIR/tls-key.pem" 2>/dev/null
+
+openssl req -new -sha256 \
+    -key "$RCA_DIR/tls-key.pem" \
+    -out "/tmp/rca-orderer-tls.csr" \
+    -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=rca-orderer.example.com" \
+    -addext "subjectAltName = DNS:rca-orderer.example.com, DNS:localhost, IP:127.0.0.1" 2>/dev/null
+
+openssl x509 -req -sha256 -days 365 \
+    -in "/tmp/rca-orderer-tls.csr" \
+    -CA "$ROOT_CA_CERT" \
+    -CAkey "$ROOT_CA_KEY" \
+    -CAcreateserial \
+    -out "$RCA_DIR/tls-cert.pem" \
+    -extfile <(printf "subjectAltName = DNS:rca-orderer.example.com, DNS:localhost, IP:127.0.0.1") 2>/dev/null
+
+rm -f "/tmp/rca-orderer-tls.csr"
+echo "گواهی TLS rca-orderer ساخته شد → $RCA_DIR/"
+
+# -------------------- rca-org1 تا rca-org8 --------------------
+for i in {1..8}; do
+    RCA_DIR="/root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/rca"
+
+    mkdir -p "$RCA_DIR"
+
+    echo "=== تولید گواهی TLS برای rca-org${i} ==="
+
+    openssl ecparam -name prime256v1 -genkey -noout \
+        -out "$RCA_DIR/tls-key.pem" 2>/dev/null
+
+    openssl req -new -sha256 \
+        -key "$RCA_DIR/tls-key.pem" \
+        -out "/tmp/rca-org${i}-tls.csr" \
+        -subj "/C=US/ST=North Carolina/O=Hyperledger/OU=Fabric/CN=rca-org${i}.org${i}.example.com" \
+        -addext "subjectAltName = DNS:rca-org${i}.org${i}.example.com, DNS:localhost, IP:127.0.0.1" 2>/dev/null
+
+    openssl x509 -req -sha256 -days 365 \
+        -in "/tmp/rca-org${i}-tls.csr" \
+        -CA "$ROOT_CA_CERT" \
+        -CAkey "$ROOT_CA_KEY" \
+        -CAcreateserial \
+        -out "$RCA_DIR/tls-cert.pem" \
+        -extfile <(printf "subjectAltName = DNS:rca-org${i}.org${i}.example.com, DNS:localhost, IP:127.0.0.1") 2>/dev/null
+
+    rm -f "/tmp/rca-org${i}-tls.csr"
+    echo "گواهی TLS rca-org${i} ساخته شد → $RCA_DIR/"
+done
+
+success "تمام گواهی‌های TLS سرورهای rca با موفقیت توسط Root CA ساخته شدند"
+
 echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت ساخته شدند (با ساختار جدید Root CA)"
+
+  cd "$CRYPTO_DIR"
+  tree
+  cd "$PROJECT_DIR"
   
   # 6. بالا آوردن Enrollment CAها
   log "بالا آوردن Enrollment CAها"
@@ -310,9 +380,6 @@ echo "تمام فایل‌های fabric-ca-server-config.yaml با موفقیت 
 
   docker ps
   
-  cd "$CRYPTO_DIR"
-  tree
-  cd "$PROJECT_DIR"
 # =====================================================
 # استخراج ID کانتینرهای rca-*
 # =====================================================
@@ -421,14 +488,7 @@ done
 
 echo "تمام هویت‌ها با موفقیت تولید شدند"
 
-echo "تمام هویت‌ها با موفقیت تولید شدند"
 
-echo "تمام هویت‌ها با موفقیت تولید شدند"
-
-echo "تمام هویت‌های Orderer و Peerها با موفقیت تولید شدند"
-
-echo 'تمام گواهی‌ها بدون خطا تولید شدند — پروژه ۶G کامل شد!'
-log "تولید گواهی‌های TLS برای نودها (به صورت کاملاً اصولی)"
 
   cd "$CRYPTO_DIR"
   tree
