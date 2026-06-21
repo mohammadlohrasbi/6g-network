@@ -277,7 +277,8 @@ success "ID rca-main: $RCA_MAIN_ID"
 # =====================================================
 log "تولید هویت Orderer و Orgها از Intermediate CA (rca-main)"
 
-TLS_CERT="/root/6g-network/config/crypto-config/intermediate-ca/tls/ca.crt"
+# مسیر صحیح گواهی CA برای verify (از tlscacerts)
+TLS_CERT="/root/6g-network/config/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
 
 # ===================== Orderer =====================
 log "تولید هویت Orderer از rca-main"
@@ -315,7 +316,7 @@ docker run --rm \
   '
 
 # ===================== تمام Orgها (org1 تا org8) =====================
-log "تولید هویت تمام سازمان‌ها (org1 تا org8) از rca-main"
+log "تولید هویت تمام سازمان‌ها از rca-main"
 
 for i in {1..8}; do
   log "در حال تولید هویت org${i} ..."
