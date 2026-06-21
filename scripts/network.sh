@@ -112,13 +112,23 @@ rm -rf "$CRYPTO_DIR"/peerOrganizations/*/rca
 INTERMEDIATE_DIR="$CRYPTO_DIR/intermediate-ca"
 mkdir -p "$INTERMEDIATE_DIR/tls"
 
-# =====================================================
-# 1. ساخت فایل fabric-ca-server-config.yaml
-# =====================================================
-cat > "$INTERMEDIATE_DIR/fabric-ca-server-config.yaml" << 'EOF'
-port: 7054
-address: 0.0.0.0
-debug: true
+cat > /root/6g-network/config/crypto-config/intermediate-ca/fabric-ca-server-config.yaml << 'EOF'
+ou:
+  enabled: true
+  organizational_unit_identifiers:
+    - organizational_unit_identifier: "orderer"
+      certificate: "msp/signcerts/cert.pem"
+    - organizational_unit_identifier: "admin"
+      certificate: "msp/signcerts/cert.pem"
+    - organizational_unit_identifier: "client"
+      certificate: "msp/signcerts/cert.pem"
+
+csr:
+  cn: rca-main.example.com
+  hosts:
+    - rca-main
+    - localhost
+    - 127.0.0.1
 
 tls:
   enabled: true
@@ -126,26 +136,6 @@ tls:
   keyfile: tls/server.key
   clientauth:
     type: NoClientCert
-
-registry:
-  maxenrollments: -1
-  identities:
-    - name: admin
-      pass: adminpw
-      type: admin
-      affiliation: ""
-      attrs:
-        hf.Registrar.Roles: "*"
-        hf.Registrar.DelegateRoles: "*"
-        hf.Revoker: true
-        hf.IntermediateCA: true
-        hf.GenCRL: true
-        hf.Registrar.Attributes: "*"
-        hf.AffiliationMgr: true
-
-affiliations:
-  "":
-    - "."
 
 signing:
   default:
@@ -168,15 +158,30 @@ signing:
         - cert sign
       expiry: 8760h
 
-csr:
-  cn: rca-main.example.com
-  hosts:
-    - rca-main
-    - localhost
-    - 127.0.0.1
+registry:
+  maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: admin
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "client,peer,orderer,admin,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
+        hf.Revoker: true
+        hf.IntermediateCA: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"
+        hf.AffiliationMgr: true
+
+affiliations:
+  "":
+    - "."
+
+debug: true
 EOF
 
-success "فایل config.yaml برای Intermediate CA ساخته شد"
+echo "کانفیگ rca-main با موفقیت به‌روزرسانی شد (شبیه نسخه قدیمی کارکننده)"
 
 # =====================================================
 # 2. دریافت گواهی Intermediate CA از Root CA
