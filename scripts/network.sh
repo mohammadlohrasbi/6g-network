@@ -187,15 +187,24 @@ registry:
       pass: ordererpw
       type: orderer
       affiliation: ""
-
-affiliations:
-  "":
-    - "."
-
-debug: true
 EOF
 
-echo "کانفیگ rca-main با موفقیت به‌روزرسانی شد (با هویت‌های پیش‌ثبت‌شده)"
+# اضافه کردن هویت‌های org1 تا org8
+for i in {1..8}; do
+  cat >> /root/6g-network/config/crypto-config/intermediate-ca/fabric-ca-server-config.yaml << EOF
+    - name: Admin@org${i}.example.com
+      pass: adminpw
+      type: admin
+      affiliation: ""
+
+    - name: peer0.org${i}.example.com
+      pass: peerpw
+      type: peer
+      affiliation: ""
+EOF
+done
+
+echo "کانفیگ rca-main با موفقیت به‌روزرسانی شد (با تمام هویت‌های پیش‌ثبت‌شده)"
 
 # =====================================================
 # 2. دریافت گواهی Intermediate CA از Root CA
