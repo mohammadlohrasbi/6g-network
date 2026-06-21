@@ -276,7 +276,7 @@ success "ID rca-main: $RCA_MAIN_ID"
 log "تولید هویت Orderer و Orgها از Intermediate CA (rca-main)"
 
 # مسیر صحیح فایل CA Certificate از tlscacerts
-TLS_CERT="/crypto-config/root-ca/ca-cert.pem"
+TLS_CERT="/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
 
 # ===================== Orderer =====================
 log "تولید هویت Orderer از rca-main"
