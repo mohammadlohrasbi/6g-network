@@ -174,6 +174,20 @@ registry:
         hf.Registrar.Attributes: "*"
         hf.AffiliationMgr: true
 
+    - name: Admin@example.com
+      pass: adminpw
+      type: admin
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "client,peer,orderer,admin,user"
+        hf.Registrar.DelegateRoles: "client,peer,orderer,admin,user"
+        hf.Revoker: true
+
+    - name: orderer.example.com
+      pass: ordererpw
+      type: orderer
+      affiliation: ""
+
 affiliations:
   "":
     - "."
@@ -181,7 +195,7 @@ affiliations:
 debug: true
 EOF
 
-echo "کانفیگ rca-main با موفقیت به‌روزرسانی شد (شبیه نسخه قدیمی کارکننده)"
+echo "کانفیگ rca-main با موفقیت به‌روزرسانی شد (با هویت‌های پیش‌ثبت‌شده)"
 
 # =====================================================
 # 2. دریافت گواهی Intermediate CA از Root CA
