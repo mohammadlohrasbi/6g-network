@@ -125,9 +125,7 @@ tls:
   certfile: tls/server.crt
   keyfile: tls/server.key
   clientauth:
-    type: RequireAndVerifyClientCert
-    certfiles:
-      - tls/ca.crt
+    type: NoClientCert
 
 registry:
   maxenrollments: -1
