@@ -289,9 +289,12 @@ log "استخراج ID کانتینر rca-main"
 RCA_MAIN_ID=$(docker ps --filter "name=rca-main" --format "{{.ID}}")
 success "ID rca-main: $RCA_MAIN_ID"
 
-log "تولید هویت Orderer و Orgها از rca-main"
+# =====================================================
+# تولید هویت Orderer و تمام Orgها (روش مستقیم Enroll)
+# =====================================================
+log "تولید هویت Orderer و تمام Orgها از rca-main"
 
-TLS_CERT="/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
+TLS_CERT="/root/6g-network/config/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
 
 # ===================== Orderer =====================
 log "تولید هویت Orderer از rca-main"
@@ -302,33 +305,27 @@ docker run --rm \
   hyperledger/fabric-ca-tools:latest \
   /bin/bash -c '
     set -e
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
+    TLS_CERT="/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
 
-    # Enroll Admin
-    fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles "'"$TLS_CERT"'"
-
-    export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
-
-    # Register و Enroll
-    fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin \
-      --tls.certfiles "'"$TLS_CERT"'"
-
-    fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-main:7054 \
-      --tls.certfiles "'"$TLS_CERT"'" \
+    echo "=== Enroll Admin@example.com ==="
+    fabric-ca-client enroll \
+      -u https://Admin@example.com:adminpw@rca-main:7054 \
+      --tls.certfiles "$TLS_CERT" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
-      --tls.certfiles "'"$TLS_CERT"'"
-
-    fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-main:7054 \
-      --tls.certfiles "'"$TLS_CERT"'" \
+    echo "=== Enroll orderer.example.com ==="
+    fabric-ca-client enroll \
+      -u https://orderer.example.com:ordererpw@rca-main:7054 \
+      --tls.certfiles "$TLS_CERT" \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
-    echo "هویت Orderer با موفقیت تولید شد"
+    echo "✅ هویت Orderer با موفقیت تولید شد"
   '
 
-# ===================== تمام Orgها =====================
+# ===================== تمام Orgها (org1 تا org8) =====================
+log "تولید هویت تمام سازمان‌ها از rca-main"
+
 for i in {1..8}; do
   log "تولید هویت org${i} ..."
 
@@ -338,28 +335,22 @@ for i in {1..8}; do
     hyperledger/fabric-ca-tools:latest \
     /bin/bash -c "
       set -e
-      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org${i}
+      TLS_CERT=\"/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem\"
 
-      fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles \"${TLS_CERT}\"
-
-      export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org${i}
-
-      fabric-ca-client register --id.name Admin@org${i}.example.com --id.secret adminpw --id.type admin \
-        --tls.certfiles \"${TLS_CERT}\"
-
-      fabric-ca-client enroll -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
-        --tls.certfiles \"${TLS_CERT}\" \
+      echo \"=== Enroll Admin@org${i}.example.com ===\"
+      fabric-ca-client enroll \
+        -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
+        --tls.certfiles \"\$TLS_CERT\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp
 
-      fabric-ca-client register --id.name peer0.org${i}.example.com --id.secret peerpw --id.type peer \
-        --tls.certfiles \"${TLS_CERT}\"
-
-      fabric-ca-client enroll -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
-        --tls.certfiles \"${TLS_CERT}\" \
+      echo \"=== Enroll peer0.org${i}.example.com ===\"
+      fabric-ca-client enroll \
+        -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
+        --tls.certfiles \"\$TLS_CERT\" \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp
 
-      echo \"org${i} با موفقیت تولید شد\"
+      echo \"✅ org${i} با موفقیت تولید شد\"
     "
 done
 
@@ -1115,12 +1106,12 @@ approve_and_commit_chaincode() {
 main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
-  generate_bundled_certs
-  start_network
-  create_and_join_channels
-  update_anchor_peers
-  generate_chaincode_modules
-  package_and_install_chaincode
+  #generate_bundled_certs
+  #start_network
+  #create_and_join_channels
+  #update_anchor_peers
+  #generate_chaincode_modules
+  #package_and_install_chaincode
   #approve_and_commit_chaincode
 }
 
