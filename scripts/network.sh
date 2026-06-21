@@ -270,16 +270,13 @@ log "استخراج ID کانتینر rca-main"
 RCA_MAIN_ID=$(docker ps --filter "name=rca-main" --format "{{.ID}}")
 success "ID rca-main: $RCA_MAIN_ID"
 
-# =====================================================
-# تولید هویت Orderer و تمام Orgها از rca-main
-# =====================================================
-log "تولید هویت Orderer و Orgها از Intermediate CA (rca-main)"
+log "تولید هویت Orderer و Orgها از rca-main"
 
-# مسیر صحیح فایل CA Certificate از tlscacerts
 TLS_CERT="/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
 
 # ===================== Orderer =====================
 log "تولید هویت Orderer از rca-main"
+
 docker run --rm \
   --network 6g-network \
   -v "/root/6g-network/config/crypto-config":/crypto-config \
@@ -288,23 +285,22 @@ docker run --rm \
     set -e
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
-    echo "=== Enroll admin روی rca-main ==="
+    # 1. Enroll Admin
     fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles "'"$TLS_CERT"'"
 
-    echo "=== Register Admin@example.com ==="
+    # 2. Register و Enroll با استفاده از MSP ادمین
     fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin \
+      --mspdir /tmp/ca-client-orderer/msp \
       -u https://admin:adminpw@rca-main:7054 --tls.certfiles "'"$TLS_CERT"'"
 
-    echo "=== Enroll Admin@example.com ==="
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-main:7054 \
       --tls.certfiles "'"$TLS_CERT"'" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    echo "=== Register orderer.example.com ==="
     fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+      --mspdir /tmp/ca-client-orderer/msp \
       -u https://admin:adminpw@rca-main:7054 --tls.certfiles "'"$TLS_CERT"'"
 
-    echo "=== Enroll orderer.example.com ==="
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-main:7054 \
       --tls.certfiles "'"$TLS_CERT"'" \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
@@ -313,11 +309,9 @@ docker run --rm \
     echo "هویت Orderer با موفقیت تولید شد"
   '
 
-# ===================== تمام Orgها (org1 تا org8) =====================
-log "تولید هویت تمام سازمان‌ها از rca-main"
-
+# ===================== تمام Orgها =====================
 for i in {1..8}; do
-  log "در حال تولید هویت org${i} ..."
+  log "تولید هویت org${i} ..."
 
   docker run --rm \
     --network 6g-network \
@@ -327,23 +321,22 @@ for i in {1..8}; do
       set -e
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org${i}
 
-      echo \"=== Enroll admin روی rca-main برای org${i} ===\"
+      # Enroll Admin
       fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles \"${TLS_CERT}\"
 
-      echo \"=== Register Admin@org${i}.example.com ===\"
+      # Register و Enroll با MSP ادمین
       fabric-ca-client register --id.name Admin@org${i}.example.com --id.secret adminpw --id.type admin \
+        --mspdir /tmp/ca-client-org${i}/msp \
         -u https://admin:adminpw@rca-main:7054 --tls.certfiles \"${TLS_CERT}\"
 
-      echo \"=== Enroll Admin@org${i}.example.com ===\"
       fabric-ca-client enroll -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
         --tls.certfiles \"${TLS_CERT}\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp
 
-      echo \"=== Register peer0.org${i}.example.com ===\"
       fabric-ca-client register --id.name peer0.org${i}.example.com --id.secret peerpw --id.type peer \
+        --mspdir /tmp/ca-client-org${i}/msp \
         -u https://admin:adminpw@rca-main:7054 --tls.certfiles \"${TLS_CERT}\"
 
-      echo \"=== Enroll peer0.org${i}.example.com ===\"
       fabric-ca-client enroll -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
         --tls.certfiles \"${TLS_CERT}\" \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
@@ -353,7 +346,7 @@ for i in {1..8}; do
     "
 done
 
-success "تمام هویت‌های Orderer و Orgها با موفقیت از rca-main تولید شدند"
+success "تمام هویت‌های Orderer و Orgها با موفقیت تولید شدند"
 
 
 
