@@ -285,18 +285,22 @@ docker run --rm \
     set -e
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
-    # 1. Enroll Admin
+    # Enroll Admin
     fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles "'"$TLS_CERT"'"
 
-    # 2. حالا از MSP ادمین برای register استفاده می‌کنیم
     export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-orderer
 
-    fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin
+    # Register و Enroll
+    fabric-ca-client register --id.name Admin@example.com --id.secret adminpw --id.type admin \
+      --tls.certfiles "'"$TLS_CERT"'"
+
     fabric-ca-client enroll -u https://Admin@example.com:adminpw@rca-main:7054 \
       --tls.certfiles "'"$TLS_CERT"'" \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
-    fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer
+    fabric-ca-client register --id.name orderer.example.com --id.secret ordererpw --id.type orderer \
+      --tls.certfiles "'"$TLS_CERT"'"
+
     fabric-ca-client enroll -u https://orderer.example.com:ordererpw@rca-main:7054 \
       --tls.certfiles "'"$TLS_CERT"'" \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
@@ -317,18 +321,20 @@ for i in {1..8}; do
       set -e
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org${i}
 
-      # Enroll Admin
       fabric-ca-client enroll -u https://admin:adminpw@rca-main:7054 --tls.certfiles \"${TLS_CERT}\"
 
-      # Register با MSP ادمین
       export FABRIC_CA_CLIENT_HOME=/tmp/ca-client-org${i}
 
-      fabric-ca-client register --id.name Admin@org${i}.example.com --id.secret adminpw --id.type admin
+      fabric-ca-client register --id.name Admin@org${i}.example.com --id.secret adminpw --id.type admin \
+        --tls.certfiles \"${TLS_CERT}\"
+
       fabric-ca-client enroll -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
         --tls.certfiles \"${TLS_CERT}\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp
 
-      fabric-ca-client register --id.name peer0.org${i}.example.com --id.secret peerpw --id.type peer
+      fabric-ca-client register --id.name peer0.org${i}.example.com --id.secret peerpw --id.type peer \
+        --tls.certfiles \"${TLS_CERT}\"
+
       fabric-ca-client enroll -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
         --tls.certfiles \"${TLS_CERT}\" \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
