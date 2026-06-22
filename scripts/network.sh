@@ -398,7 +398,7 @@ docker run --rm \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
     cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/keystore/*_sk \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
-    cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem \
+    cp /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlsintermediatecerts/tls-rca-main-7054.pem \
        /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
     echo "✅ گواهی TLS Orderer تولید شد"
@@ -430,7 +430,7 @@ for i in {1..8}; do
          /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/server.crt
       cp /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/keystore/*_sk \
          /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/server.key
-      cp /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/tlscacerts/*.pem \
+      cp /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/tlsintermediatecerts/tls-rca-main-7054.pem \
          /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
 
       echo \"✅ گواهی TLS peer0.org${i} تولید شد\"
@@ -516,17 +516,6 @@ EOF
     echo "config.yaml به MSP Admin کاربر $ORG کپی شد (برای mount)"
   done
 
-  echo "تمام فایل‌های config.yaml ساخته شدند — MSP admin-msp آماده mount مستقیم از Admin کاربر است!"
-  echo "در docker-compose.yml این خطوط را اضافه کنید:"
-  echo "  برای orderer:"
-  echo "    - ./crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp:/etc/hyperledger/fabric/admin-msp:ro"
-  echo "  برای هر peer:"
-  echo "    - ./crypto-config/peerOrganizations/orgX.example.com/users/Admin@orgX.example.com/msp:/etc/hyperledger/fabric/admin-msp:ro"
-
-  log "اصلاح config.yaml با نام دقیق فایل RCA (حل خطای wildcard و OU classification)"
-
-log "6. تولید genesis.block و channel transactionها"
-log "اصلاح نهایی MSP سازمان‌ها — کپی cacerts از MSP peer به MSP اصلی"
 
 # Orderer Org
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
