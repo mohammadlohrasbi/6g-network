@@ -1079,8 +1079,8 @@ approve_and_commit_chaincode() {
 main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
-  #generate_bundled_certs
-  #start_network
+  generate_bundled_certs
+  start_network
   #create_and_join_channels
   #update_anchor_peers
   #generate_chaincode_modules
