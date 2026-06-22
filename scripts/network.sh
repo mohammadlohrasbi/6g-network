@@ -445,7 +445,6 @@ echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و 
   cd "$PROJECT_DIR"
 
   log "ساخت یکپارچه تمام فایل‌های config.yaml + آماده‌سازی MSP Admin کاربر برای mount مستقیم (Peer و Orderer)"
-log "ساخت config.yaml، admincerts و cacerts برای ساختار جدید (تک rca-main)"
 CA_CERT_NAME="rca-main-7054.pem"
 ROOT_CA_CERT="root-ca-7052.pem"
 
@@ -487,20 +486,21 @@ mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
 
-# ۵. admincerts و cacerts برای MSP اصلی OrdererOrg
+# ۵. admincerts و cacerts برای MSP اصلی OrdererOrg + نود orderer
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
-
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/msp/admincerts/
 
-# کپی Intermediate CA cert به cacerts
+# کپی Intermediate CA به cacerts (اصلی + نود)
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
 
-# کپی Root CA cert به cacerts (برای کامل بودن زنجیره)
+# کپی Root CA به cacerts (اصلی)
 cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 2>/dev/null || true
 
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
@@ -541,20 +541,22 @@ EOF
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts/
 
-  # ۵. admincerts و cacerts برای MSP اصلی سازمان
+  # ۵. admincerts و cacerts برای MSP اصلی سازمان + نود peer
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
 
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
 
-  # کپی Intermediate CA cert به cacerts
+  # کپی Intermediate CA به cacerts (اصلی + نود)
   cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/intermediatecerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/intermediatecerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
 
-  # کپی Root CA cert به cacerts
+  # کپی Root CA به cacerts اصلی سازمان
   cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 2>/dev/null || true
 
   echo "MSP کامل برای $ORG ساخته شد"
 done
