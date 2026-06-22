@@ -491,8 +491,8 @@ mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/msp/admincerts/
-cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 2>/dev/null || true
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
 
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
@@ -539,7 +539,7 @@ EOF
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/intermediatecerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
 
   echo "MSP کامل برای $ORG ساخته شد"
