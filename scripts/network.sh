@@ -445,154 +445,107 @@ echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و 
   cd "$PROJECT_DIR"
 
   log "ساخت یکپارچه تمام فایل‌های config.yaml + آماده‌سازی MSP Admin کاربر برای mount مستقیم (Peer و Orderer)"
+log "ساخت config.yaml، admincerts و cacerts برای ساختار جدید (تک rca-main)"
 
-  # ۱. MSP نود orderer
-  cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<'EOF'
+CA_CERT_NAME="rca-main-7054.pem"
+
+# ===================== Orderer =====================
+log "تنظیم MSP Orderer"
+
+# ۱. config.yaml برای نود orderer
+mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<'EOF'
 NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
+    Certificate: cacerts/rca-main-7054.pem
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
+    Certificate: cacerts/rca-main-7054.pem
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
+    Certificate: cacerts/rca-main-7054.pem
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/rca-orderer-7054.pem
+    Certificate: cacerts/rca-main-7054.pem
     OrganizationalUnitIdentifier: orderer
 EOF
-  echo "config.yaml برای MSP نود orderer ساخته شد"
+echo "config.yaml برای نود orderer ساخته شد"
 
-  # ۲. MSP اصلی OrdererOrg
-  mkdir -p crypto-config/ordererOrganizations/example.com/msp
-  cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
-     crypto-config/ordererOrganizations/example.com/msp/config.yaml
-  echo "config.yaml برای MSP اصلی OrdererOrg کپی شد"
+# ۲. کپی config.yaml به MSP اصلی OrdererOrg
+mkdir -p crypto-config/ordererOrganizations/example.com/msp
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
+   crypto-config/ordererOrganizations/example.com/msp/config.yaml
 
-  # ۳. کپی config.yaml به MSP Admin کاربر Orderer (برای mount)
-  mkdir -p crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
-  cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
-     crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/config.yaml
-  echo "config.yaml به MSP Admin کاربر Orderer کپی شد (برای mount)"
+# ۳. کپی config.yaml به MSP کاربر Admin Orderer
+mkdir -p crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
+   crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/config.yaml
 
-  # ۴. MSP نود peerها و MSP اصلی Peer Orgها + کپی به MSP Admin کاربر Peerها
-  for i in {1..8}; do
-    ORG=org$i
-    PORT=$((7054 + $i * 100))
-    RCA_FILE="rca-org${i}-${PORT}.pem"
-
-    # MSP نود peer
-    mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp
-    cat > crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml <<EOF
-NodeOUs:
-  Enable: true
-  ClientOUIdentifier:
-    Certificate: cacerts/$RCA_FILE
-    OrganizationalUnitIdentifier: client
-  PeerOUIdentifier:
-    Certificate: cacerts/$RCA_FILE
-    OrganizationalUnitIdentifier: peer
-  AdminOUIdentifier:
-    Certificate: cacerts/$RCA_FILE
-    OrganizationalUnitIdentifier: admin
-  OrdererOUIdentifier:
-    Certificate: cacerts/$RCA_FILE
-    OrganizationalUnitIdentifier: orderer
-EOF
-    echo "config.yaml برای MSP نود peer0.$ORG ساخته شد"
-
-    # MSP اصلی سازمان
-    mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp
-    cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
-       crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml
-    echo "config.yaml برای MSP اصلی $ORG کپی شد"
-
-    # کپی config.yaml به MSP Admin کاربر Peer (برای mount)
-    mkdir -p crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp
-    cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
-       crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/config.yaml
-    echo "config.yaml به MSP Admin کاربر $ORG کپی شد (برای mount)"
-  done
-
-
-# Orderer Org
-mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
-cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/
-
-echo "cacerts برای OrdererMSP کپی شد"
-
-# همه Peer Orgها (org1 تا org8)
-for i in {1..8}; do
-  ORG=org$i
-
-  # ساخت پوشه cacerts در MSP اصلی سازمان
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
-
-  # کپی از MSP peer0 (که گواهی CA دارد)
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
-
-  echo "cacerts برای Org${i}MSP از peer0 کپی شد"
-done
-
-echo "تمام MSPهای اصلی سازمان اصلاح شدند — configtxgen حالا ۱۰۰٪ کار می‌کند!"
-
-# Orderer Org
-mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
-cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/admincerts/
-cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/
-
-# Peer Orgها
-for i in {1..8}; do
-  ORG=org$i
-
-  # MSP اصلی سازمان
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
-  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
-
-  # کپی admincerts از Admin کاربر
-  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
-
-  # کپی cacerts از MSP peer (یا Admin)
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
-
-  # اختیاری: کپی config.yaml اگر OU classification بخواهید
-  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml 2>/dev/null || true
-
-  echo "MSP اصلی Org${i}MSP ساخته شد (admincerts + cacerts)"
-done
-
-log "کپی admincerts به MSP اصلی نودها (peer و orderer — روش کاملاً اصولی)"
+# ۴. admincerts و cacerts برای Orderer
 mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
 
-# همه Peerها
+mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
+mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
+cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/admincerts/
+cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 2>/dev/null || true
+
+# ===================== Peer Orgها =====================
 for i in {1..8}; do
   ORG=org$i
+
+  log "تنظیم MSP برای $ORG"
+
+  # ۱. config.yaml برای نود peer0
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp
+  cat > crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml <<EOF
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/$CA_CERT_NAME
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/$CA_CERT_NAME
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/$CA_CERT_NAME
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/$CA_CERT_NAME
+    OrganizationalUnitIdentifier: orderer
+EOF
+
+  # ۲. کپی config.yaml به MSP اصلی سازمان
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/config.yaml
+
+  # ۳. کپی config.yaml به MSP کاربر Admin
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/config.yaml \
+     crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/config.yaml
+
+  # ۴. admincerts برای نود peer
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/admincerts/
 
-  echo "admincerts برای MSP peer0.$ORG.example.com اضافه شد"
+  # ۵. admincerts و cacerts برای MSP اصلی سازمان
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
+  mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
+  cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+  cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/cacerts/*.pem \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
+
+  echo "MSP کامل برای $ORG ساخته شد"
 done
 
-log "تولید دوباره genesis.block و channel artifacts"
-
-# تنظیم دقیق FABRIC_CFG_PATH (مسیر پوشه‌ای که configtx.yaml داخل آن است)
-export FABRIC_CFG_PATH="/root/6g-network/config"   # اگر configtx.yaml در این پوشه است
-
-echo "FABRIC_CFG_PATH تنظیم شد روی: $FABRIC_CFG_PATH"
-echo "محتویات دایرکتوری:"
-ls -la "$FABRIC_CFG_PATH/configtx.yaml" || echo "configtx.yaml پیدا نشد!"
+success "تمام config.yaml، admincerts و cacerts با موفقیت برای ساختار جدید ساخته شدند"
 
 # مطمئن شو پوشه خروجی وجود دارد
 mkdir -p "$CHANNEL_ARTIFACTS"
