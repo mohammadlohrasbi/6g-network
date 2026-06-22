@@ -446,28 +446,28 @@ echo 'تمام گواهی‌های TLS به صورت کاملاً اصولی و 
 
   log "ساخت یکپارچه تمام فایل‌های config.yaml + آماده‌سازی MSP Admin کاربر برای mount مستقیم (Peer و Orderer)"
 log "ساخت config.yaml، admincerts و cacerts برای ساختار جدید (تک rca-main)"
-
 CA_CERT_NAME="rca-main-7054.pem"
+ROOT_CA_CERT="root-ca-7052.pem"
 
 # ===================== Orderer =====================
 log "تنظیم MSP Orderer"
 
 # ۱. config.yaml برای نود orderer
 mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<'EOF'
+cat > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml <<EOF
 NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/rca-main-7054.pem
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/rca-main-7054.pem
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/rca-main-7054.pem
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/rca-main-7054.pem
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: orderer
 EOF
 echo "config.yaml برای نود orderer ساخته شد"
@@ -482,22 +482,29 @@ mkdir -p crypto-config/ordererOrganizations/example.com/users/Admin@example.com/
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/config.yaml \
    crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/config.yaml
 
-# ۴. admincerts و cacerts برای Orderer
+# ۴. admincerts برای نود orderer
 mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
 
+# ۵. admincerts و cacerts برای MSP اصلی OrdererOrg
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/admincerts
 mkdir -p crypto-config/ordererOrganizations/example.com/msp/cacerts
+
 cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem \
    crypto-config/ordererOrganizations/example.com/msp/admincerts/
+
+# کپی Intermediate CA cert به cacerts
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
+
+# کپی Root CA cert به cacerts (برای کامل بودن زنجیره)
+cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
    crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
 
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
   ORG=org$i
-
   log "تنظیم MSP برای $ORG"
 
   # ۱. config.yaml برای نود peer0
@@ -506,16 +513,16 @@ for i in {1..8}; do
 NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/$CA_CERT_NAME
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/$CA_CERT_NAME
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/$CA_CERT_NAME
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/$CA_CERT_NAME
+    Certificate: cacerts/${CA_CERT_NAME}
     OrganizationalUnitIdentifier: orderer
 EOF
 
@@ -537,10 +544,17 @@ EOF
   # ۵. admincerts و cacerts برای MSP اصلی سازمان
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts
   mkdir -p crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts
+
   cp crypto-config/peerOrganizations/$ORG.example.com/users/Admin@$ORG.example.com/msp/signcerts/*.pem \
      crypto-config/peerOrganizations/$ORG.example.com/msp/admincerts/
+
+  # کپی Intermediate CA cert به cacerts
   cp crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.$ORG.example.com/msp/intermediatecerts/*.pem \
-     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 
+
+  # کپی Root CA cert به cacerts
+  cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
+     crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 
 
   echo "MSP کامل برای $ORG ساخته شد"
 done
