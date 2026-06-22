@@ -819,67 +819,35 @@ echo "تمام MSPهای اصلی نودها با admincerts اصلاح شدند
 } 
 
 generate_bundled_certs() {
-  log "ساخت bundled-tls-ca.pem (TLS CA + Enrollment CA + Admin Certificate)..."
-  cd "$CONFIG_DIR"
-  > bundled-tls-ca.pem
+  log "آماده‌سازی ca.crt کامل (Root CA + Intermediate CA) برای TLS نودها..."
+
+  # مسیر گواهی‌ها
+  ROOT_CA_CERT="/root/6g-network/config/crypto-config/intermediate-ca/msp/cacerts/root-ca-7052.pem"
+  INTERMEDIATE_TLS_CA="/root/6g-network/config/crypto-config/intermediate-ca/tls/tlscacerts/tls-root-ca-7052.pem"
+
+  if [ ! -f "$ROOT_CA_CERT" ] || [ ! -f "$INTERMEDIATE_TLS_CA" ]; then
+    error "یکی از گواهی‌های CA پیدا نشد!"
+  fi
 
   # ===================== Orderer =====================
-  log "اضافه کردن گواهی‌های Orderer..."
+  log "تنظیم ca.crt کامل برای نود orderer..."
+  mkdir -p crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls
 
-  # TLS CA
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/tlscacerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
+  # اول Root CA بعد Intermediate CA (ترتیب استاندارد زنجیره)
+  cat "$ROOT_CA_CERT" > crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+  cat "$INTERMEDIATE_TLS_CA" >> crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
-  # Enrollment CA
-  cat crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
-
-  # Admin Certificate
-  cat crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/*.pem >> bundled-tls-ca.pem 2>/dev/null || true
-
-  # ===================== همه Peerها (org1 تا org8) =====================
+  # ===================== همه Peerها =====================
   for i in {1..8}; do
-    log "اضافه کردن گواهی‌های org${i}..."
+    log "تنظیم ca.crt کامل برای peer0.org${i}..."
+    PEER_TLS_DIR="crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls"
+    mkdir -p "$PEER_TLS_DIR"
 
-    PEER_DIR="crypto-config/peerOrganizations/org${i}.example.com"
-    PEER_TLS_DIR="$PEER_DIR/peers/peer0.org${i}.example.com/tls"
-    PEER_MSP_DIR="$PEER_DIR/peers/peer0.org${i}.example.com/msp"
-    ADMIN_MSP_DIR="$PEER_DIR/users/Admin@org${i}.example.com/msp"
-
-    # TLS CA اصلی (tlscacerts)
-    cat "$PEER_TLS_DIR/tlscacerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
-
-    # Enrollment CA (از msp/cacerts)
-    cat "$PEER_MSP_DIR/cacerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
-
-    # Admin Certificate
-    cat "$ADMIN_MSP_DIR/signcerts/"*.pem >> bundled-tls-ca.pem 2>/dev/null || true
+    cat "$ROOT_CA_CERT" > "$PEER_TLS_DIR/ca.crt"
+    cat "$INTERMEDIATE_TLS_CA" >> "$PEER_TLS_DIR/ca.crt"
   done
 
-  # ===================== گواهی‌های اولیه rca (برای اطمینان کامل) =====================
-  log "اضافه کردن گواهی‌های اولیه از rca..."
-
-  # Orderer rca
-  cat crypto-config/ordererOrganizations/example.com/rca/ca-orderer.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
-  find crypto-config/ordererOrganizations/example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
-
-  # همه Peerها rca
-  for i in {1..8}; do
-    cat crypto-config/peerOrganizations/org${i}.example.com/rca/ca-org${i}.org${i}.example.com-cert.pem >> bundled-tls-ca.pem 2>/dev/null || true
-    find crypto-config/peerOrganizations/org${i}.example.com/rca/tls-msp/cacerts -name "*.pem" -exec cat {} + >> bundled-tls-ca.pem 2>/dev/null || true
-  done
-
-
-  tls_count=$(grep -c "BEGIN CERTIFICATE" bundled-tls-ca.pem || echo 0)
-  success "bundled-tls-ca.pem ساخته شد (تعداد گواهی: $tls_count)"
-
-  # اعمال روی هاست (به عنوان ca.crt همه نودها)
-  log "اعمال bundled به عنوان ca.crt همه نودها..."
-  cp bundled-tls-ca.pem crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
-
-  for i in {1..8}; do
-    cp bundled-tls-ca.pem crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls/ca.crt
-  done
-
-  success "✅ bundled-tls-ca.pem به عنوان ca.crt همه نودها تنظیم شد"
+  success "ca.crt کامل (Root + Intermediate) برای همه نودها تنظیم شد"
 }
    
 # ------------------- راه‌اندازی شبکه -------------------
