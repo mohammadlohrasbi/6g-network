@@ -37,7 +37,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
     local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
     local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
-
     # =====================================================
     # ایجاد شبکه Docker (حتماً قبل از هر compose)
     # =====================================================
@@ -45,10 +44,16 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         log "ایجاد شبکه 6g-network"
         docker network create 6g-network
         success "شبکه 6g-network ساخته شد"
+        sleep 3
     else
         log "شبکه 6g-network از قبل وجود دارد"
+        sleep 1
     fi
 
+    # چک نهایی (برای اطمینان)
+    if ! docker network ls | grep -q "6g-network"; then
+       error "شبکه 6g-network هنوز ایجاد نشده است!"
+    fi
     # =====================================================
     # 1. پاک‌سازی ایمن
     # =====================================================
