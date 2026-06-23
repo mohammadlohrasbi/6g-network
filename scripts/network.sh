@@ -30,7 +30,6 @@ cleanup() {
   success "پاک‌سازی کامل شد"
   cd "$PROJECT_DIR"
 }
-
 setup_network_with_fabric_ca_tls_nodeous_active() {
     log "=========================================="
     log "راه‌اندازی تمیز شبکه 6G با یک Intermediate CA"
@@ -40,7 +39,18 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
 
     # =====================================================
-    # 1. پاک‌سازی ایمن (فقط بخش‌های لازم)
+    # ایجاد شبکه Docker (حتماً قبل از هر compose)
+    # =====================================================
+    if ! docker network ls | grep -q "6g-network"; then
+        log "ایجاد شبکه 6g-network"
+        docker network create 6g-network
+        success "شبکه 6g-network ساخته شد"
+    else
+        log "شبکه 6g-network از قبل وجود دارد"
+    fi
+
+    # =====================================================
+    # 1. پاک‌سازی ایمن
     # =====================================================
     log "پاک‌سازی ایمن..."
     docker-compose -f docker-compose-rca.yml down -v --remove-orphans 2>/dev/null || true
@@ -53,6 +63,8 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     rm -rf "$CHANNEL_ARTIFACTS"/*
 
     mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
+
+    # بقیه تابع مثل قبل...
 
     # =====================================================
     # 2. راه‌اندازی Root CA
