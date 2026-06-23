@@ -44,12 +44,16 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
     # =====================================================
     # ایجاد شبکه Docker (حتماً قبل از هر compose)
     # =====================================================
+    # =====================================================
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] اطمینان از وجود شبکه 6g-network..."
+    docker network create 6g-network 2>/dev/null || true
+    sleep 4
+
     if ! docker network ls | grep -q "6g-network"; then
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ایجاد شبکه 6g-network"
-        docker network create 6g-network
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] موفق: شبکه 6g-network ساخته شد"
-        sleep 3
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] خطا: شبکه 6g-network ایجاد نشد!"
+        exit 1
     fi
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] شبکه 6g-network آماده است."
     # =====================================================
     # 1. پاک‌سازی ایمن
     # =====================================================
