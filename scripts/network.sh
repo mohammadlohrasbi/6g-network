@@ -37,16 +37,20 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
     local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
     local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
+    docker-compose -f docker-compose-tls-ca.yml down -v --remove-orphans
+    docker-compose -f docker-compose-rca.yml down -v --remove-orphans
+    docker-compose down -v
+    docker volume prune -f
     # =====================================================
     # ایجاد شبکه Docker (حتماً قبل از هر compose)
     # =====================================================
-  if ! docker network ls | grep -q "6g-network"; then
-      log "ایجاد شبکه 6g-network"
-      docker network create 6g-network
-      success "شبکه 6g-network ساخته شد"
-  else
-      log "شبکه 6g-network از قبل وجود دارد"
-  fi
+    if ! docker network ls | grep -q "6g-network"; then
+        log "ایجاد شبکه 6g-network"
+        docker network create 6g-network
+        success "شبکه 6g-network ساخته شد"
+    else
+        log "شبکه 6g-network از قبل وجود دارد"
+    fi
     # =====================================================
     # 1. پاک‌سازی ایمن
     # =====================================================
