@@ -37,13 +37,17 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
 
     local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
     local CHANNEL_ARTIFACTS="$PROJECT_DIR/channel-artifacts"
-    docker-compose -f docker-compose-tls-ca.yml down -v --remove-orphans
-    docker-compose -f docker-compose-rca.yml down -v --remove-orphans
-    docker-compose down -v
-    docker volume prune -f
+
+    # =====================================================
+    # 1. پاک‌سازی ایمن
+    # =====================================================
+    log "پاک‌سازی ایمن..."
+    docker-compose -f docker-compose-rca.yml down -v --remove-orphans 
+    docker-compose down -v --remove-orphans 
+    docker volume prune -f 
+    
     # =====================================================
     # ایجاد شبکه Docker (حتماً قبل از هر compose)
-    # =====================================================
     # =====================================================
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] اطمینان از وجود شبکه 6g-network..."
     docker network create 6g-network 2>/dev/null || true
@@ -54,13 +58,6 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
         exit 1
     fi
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] شبکه 6g-network آماده است."
-    # =====================================================
-    # 1. پاک‌سازی ایمن
-    # =====================================================
-    log "پاک‌سازی ایمن..."
-    docker-compose -f docker-compose-rca.yml down -v --remove-orphans 
-    docker-compose down -v --remove-orphans 
-    docker volume prune -f 
 
     rm -rf "$CRYPTO_DIR"/ordererOrganizations
     rm -rf "$CRYPTO_DIR"/peerOrganizations
