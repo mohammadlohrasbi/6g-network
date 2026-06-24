@@ -516,7 +516,7 @@ docker run --rm \
       --tls.certfiles /crypto-config/root-ca/ca-cert.pem \
       --enrollment.profile tls \
       --csr.cn rca-main.example.com \
-      --csr.hosts "rca-main,localhost,127.0.0.1" \
+      --csr.hosts "rca-main,localhost,127.0.0.1,rca-main.example.com" \
       -M /crypto-config/intermediate-ca/tls
   '
 
@@ -582,12 +582,16 @@ docker run --rm \
     fabric-ca-client enroll \
       -u https://Admin@example.com:adminpw@rca-main:7054 \
       --tls.certfiles "$TLS_CERT" \
+      --csr.cn Admin@example.com \
+      --csr.names C=IR,O=6G-Project,OU=admin,ST=Tehran \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
 
     echo "=== Enroll orderer.example.com ==="
     fabric-ca-client enroll \
       -u https://orderer.example.com:ordererpw@rca-main:7054 \
       --tls.certfiles "$TLS_CERT" \
+      --csr.cn orderer.example.com \
+      --csr.names C=IR,O=6G-Project,OU=orderer,ST=Tehran \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
 
@@ -612,12 +616,16 @@ for i in {1..8}; do
       fabric-ca-client enroll \
         -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
         --tls.certfiles \"\$TLS_CERT\" \
+        --csr.cn Admin@org${i}.example.com \
+        --csr.names C=IR,O=6G-Project,OU=admin,ST=Tehran \
         -M /crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp
 
       echo \"=== Enroll peer0.org${i}.example.com ===\"
       fabric-ca-client enroll \
         -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
         --tls.certfiles \"\$TLS_CERT\" \
+        --csr.cn peer0.org${i}.example.com \
+        --csr.names C=IR,O=6G-Project,OU=peer,ST=Tehran \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/msp
 
@@ -652,6 +660,7 @@ docker run --rm \
       -u https://orderer.example.com:ordererpw@rca-main:7054 \
       --tls.certfiles "$TLS_CA_CERT" \
       --enrollment.profile tls \
+      --csr.cn orderer.example.com \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
       -M /crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls
 
@@ -684,6 +693,7 @@ for i in {1..8}; do
         -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
         --tls.certfiles \"\$TLS_CA_CERT\" \
         --enrollment.profile tls \
+        --csr.cn peer0.org${i}.example.com \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
         -M /crypto-config/peerOrganizations/org${i}.example.com/peers/peer0.org${i}.example.com/tls
 
