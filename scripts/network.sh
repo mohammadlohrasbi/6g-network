@@ -582,6 +582,7 @@ docker run --rm \
     fabric-ca-client enroll \
       -u https://Admin@example.com:adminpw@rca-main:7054 \
       --tls.certfiles "$TLS_CERT" \
+      --enrollment.profile ca \
       --csr.cn Admin@example.com \
       --csr.names C=IR,O=6G-Project,OU=admin,ST=Tehran \
       -M /crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp
@@ -590,6 +591,7 @@ docker run --rm \
     fabric-ca-client enroll \
       -u https://orderer.example.com:ordererpw@rca-main:7054 \
       --tls.certfiles "$TLS_CERT" \
+      --enrollment.profile ca \
       --csr.cn orderer.example.com \
       --csr.names C=IR,O=6G-Project,OU=orderer,ST=Tehran \
       --csr.hosts "orderer.example.com,localhost,127.0.0.1" \
@@ -616,6 +618,7 @@ for i in {1..8}; do
       fabric-ca-client enroll \
         -u https://Admin@org${i}.example.com:adminpw@rca-main:7054 \
         --tls.certfiles \"\$TLS_CERT\" \
+        --enrollment.profile ca \
         --csr.cn Admin@org${i}.example.com \
         --csr.names C=IR,O=6G-Project,OU=admin,ST=Tehran \
         -M /crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp
@@ -624,6 +627,7 @@ for i in {1..8}; do
       fabric-ca-client enroll \
         -u https://peer0.org${i}.example.com:peerpw@rca-main:7054 \
         --tls.certfiles \"\$TLS_CERT\" \
+        --enrollment.profile ca \
         --csr.cn peer0.org${i}.example.com \
         --csr.names C=IR,O=6G-Project,OU=peer,ST=Tehran \
         --csr.hosts \"peer0.org${i}.example.com,localhost,127.0.0.1\" \
