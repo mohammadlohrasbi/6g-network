@@ -30,7 +30,7 @@ cleanup() {
   success "پاک‌سازی کامل شد"
   cd "$PROJECT_DIR"
 }
-setup_network_with_fabric_ca_tls_nodeous_activee() {
+setup_network_with_fabric_ca_tls_nodeous_active() {
     log "=========================================="
     log "راه‌اندازی تمیز شبکه 6G با یک Intermediate CA"
     log "=========================================="
@@ -322,7 +322,7 @@ EOF
     success "شبکه با موفقیت راه‌اندازی شد!"
 }
 
-setup_network_with_fabric_ca_tls_nodeous_active() {
+setup_network_with_fabric_ca_tls_nodeous_activee() {
   log "راه‌اندازی کامل شبکه — با جداسازی CA + استفاده از ID کانتینر + cacerts برای verify"
 
   local CRYPTO_DIR="$PROJECT_DIR/crypto-config"
