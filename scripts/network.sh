@@ -66,7 +66,21 @@ setup_network_with_fabric_ca_tls_nodeous_activee() {
 
     mkdir -p "$CRYPTO_DIR" "$CHANNEL_ARTIFACTS"
 
-    # بقیه تابع مثل قبل...
+    cat > /root/6g-network/config/crypto-config/root-ca/fabric-ca-server-config.yaml << 'EOF'
+port: 7052
+debug: true
+tls:
+  enabled: true
+registry:
+  maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: admin
+      attrs:
+        hf.IntermediateCA: true
+        ...
+EOF
 
     # =====================================================
     # 2. راه‌اندازی Root CA
