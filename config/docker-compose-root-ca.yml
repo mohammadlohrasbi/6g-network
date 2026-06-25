@@ -1,9 +1,7 @@
 version: '3.7'
-
 networks:
   6g-network:
     external: true
-
 services:
   root-ca:
     container_name: root-ca
@@ -15,6 +13,17 @@ services:
       - FABRIC_CA_SERVER_PORT=7052
       - FABRIC_CA_SERVER_CSR_CN=root-ca.example.com
       - FABRIC_CA_SERVER_CSR_HOSTS=root-ca,localhost,127.0.0.1
+      - FABRIC_CA_SERVER_REGISTRY_MAXENROLLMENTS=-1
+      - FABRIC_CA_SERVER_IDENTITIES_0_NAME=admin
+      - FABRIC_CA_SERVER_IDENTITIES_0_PASS=adminpw
+      - FABRIC_CA_SERVER_IDENTITIES_0_TYPE=admin
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_REGISTRAR_ROLES=*
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_REGISTRAR_DELEGATEROLES=*
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_REVOKER=true
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_INTERMEDIATECA=true
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_GENCRL=true
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_REGISTRAR_ATTRIBUTES=*
+      - FABRIC_CA_SERVER_IDENTITIES_0_ATTRS_HF_AFFILIATIONMGR=true
     ports:
       - "7052:7052"
     command: sh -c 'fabric-ca-server start -b admin:adminpw'
