@@ -19,8 +19,6 @@ services:
       - FABRIC_CA_SERVER_INTERMEDIATE_PARENTSERVER_URL=https://admin:adminpw@root-ca:7052
       - FABRIC_CA_SERVER_INTERMEDIATE_PARENTSERVER_CANAME=root-ca
       - FABRIC_CA_SERVER_INTERMEDIATE_TLS_CERTFILES=/etc/hyperledger/fabric-ca-server/tls/ca.crt
-      - FABRIC_CA_SERVER_CSR_CN=rca-main.example.com
-      - FABRIC_CA_SERVER_CSR_HOSTS=rca-main,localhost,127.0.0.1
     volumes:
       - ./crypto-config/intermediate-ca:/etc/hyperledger/fabric-ca-server
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1'
