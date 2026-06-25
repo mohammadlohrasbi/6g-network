@@ -21,7 +21,9 @@ services:
       - FABRIC_CA_SERVER_INTERMEDIATE_TLS_CERTFILES=/etc/hyperledger/fabric-ca-server/tls/ca.crt
     volumes:
       - ./crypto-config/intermediate-ca:/etc/hyperledger/fabric-ca-server
-    command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1'
+    command: >
+      sh -c 'rm -f /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+             fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1'
     networks:
       - 6g-network
     restart: unless-stopped
