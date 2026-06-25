@@ -47,7 +47,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_LOCALMSPID=org1MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -79,7 +79,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:8051
       - CORE_PEER_LOCALMSPID=org2MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -111,7 +111,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:9051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org3.example.com:9051
       - CORE_PEER_LOCALMSPID=org3MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -143,7 +143,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org4.example.com:10051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org4.example.com:10051
       - CORE_PEER_LOCALMSPID=org4MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -175,7 +175,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org5.example.com:11051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org5.example.com:11051
       - CORE_PEER_LOCALMSPID=org5MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -207,7 +207,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org6.example.com:12051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org6.example.com:12051
       - CORE_PEER_LOCALMSPID=org6MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -239,7 +239,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org7.example.com:13051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org7.example.com:13051
       - CORE_PEER_LOCALMSPID=org7MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
@@ -271,7 +271,7 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org8.example.com:14051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org8.example.com:14051
       - CORE_PEER_LOCALMSPID=org8MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
