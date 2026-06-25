@@ -1,9 +1,7 @@
 version: '3.8'
-
 networks:
   6g-network:
     external: true
-
 services:
   rca-main:
     image: hyperledger/fabric-ca:1.5
@@ -14,21 +12,16 @@ services:
     environment:
       - FABRIC_CA_SERVER_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_PORT=7054
+      - FABRIC_CA_SERVER_CA_NAME=rca-main
       - FABRIC_CA_SERVER_TLS_ENABLED=true
-
-      # ===== استفاده صریح از فایل‌های server.crt و server.key =====
       - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server/tls/server.crt
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/server.key
-
-      # ===== گواهی و کلید CA برای signing (اختیاری اما توصیه می‌شود) =====
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/msp/signcerts/cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/msp/keystore/priv_sk
-
-      - FABRIC_CA_SERVER_CA_NAME=rca-main
+      - FABRIC_CA_SERVER_INTERMEDIATE_PARENTSERVER_URL=https://admin:adminpw@root-ca:7052
+      - FABRIC_CA_SERVER_INTERMEDIATE_PARENTSERVER_CANAME=root-ca
+      - FABRIC_CA_SERVER_INTERMEDIATE_TLS_CERTFILES=/etc/hyperledger/fabric-ca-server/tls/ca.crt
       - FABRIC_CA_SERVER_CSR_CN=rca-main.example.com
       - FABRIC_CA_SERVER_CSR_HOSTS=rca-main,localhost,127.0.0.1
     volumes:
-      # mount کل پوشه intermediate-ca
       - ./crypto-config/intermediate-ca:/etc/hyperledger/fabric-ca-server
     command: sh -c 'fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1'
     networks:
