@@ -778,6 +778,10 @@ cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/m
 cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
    crypto-config/ordererOrganizations/example.com/msp/cacerts/ 2>/dev/null || true
 
+   # کپی Root CA به cacerts (اصلی)
+cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
+   crypto-config//ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/ 2>/dev/null || true
+
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
   ORG=org$i
@@ -833,6 +837,10 @@ EOF
   # کپی Root CA به cacerts اصلی سازمان
   cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
      crypto-config/peerOrganizations/$ORG.example.com/msp/cacerts/ 2>/dev/null || true
+   
+  # کپی Root CA به cacerts اصلی سازمان
+  cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
+     crypto-config/peerOrganizations/$ORG.example.com/peers/peer0.org${i}.example.com/msp/cacerts/ 2>/dev/null || true
 
   echo "MSP کامل برای $ORG ساخته شد"
 done
