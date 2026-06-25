@@ -479,17 +479,26 @@ cp crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/si
 
 # کپی Intermediate CA به cacerts (اصلی + نود)
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/${CA_CERT_NAME} 
 cp crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/intermediatecerts/*.pem \
-   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/${CA_CERT_NAME} 2>/dev/null || true
+   crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/${CA_CERT_NAME} 
 
 # کپی Root CA به cacerts (اصلی)
 cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
-   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 2>/dev/null || true
+   crypto-config/ordererOrganizations/example.com/msp/cacerts/ 
 
    # کپی Root CA به cacerts (اصلی)
 cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
-   crypto-config//ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/ 2>/dev/null || true
+   crypto-config//ordererOrganizations/example.com/orderers/orderer.example.com/msp/cacerts/ 
+   
+for i in {1..8}; do
+  cp /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts/rca-main-7054.pem \
+     /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/cacerts/
+done
+
+# برای Orderer Admin هم:
+cp /root/6g-network/config/crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-main-7054.pem \
+   /root/6g-network/config/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/cacerts/
 
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
