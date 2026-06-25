@@ -494,11 +494,17 @@ cp crypto-config/intermediate-ca/msp/cacerts/${ROOT_CA_CERT} \
 for i in {1..8}; do
   cp /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts/rca-main-7054.pem \
      /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/cacerts/
+  cp /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/msp/cacerts/root-ca-7052.pem \
+     /root/6g-network/config/crypto-config/peerOrganizations/org${i}.example.com/users/Admin@org${i}.example.com/msp/cacerts/
+  echo "org${i} cacerts پر شد"
 done
 
-# برای Orderer Admin هم:
+# برای Orderer Admin:
 cp /root/6g-network/config/crypto-config/ordererOrganizations/example.com/msp/cacerts/rca-main-7054.pem \
    /root/6g-network/config/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/cacerts/
+cp /root/6g-network/config/crypto-config/ordererOrganizations/example.com/msp/cacerts/root-ca-7052.pem \
+   /root/6g-network/config/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/cacerts/
+echo "Orderer Admin cacerts پر شد"
 
 # ===================== Peer Orgها =====================
 for i in {1..8}; do
