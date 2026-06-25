@@ -18,20 +18,7 @@ services:
       - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server/tls/server.key
     volumes:
       - ./crypto-config/intermediate-ca:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c '
-        rm -f /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-        rm -f /etc/hyperledger/fabric-ca-server/ca-cert.pem
-        rm -f /etc/hyperledger/fabric-ca-server/ca-chain.pem
-        rm -f /etc/hyperledger/fabric-ca-server/fabric-ca-server.db
-        rm -rf /etc/hyperledger/fabric-ca-server/msp
-        fabric-ca-server start
-          -b admin:adminpw
-          --registry.maxenrollments -1
-          --intermediate.parentserver.url https://admin:adminpw@root-ca:7052
-          --intermediate.parentserver.caname root-ca
-          --intermediate.tls.certfiles /etc/hyperledger/fabric-ca-server/tls/ca.crt
-      '
+    command: sh -c 'rm -f /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml /etc/hyperledger/fabric-ca-server/ca-cert.pem /etc/hyperledger/fabric-ca-server/ca-chain.pem /etc/hyperledger/fabric-ca-server/fabric-ca-server.db && rm -rf /etc/hyperledger/fabric-ca-server/msp && fabric-ca-server start -b admin:adminpw --registry.maxenrollments -1 --intermediate.parentserver.url https://admin:adminpw@root-ca:7052 --intermediate.parentserver.caname root-ca --intermediate.tls.certfiles /etc/hyperledger/fabric-ca-server/tls/ca.crt'
     networks:
       - 6g-network
     restart: unless-stopped
