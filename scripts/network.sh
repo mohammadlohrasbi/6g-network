@@ -59,7 +59,33 @@ setup_network_with_fabric_ca_tls_nodeous_active() {
   fi
 
   rm -rf /root/6g-network/config/crypto-config/root-ca/*
+  cat > /root/6g-network/config/crypto-config/root-ca/fabric-ca-server-config.yaml << 'EOF'
+port: 7052
+debug: true
 
+tls:
+  enabled: true
+
+registry:
+  maxenrollments: -1
+  identities:
+    - name: admin
+      pass: adminpw
+      type: admin
+      affiliation: ""
+      attrs:
+        hf.Registrar.Roles: "*"
+        hf.Registrar.DelegateRoles: "*"
+        hf.Revoker: true
+        hf.IntermediateCA: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"
+        hf.AffiliationMgr: true
+
+affiliations:
+  "":
+    - "."
+EOF
 
   # =====================================================
   # راه‌اندازی Root CA (اولین قدم)
