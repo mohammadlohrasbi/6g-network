@@ -575,7 +575,7 @@ create_and_join_channels() {
   )
 
   # =====================================================
-  # ساخت bundled-tls-ca.pem — ترکیب Root CA و rca-main CA
+  # ساخت bundled-tls-ca.pem
   # =====================================================
   log "ساخت bundled-tls-ca.pem"
   cat "$CRYPTO_DIR/root-ca/ca-cert.pem" \
@@ -590,14 +590,13 @@ create_and_join_channels() {
   for ch in networkchannel resourcechannel; do
     log "ایجاد کانال $ch ..."
 
-    # کپی فایل‌های لازم به peer0.org1
     docker cp /tmp/bundled-tls-ca.pem peer0.org1.example.com:/tmp/bundled-tls-ca.pem
     docker cp "$CHANNEL_ARTIFACTS/${ch}.tx" peer0.org1.example.com:/tmp/${ch}.tx
 
-    # ایجاد کانال توسط peer0.org1
+    # ایجاد کانال توسط peer0.org1 با admin-msp
     docker exec peer0.org1.example.com bash -c "
       export CORE_PEER_LOCALMSPID=org1MSP
-      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
       export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       export CORE_PEER_TLS_ENABLED=true
       export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
@@ -612,11 +611,10 @@ create_and_join_channels() {
         --timeout 30s
     " || error "ایجاد کانال ${ch} ناموفق بود"
 
-    # کپی block به host
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/"
     success "کانال ${ch} ساخته شد"
 
-    # join همه peerها به کانال
+    # join همه peerها به کانال با admin-msp
     for i in {1..8}; do
       ORG="org${i}"
       PEER="peer0.${ORG}.example.com"
@@ -629,7 +627,7 @@ create_and_join_channels() {
 
       docker exec $PEER bash -c "
         export CORE_PEER_LOCALMSPID=org${i}MSP
-        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
         export CORE_PEER_ADDRESS=${PEER}:${PORT}
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
@@ -659,7 +657,7 @@ create_and_join_channels() {
 
       docker exec $PEER bash -c "
         export CORE_PEER_LOCALMSPID=${ORG_MSP}
-        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
         export CORE_PEER_ADDRESS=${PEER}:${PORT}
         export CORE_PEER_TLS_ENABLED=true
         export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
