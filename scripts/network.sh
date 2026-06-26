@@ -7,6 +7,7 @@ CONFIG_DIR="$ROOT_DIR/config"
 CRYPTO_DIR="$CONFIG_DIR/crypto-config"
 CHANNEL_DIR="$CONFIG_DIR/channel-artifacts"
 PROJECT_DIR="$CONFIG_DIR"
+CHAINCODE_DIR="$SCRIPTS_DIR/chaincode"
 export FABRIC_CFG_PATH="$CONFIG_DIR"
 
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
