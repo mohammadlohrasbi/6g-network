@@ -722,6 +722,206 @@ EOF
   success "تمام $count chaincode آماده شدند!"
 }
 
+package_and_install_chaincode() {
+  if [ ! -d "$CHAINCODE_DIR" ] || [ -z "$(ls -A "$CHAINCODE_DIR")" ]; then
+    log "هیچ chaincode پیدا نشد"
+    return 0
+  fi
+
+  local CRYPTO_DIR="$CONFIG_DIR/crypto-config"
+
+  # پورت هر org
+  declare -A ORG_PORTS=(
+    [1]=7051 [2]=8051 [3]=9051 [4]=10051
+    [5]=11051 [6]=12051 [7]=13051 [8]=14051
+  )
+
+  # ساخت bundled-tls-ca.pem
+  cat "$CRYPTO_DIR/root-ca/ca-cert.pem" \
+      "$CRYPTO_DIR/intermediate-ca/ca-cert.pem" \
+    > /tmp/bundled-tls-ca.pem 2>/dev/null || \
+  cp "$CRYPTO_DIR/root-ca/ca-cert.pem" /tmp/bundled-tls-ca.pem
+
+  log "دانلود تصویر fabric-tools:2.5 در صورت نیاز..."
+  docker pull hyperledger/fabric-tools:2.5 >/dev/null 2>&1 || true
+
+  for dir in "$CHAINCODE_DIR"/*/; do
+    [ ! -d "$dir" ] && continue
+    name=$(basename "$dir")
+    log "=== پردازش Chaincode: $name ==="
+
+    # =====================================================
+    # بسته‌بندی chaincode
+    # =====================================================
+    log "بسته‌بندی $name ..."
+    local tar="/tmp/${name}.tar.gz"
+    rm -f "$tar"
+
+    docker run --rm \
+      -v "$dir":/chaincode/input:ro \
+      -v /tmp:/hosttmp \
+      hyperledger/fabric-tools:2.5 \
+      peer lifecycle chaincode package /hosttmp/${name}.tar.gz \
+        --path /chaincode/input \
+        --lang golang \
+        --label ${name}_1.0 \
+        2>&1
+
+    if [ ! -f "$tar" ]; then
+      log "خطا: فایل tar برای $name ساخته نشد — رد شد"
+      continue
+    fi
+    success "بسته‌بندی $name موفق بود"
+
+    # =====================================================
+    # نصب روی همه org‌ها
+    # =====================================================
+    local PACKAGE_ID=""
+    for i in {1..8}; do
+      local PEER="peer0.org${i}.example.com"
+      local PORT="${ORG_PORTS[$i]}"
+
+      log "نصب $name روی $PEER ..."
+
+      docker cp "$tar" $PEER:/tmp/${name}.tar.gz
+      docker cp /tmp/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+
+      local INSTALL_OUTPUT
+      INSTALL_OUTPUT=$(docker exec \
+        -e CORE_PEER_LOCALMSPID=org${i}MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+        -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+        $PEER \
+        peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+
+      echo "$INSTALL_OUTPUT"
+
+      if echo "$INSTALL_OUTPUT" | grep -qE "Installed remotely|already successfully installed"; then
+        success "نصب $name روی $PEER موفق بود"
+
+        # استخراج Package ID از org1
+        if [ $i -eq 1 ]; then
+          PACKAGE_ID=$(echo "$INSTALL_OUTPUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+          if [ -z "$PACKAGE_ID" ]; then
+            PACKAGE_ID=$(docker exec \
+              -e CORE_PEER_LOCALMSPID=org1MSP \
+              -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+              -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
+              -e CORE_PEER_TLS_ENABLED=true \
+              -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+              $PEER \
+              peer lifecycle chaincode queryinstalled 2>&1 | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+          fi
+          echo "$PACKAGE_ID" > "/tmp/${name}_package_id.txt"
+          log "Package ID: $PACKAGE_ID"
+        fi
+      else
+        log "هشدار: نصب $name روی $PEER ناموفق بود"
+      fi
+    done
+
+    if [ -z "$PACKAGE_ID" ]; then
+      log "خطا: Package ID برای $name پیدا نشد — approve رد شد"
+      continue
+    fi
+
+    success "نصب $name روی همه org‌ها تمام شد — Package ID: $PACKAGE_ID"
+
+    # =====================================================
+    # approve از همه org‌ها برای هر کانال
+    # =====================================================
+    for ch in networkchannel resourcechannel; do
+      log "approve $name برای کانال $ch ..."
+
+      for i in {1..8}; do
+        local PEER="peer0.org${i}.example.com"
+        local PORT="${ORG_PORTS[$i]}"
+
+        log "approve از org${i} برای $ch ..."
+
+        docker exec \
+          -e CORE_PEER_LOCALMSPID=org${i}MSP \
+          -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+          -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
+          -e CORE_PEER_TLS_ENABLED=true \
+          -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+          $PEER \
+          peer lifecycle chaincode approveformyorg \
+            -o orderer.example.com:7050 \
+            --channelID $ch \
+            --name $name \
+            --version 1.0 \
+            --package-id "$PACKAGE_ID" \
+            --sequence 1 \
+            --tls \
+            --cafile /tmp/bundled-tls-ca.pem \
+            2>&1 && success "approve org${i} برای $ch موفق بود" \
+            || log "هشدار: approve org${i} برای $ch ناموفق بود"
+      done
+
+      # =====================================================
+      # بررسی آماده بودن برای commit
+      # =====================================================
+      log "بررسی readiness برای commit $name در $ch ..."
+      docker exec \
+        -e CORE_PEER_LOCALMSPID=org1MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+        peer0.org1.example.com \
+        peer lifecycle chaincode checkcommitreadiness \
+          --channelID $ch \
+          --name $name \
+          --version 1.0 \
+          --sequence 1 \
+          --tls \
+          --cafile /tmp/bundled-tls-ca.pem \
+          --output json \
+          2>&1
+
+      # =====================================================
+      # commit chaincode
+      # =====================================================
+      log "commit $name در کانال $ch ..."
+
+      # ساخت لیست peer addresses برای commit
+      local PEER_ARGS=""
+      for i in {1..8}; do
+        local PEER="peer0.org${i}.example.com"
+        local PORT="${ORG_PORTS[$i]}"
+        PEER_ARGS="$PEER_ARGS --peerAddresses ${PEER}:${PORT} --tlsRootCertFiles /tmp/bundled-tls-ca.pem"
+      done
+
+      docker exec \
+        -e CORE_PEER_LOCALMSPID=org1MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+        -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+        -e CORE_PEER_TLS_ENABLED=true \
+        -e CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem \
+        peer0.org1.example.com \
+        peer lifecycle chaincode commit \
+          -o orderer.example.com:7050 \
+          --channelID $ch \
+          --name $name \
+          --version 1.0 \
+          --sequence 1 \
+          --tls \
+          --cafile /tmp/bundled-tls-ca.pem \
+          $PEER_ARGS \
+          2>&1 && success "commit $name در $ch موفق بود" \
+          || log "هشدار: commit $name در $ch ناموفق بود"
+    done
+
+    rm -f "$tar"
+    success "=== Chaincode $name کاملاً deploy شد ==="
+  done
+
+  success "تمام chaincode‌ها با موفقیت نصب و deploy شدند!"
+}
+
 # ------------------- اجرا -------------------
 main() {
   cleanup
@@ -729,6 +929,7 @@ main() {
   start_network
   create_and_join_channels
   generate_chaincode_modules
+  package_and_install_chaincode
 }
 
 main
