@@ -562,11 +562,130 @@ start_network() {
   docker ps
 }
 
+create_and_join_channels() {
+  log "ایجاد کانال‌ها و تنظیم Anchor Peer..."
+
+  local CHANNEL_ARTIFACTS="$CONFIG_DIR/channel-artifacts"
+  local CRYPTO_DIR="$CONFIG_DIR/crypto-config"
+
+  # پورت هر org
+  declare -A ORG_PORTS=(
+    [1]=7051 [2]=8051 [3]=9051 [4]=10051
+    [5]=11051 [6]=12051 [7]=13051 [8]=14051
+  )
+
+  # =====================================================
+  # ساخت bundled-tls-ca.pem — ترکیب Root CA و rca-main CA
+  # =====================================================
+  log "ساخت bundled-tls-ca.pem"
+  cat "$CRYPTO_DIR/root-ca/ca-cert.pem" \
+      "$CRYPTO_DIR/intermediate-ca/ca-cert.pem" \
+    > /tmp/bundled-tls-ca.pem 2>/dev/null || \
+  cp "$CRYPTO_DIR/root-ca/ca-cert.pem" /tmp/bundled-tls-ca.pem
+  success "bundled-tls-ca.pem ساخته شد"
+
+  # =====================================================
+  # ایجاد و join کانال‌ها
+  # =====================================================
+  for ch in networkchannel resourcechannel; do
+    log "ایجاد کانال $ch ..."
+
+    # کپی فایل‌های لازم به peer0.org1
+    docker cp /tmp/bundled-tls-ca.pem peer0.org1.example.com:/tmp/bundled-tls-ca.pem
+    docker cp "$CHANNEL_ARTIFACTS/${ch}.tx" peer0.org1.example.com:/tmp/${ch}.tx
+
+    # ایجاد کانال توسط peer0.org1
+    docker exec peer0.org1.example.com bash -c "
+      export CORE_PEER_LOCALMSPID=org1MSP
+      export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      export CORE_PEER_TLS_ENABLED=true
+      export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
+
+      peer channel create \
+        -o orderer.example.com:7050 \
+        -c ${ch} \
+        -f /tmp/${ch}.tx \
+        --outputBlock /tmp/${ch}.block \
+        --tls \
+        --cafile /tmp/bundled-tls-ca.pem \
+        --timeout 30s
+    " || error "ایجاد کانال ${ch} ناموفق بود"
+
+    # کپی block به host
+    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/"
+    success "کانال ${ch} ساخته شد"
+
+    # join همه peerها به کانال
+    for i in {1..8}; do
+      ORG="org${i}"
+      PEER="peer0.${ORG}.example.com"
+      PORT="${ORG_PORTS[$i]}"
+
+      log "join کردن $PEER به $ch"
+
+      docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block
+      docker cp /tmp/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+
+      docker exec $PEER bash -c "
+        export CORE_PEER_LOCALMSPID=org${i}MSP
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_ADDRESS=${PEER}:${PORT}
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
+
+        peer channel join -b /tmp/${ch}.block
+      " && success "$PEER به $ch join شد" || error "$PEER نتوانست به $ch join شود"
+    done
+
+    # =====================================================
+    # تنظیم Anchor Peer برای هر org
+    # =====================================================
+    log "تنظیم Anchor Peer برای $ch"
+    for i in {1..8}; do
+      ORG="org${i}"
+      PEER="peer0.${ORG}.example.com"
+      PORT="${ORG_PORTS[$i]}"
+      ORG_MSP="org${i}MSP"
+      ANCHOR_TX="${ch}_${ORG_MSP}_anchors.tx"
+
+      if [ ! -f "$CHANNEL_ARTIFACTS/$ANCHOR_TX" ]; then
+        log "فایل anchor tx برای $ORG_MSP در $ch وجود ندارد — رد شد"
+        continue
+      fi
+
+      docker cp "$CHANNEL_ARTIFACTS/$ANCHOR_TX" $PEER:/tmp/$ANCHOR_TX
+      docker cp /tmp/bundled-tls-ca.pem $PEER:/tmp/bundled-tls-ca.pem
+
+      docker exec $PEER bash -c "
+        export CORE_PEER_LOCALMSPID=${ORG_MSP}
+        export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+        export CORE_PEER_ADDRESS=${PEER}:${PORT}
+        export CORE_PEER_TLS_ENABLED=true
+        export CORE_PEER_TLS_ROOTCERT_FILE=/tmp/bundled-tls-ca.pem
+
+        peer channel update \
+          -o orderer.example.com:7050 \
+          -c ${ch} \
+          -f /tmp/${ANCHOR_TX} \
+          --tls \
+          --cafile /tmp/bundled-tls-ca.pem
+      " && success "Anchor Peer $PEER در $ch تنظیم شد" \
+        || log "هشدار: Anchor Peer $PEER در $ch تنظیم نشد"
+    done
+
+    success "کانال $ch کامل شد"
+  done
+
+  success "تمام کانال‌ها ساخته و join شدند"
+}
+
 # ------------------- اجرا -------------------
 main() {
   cleanup
   setup_network_with_fabric_ca_tls_nodeous_active
   start_network
+  create_and_join_channels
 }
 
 main
