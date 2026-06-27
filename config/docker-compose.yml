@@ -19,7 +19,7 @@ services:
       - ORDERER_GENERAL_TLS_ENABLED=true
       - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/tls/ca.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=/var/hyperledger/orderer/tls/bundled-tls-ca.pem
       - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
       - ORDERER_GENERAL_BOOTSTRAPFILE=/etc/hyperledger/fabric/genesis.block
     volumes:
@@ -51,7 +51,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -83,7 +83,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -115,7 +115,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -147,7 +147,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -179,7 +179,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -211,7 +211,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -243,7 +243,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
@@ -275,7 +275,7 @@ services:
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/bundled-tls-ca.pem
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
     volumes:
       - /var/run/:/host/var/run/
