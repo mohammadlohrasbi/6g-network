@@ -35,20 +35,24 @@ create_and_join_one_channel() {
   local CHANNEL_ARTIFACTS="$CONFIG_DIR/channel-artifacts"
 
   log "=== ساخت کانال $ch ==="
-  docker cp "$CHANNEL_ARTIFACTS/${ch}.tx" peer0.org1.example.com:/tmp/${ch}.tx
-  docker exec \
-    -e CORE_PEER_LOCALMSPID=org1MSP \
-    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
-    -e CORE_PEER_TLS_ENABLED=false \
-    peer0.org1.example.com \
-    peer channel create \
-      -o orderer.example.com:7050 \
-      -c ${ch} -f /tmp/${ch}.tx \
-      --outputBlock /tmp/${ch}.block --timeout 30s 2>&1 \
-    || { log "هشدار: ساخت $ch ناموفق (شاید از قبل هست)"; }
-
-  docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/" 2>/dev/null || true
+  # اگر بلاک کانال از قبل ساخته شده، دوباره create نکن
+  if [ -f "$CHANNEL_ARTIFACTS/${ch}.block" ]; then
+    log "  کانال $ch از قبل ساخته شده — فقط join انجام می‌شود"
+  else
+    docker cp "$CHANNEL_ARTIFACTS/${ch}.tx" peer0.org1.example.com:/tmp/${ch}.tx
+    docker exec \
+      -e CORE_PEER_LOCALMSPID=org1MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+      -e CORE_PEER_TLS_ENABLED=false \
+      peer0.org1.example.com \
+      peer channel create \
+        -o orderer.example.com:7050 \
+        -c ${ch} -f /tmp/${ch}.tx \
+        --outputBlock /tmp/${ch}.block --timeout 30s 2>&1 \
+      || { log "هشدار: ساخت $ch ناموفق (شاید از قبل هست)"; }
+    docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/" 2>/dev/null || true
+  fi
 
   # join همه ۸ peer
   for i in {1..8}; do
@@ -72,7 +76,7 @@ install_one_chaincode() {
   local dir="$CHAINCODE_DIR/$name"
   local tar="/tmp/${name}.tar.gz"
 
-  [ ! -d "$dir" ] && { log "قرارداد $name یافت نشد"; return 1; }
+  [ ! -d "$dir" ] && { log "قرارداد $name یافت نشد" >&2; return 1; }
 
   rm -f "$tar"
   docker run --rm \
@@ -81,14 +85,14 @@ install_one_chaincode() {
     peer lifecycle chaincode package /hosttmp/${name}.tar.gz \
       --path /chaincode/input --lang golang --label ${name}_1.0 >/dev/null 2>&1
 
-  [ ! -f "$tar" ] && { log "بسته‌بندی $name ناموفق"; return 1; }
+  [ ! -f "$tar" ] && { log "بسته‌بندی $name ناموفق" >&2; return 1; }
 
-  log "  بسته‌بندی $name انجام شد، شروع نصب روی ۸ peer..."
+  log "  بسته‌بندی $name انجام شد، شروع نصب روی ۸ peer..." >&2
   local PACKAGE_ID=""
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
-    printf "    نصب روی org%d... " "$i"
+    printf "    نصب روی org%d... " "$i" >&2
     docker cp "$tar" $PEER:/tmp/${name}.tar.gz >/dev/null 2>&1
     local OUT
     OUT=$(docker exec \
@@ -98,9 +102,9 @@ install_one_chaincode() {
       -e CORE_PEER_TLS_ENABLED=false \
       $PEER peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
     if echo "$OUT" | grep -qE "Installed remotely|already successfully"; then
-      echo "✅"
+      echo "✅" >&2
     else
-      echo "⚠️"
+      echo "⚠️" >&2
     fi
     if [ $i -eq 1 ]; then
       PACKAGE_ID=$(echo "$OUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
