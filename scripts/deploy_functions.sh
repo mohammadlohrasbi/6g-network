@@ -83,10 +83,12 @@ install_one_chaincode() {
 
   [ ! -f "$tar" ] && { log "بسته‌بندی $name ناموفق"; return 1; }
 
+  log "  بسته‌بندی $name انجام شد، شروع نصب روی ۸ peer..."
   local PACKAGE_ID=""
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
+    printf "    نصب روی org%d... " "$i"
     docker cp "$tar" $PEER:/tmp/${name}.tar.gz >/dev/null 2>&1
     local OUT
     OUT=$(docker exec \
@@ -95,6 +97,11 @@ install_one_chaincode() {
       -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
       -e CORE_PEER_TLS_ENABLED=false \
       $PEER peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
+    if echo "$OUT" | grep -qE "Installed remotely|already successfully"; then
+      echo "✅"
+    else
+      echo "⚠️"
+    fi
     if [ $i -eq 1 ]; then
       PACKAGE_ID=$(echo "$OUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
       [ -z "$PACKAGE_ID" ] && PACKAGE_ID=$(docker exec \
@@ -114,6 +121,7 @@ install_one_chaincode() {
 approve_commit_one() {
   local name="$1" ch="$2" pkgid="$3"
 
+  log "  approve $name روی ۸ سازمان..."
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
