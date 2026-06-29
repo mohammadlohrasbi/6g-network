@@ -983,6 +983,20 @@ func main() {
 EOF
             ;;
     esac
+
+    # ساخت go.mod + vendor برای این قرارداد (مثل part1)
+    (
+      cd "chaincode/$contract"
+      cat > go.mod <<GOMOD
+module $contract
+
+go 1.21
+
+require github.com/hyperledger/fabric-contract-api-go v1.2.2
+GOMOD
+      go mod tidy >/dev/null 2>&1
+      go mod vendor >/dev/null 2>&1
+    )
 done
 
 echo "Generated chaincode for ${#contracts[@]} contracts in part 2:"
