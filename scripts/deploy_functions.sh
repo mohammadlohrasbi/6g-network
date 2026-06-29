@@ -54,19 +54,22 @@ create_and_join_one_channel() {
     docker cp peer0.org1.example.com:/tmp/${ch}.block "$CHANNEL_ARTIFACTS/" 2>/dev/null || true
   fi
 
-  # join همه ۸ peer
+  # join موازی همه ۸ peer
+  for i in {1..8}; do
+    docker cp "$CHANNEL_ARTIFACTS/${ch}.block" "peer0.org${i}.example.com:/tmp/${ch}.block" 2>/dev/null &
+  done
+  wait
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
-    docker cp "$CHANNEL_ARTIFACTS/${ch}.block" $PEER:/tmp/${ch}.block 2>/dev/null
     docker exec \
       -e CORE_PEER_LOCALMSPID=org${i}MSP \
       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
       -e CORE_PEER_TLS_ENABLED=false \
-      $PEER peer channel join -b /tmp/${ch}.block 2>&1 \
-      | grep -iE "already exists|Successfully" >/dev/null && true || true
+      $PEER peer channel join -b /tmp/${ch}.block >/dev/null 2>&1 &
   done
+  wait
   success "کانال $ch ساخته و همه peer‌ها join شدند"
 }
 
@@ -87,36 +90,38 @@ install_one_chaincode() {
 
   [ ! -f "$tar" ] && { log "بسته‌بندی $name ناموفق" >&2; return 1; }
 
-  log "  بسته‌بندی $name انجام شد، شروع نصب روی ۸ peer..." >&2
-  local PACKAGE_ID=""
+  log "  بسته‌بندی $name انجام شد، نصب موازی روی ۸ peer..." >&2
+
+  # کپی tar به همه peerها (سریع)
+  for i in {1..8}; do
+    docker cp "$tar" "peer0.org${i}.example.com:/tmp/${name}.tar.gz" >/dev/null 2>&1 &
+  done
+  wait
+
+  # نصب موازی روی همه ۸ peer به‌طور همزمان
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
-    printf "    نصب روی org%d... " "$i" >&2
-    docker cp "$tar" $PEER:/tmp/${name}.tar.gz >/dev/null 2>&1
-    local OUT
-    OUT=$(docker exec \
+    docker exec \
       -e CORE_PEER_LOCALMSPID=org${i}MSP \
       -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
       -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
       -e CORE_PEER_TLS_ENABLED=false \
-      $PEER peer lifecycle chaincode install /tmp/${name}.tar.gz 2>&1)
-    if echo "$OUT" | grep -qE "Installed remotely|already successfully"; then
-      echo "✅" >&2
-    else
-      echo "⚠️" >&2
-    fi
-    if [ $i -eq 1 ]; then
-      PACKAGE_ID=$(echo "$OUT" | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
-      [ -z "$PACKAGE_ID" ] && PACKAGE_ID=$(docker exec \
-        -e CORE_PEER_LOCALMSPID=org1MSP \
-        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
-        -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
-        -e CORE_PEER_TLS_ENABLED=false \
-        $PEER peer lifecycle chaincode queryinstalled 2>&1 \
-        | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
-    fi
+      $PEER peer lifecycle chaincode install /tmp/${name}.tar.gz >/dev/null 2>&1 &
   done
+  wait
+  echo "    نصب روی ۸ peer تمام شد ✅" >&2
+
+  # استخراج Package ID از org1
+  local PACKAGE_ID
+  PACKAGE_ID=$(docker exec \
+    -e CORE_PEER_LOCALMSPID=org1MSP \
+    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+    -e CORE_PEER_TLS_ENABLED=false \
+    peer0.org1.example.com peer lifecycle chaincode queryinstalled 2>&1 \
+    | grep -o "${name}_1.0:[0-9a-f]*" | head -n1)
+
   rm -f "$tar"
   echo "$PACKAGE_ID"
 }
@@ -125,7 +130,7 @@ install_one_chaincode() {
 approve_commit_one() {
   local name="$1" ch="$2" pkgid="$3"
 
-  log "  approve $name روی ۸ سازمان..."
+  log "  approve موازی $name روی ۸ سازمان..."
   for i in {1..8}; do
     local PEER="peer0.org${i}.example.com"
     local PORT="${ORG_PORTS[$i]}"
@@ -137,9 +142,10 @@ approve_commit_one() {
       $PEER peer lifecycle chaincode approveformyorg \
         -o orderer.example.com:7050 \
         --channelID $ch --name $name --version 1.0 \
-        --package-id "$pkgid" --sequence 1 >/dev/null 2>&1 \
-      && true || log "هشدار: approve $name/org$i/$ch ناموفق"
+        --package-id "$pkgid" --sequence 1 >/dev/null 2>&1 &
   done
+  wait
+  log "  approve ۸ سازمان تمام شد"
 
   local PEER_ARGS=""
   for i in {1..8}; do
