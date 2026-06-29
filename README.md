@@ -36,8 +36,8 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 ### ۱) clone و آماده‌سازی
 ```bash
 cd
-rm -rf 6g-network
-git clone https://github.com/6g-fabricc/6g-network.git
+rm -rf 6g-fabricc
+git clone https://github.com/mohammadlohrasbi/6g-fabricc.git
 cd /root/6g-network/scripts
 chmod +x *.sh
 ```
