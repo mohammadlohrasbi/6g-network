@@ -37,7 +37,7 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 ```bash
 cd
 rm -rf 6g-network
-git clone https://github.com/USERNAME/6g-network.git
+git clone https://github.com/6g-fabricc/6g-network.git
 cd /root/6g-network/scripts
 chmod +x *.sh
 ```
