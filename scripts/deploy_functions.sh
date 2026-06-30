@@ -175,6 +175,62 @@ cleanup_dev_containers() {
   fi
 }
 
+# --------- نصب یک قرارداد که tar آن از قبل ساخته شده ---------
+install_prepackaged() {
+  local name="$1"
+  local tar="/tmp/${name}.tar.gz"
+  [ ! -f "$tar" ] && { echo ""; return 1; }
+
+  # کپی موازی به ۸ peer
+  for i in {1..8}; do
+    docker cp "$tar" "peer0.org${i}.example.com:/tmp/${name}.tar.gz" >/dev/null 2>&1 &
+  done
+  wait
+
+  # نصب موازی روی ۸ peer
+  for i in {1..8}; do
+    local PEER="peer0.org${i}.example.com"
+    local PORT="${ORG_PORTS[$i]}"
+    docker exec \
+      -e CORE_PEER_LOCALMSPID=org${i}MSP \
+      -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+      -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
+      -e CORE_PEER_TLS_ENABLED=false \
+      $PEER peer lifecycle chaincode install /tmp/${name}.tar.gz >/dev/null 2>&1 &
+  done
+  wait
+
+  # استخراج Package ID
+  docker exec \
+    -e CORE_PEER_LOCALMSPID=org1MSP \
+    -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+    -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+    -e CORE_PEER_TLS_ENABLED=false \
+    peer0.org1.example.com peer lifecycle chaincode queryinstalled 2>&1 \
+    | grep -o "${name}_1.0:[0-9a-f]*" | head -n1
+}
+
+# --------- package دسته‌ای همه قراردادهای یک کانال در یک container ---------
+batch_package_channel() {
+  local ch="$1"
+  local contracts="${CHANNEL_CONTRACTS[$ch]}"
+  [ -z "$contracts" ] && return 0
+
+  local pkg_script="/tmp/batch_pkg_${ch}.sh"
+  echo '#!/bin/bash' > "$pkg_script"
+  for cc in $contracts; do
+    echo "rm -f /hosttmp/${cc}.tar.gz" >> "$pkg_script"
+    echo "peer lifecycle chaincode package /hosttmp/${cc}.tar.gz --path /chaincode/${cc} --lang golang --label ${cc}_1.0 && echo PKG_OK_${cc}" >> "$pkg_script"
+  done
+
+  docker run --rm \
+    -v "$CHAINCODE_DIR":/chaincode:ro \
+    -v /tmp:/hosttmp \
+    hyperledger/fabric-tools:2.5 \
+    bash /hosttmp/batch_pkg_${ch}.sh 2>&1 | grep -c "PKG_OK_" >/dev/null
+  rm -f "$pkg_script"
+}
+
 # --------- deploy کامل یک کانال (همه قراردادهایش) ---------
 deploy_one_channel() {
   local ch="$1"
@@ -189,16 +245,22 @@ deploy_one_channel() {
 
   create_and_join_one_channel "$ch"
 
+  # مرحله ۱: package دسته‌ای همه قراردادها در یک container (سریع!)
+  log "  package دسته‌ای ${ch} (یک container برای همه)..."
+  batch_package_channel "$ch"
+
+  # مرحله ۲: نصب + approve + commit هر قرارداد (با tar آماده)
   for cc in $contracts; do
     log "── قرارداد $cc روی $ch ──"
     local pkgid
-    pkgid=$(install_one_chaincode "$cc")
+    pkgid=$(install_prepackaged "$cc")
     if [ -z "$pkgid" ]; then
       log "هشدار: نصب $cc ناموفق — رد شد"
       continue
     fi
-    log "Package ID: $pkgid"
+    log "  نصب شد، Package ID: ${pkgid:0:40}..."
     approve_commit_one "$cc" "$ch" "$pkgid"
+    rm -f "/tmp/${cc}.tar.gz"
   done
 
   # نمایش مصرف حافظه فعلی
