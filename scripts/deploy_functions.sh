@@ -211,24 +211,35 @@ install_prepackaged() {
 }
 
 # --------- package دسته‌ای همه قراردادهای یک کانال در یک container ---------
+# --------- package دستی فوق‌سریع (بدون go، بدون docker run) ---------
+# یک Fabric package = metadata.json + code.tar.gz(شامل src/)
+# ساختار دقیق مطابق fabric-tools: code/src/{go.mod,chaincode.go,vendor}
+manual_package_one() {
+  local name="$1"
+  local src_dir="$CHAINCODE_DIR/$name"
+  local out_tar="/tmp/${name}.tar.gz"
+  [ ! -d "$src_dir" ] && return 1
+
+  local work
+  work=$(mktemp -d)
+  mkdir -p "$work/src"
+  cp -r "$src_dir"/. "$work/src/" 2>/dev/null
+  printf '{"path":"%s","type":"golang","label":"%s_1.0"}' "$name" "$name" > "$work/metadata.json"
+  tar -czf "$work/code.tar.gz" -C "$work" src
+  rm -f "$out_tar"
+  tar -czf "$out_tar" -C "$work" metadata.json code.tar.gz
+  rm -rf "$work"
+  [ -f "$out_tar" ]
+}
+
 batch_package_channel() {
   local ch="$1"
   local contracts="${CHANNEL_CONTRACTS[$ch]}"
   [ -z "$contracts" ] && return 0
-
-  local pkg_script="/tmp/batch_pkg_${ch}.sh"
-  echo '#!/bin/bash' > "$pkg_script"
   for cc in $contracts; do
-    echo "rm -f /hosttmp/${cc}.tar.gz" >> "$pkg_script"
-    echo "peer lifecycle chaincode package /hosttmp/${cc}.tar.gz --path /chaincode/${cc} --lang golang --label ${cc}_1.0 && echo PKG_OK_${cc}" >> "$pkg_script"
+    manual_package_one "$cc" &
   done
-
-  docker run --rm \
-    -v "$CHAINCODE_DIR":/chaincode:ro \
-    -v /tmp:/hosttmp \
-    hyperledger/fabric-tools:2.5 \
-    bash /hosttmp/batch_pkg_${ch}.sh 2>&1 | grep -c "PKG_OK_" >/dev/null
-  rm -f "$pkg_script"
+  wait
 }
 
 # --------- deploy کامل یک کانال (همه قراردادهایش) ---------
