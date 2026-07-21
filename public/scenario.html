@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سناریوی شبیه‌سازی 6G</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .fg { display: flex; flex-direction: column; }
+  .fg label { font-weight: bold; margin-bottom: 4px; }
+  .fg input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+  .panel { background:#fff; border:1px solid #e5e5e5; border-radius:10px; padding:16px; margin-bottom:16px; }
+  .panel h3 { margin-top:0; }
+  .chrow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 4px; border-bottom:1px dashed #eee; }
+  .chrow select { min-width: 260px; padding:5px; }
+  .chrow select option:disabled { color:#bbb; }
+  .btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; padding:12px 30px; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold; }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:14px 0; }
+  .card { background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.08); padding:14px; text-align:center; }
+  .card h4 { margin:0 0 6px; color:#666; font-size:13px; }
+  .card p { margin:0; font-size:22px; font-weight:bold; }
+  table.res { width:100%; border-collapse:collapse; }
+  table.res th, table.res td { border:1px solid #eee; padding:6px 8px; text-align:center; font-size:13px; }
+  #mapBox { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  #legend { font-size:13px; line-height:1.9; }
+  .dot { display:inline-block; width:11px; height:11px; border-radius:50%; margin-left:6px; vertical-align:middle; }
+  .spinner { border:4px solid #f3f3f3; border-top:4px solid #667eea; border-radius:50%; width:36px; height:36px; animation:spin 1s linear infinite; margin:16px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .note { color:#8a6d3b; background:#fcf8e3; border:1px solid #faebcc; border-radius:6px; padding:8px 10px; font-size:13px; }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand"><span class="logo">⬡</span><h1>6G Fabric Dashboard</h1></div>
+  <div class="header-actions">
+    <a class="btn" href="test.html">🧪 تست کارایی</a>
+    <a class="btn" href="index.html">⬅ داشبورد</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>🗺️ سناریوی شبیه‌سازی: آنتن‌های ماکروسل در پهنه ۱۰×۱۰ کیلومتر</h1>
+  <p>در هر اجرا، ۸ سازمان به‌عنوان آنتن ماکروسل به‌صورت تصادفی جانمایی می‌شوند؛ IoT ها و کاربرها با تعداد انتخابی و موقعیت تصادفی به <b>نزدیک‌ترین آنتن</b> متصل می‌شوند (زیرمجموعه همان سازمان) و تراکنش هر موجودیت از دروازه همان سازمان روی زنجیره ثبت می‌شود.</p>
+
+  <div class="grid">
+    <div class="fg"><label>تعداد IoT (آنتن‌های کوچک)</label><input type="number" id="iotCount" value="20" min="0" max="500"></div>
+    <div class="fg"><label>تعداد کاربران</label><input type="number" id="userCount" value="20" min="0" max="500"></div>
+    <div class="fg"><label>Seed (خالی = تصادفی؛ برای تکرار همان توپولوژی عدد بدهید)</label><input type="number" id="seed" placeholder="مثلاً 42"></div>
+    <div class="fg"><label>همزمانی ارسال (۱ تا ۱۶)</label><input type="number" id="concurrency" value="6" min="1" max="16"></div>
+  </div>
+
+  <div class="panel">
+    <h3>انتخاب کانال‌ها و قراردادها</h3>
+    <label style="display:block;margin-bottom:8px"><input type="checkbox" id="selAll"> انتخاب همه کانال‌ها (با قرارداد پیش‌فرض هر کانال)</label>
+    <label style="display:block;margin-bottom:8px"><input type="checkbox" id="connectToggle" checked> برقراری اتصال کاربرها و IoT ها روی connectivitychannel (ConnectUser / ConnectIoT)</label>
+    <div id="channelList">در حال بارگذاری...</div>
+    <p class="note">قراردادهای خاکستری قابل انتخاب نیستند: یا تابع نوشتنی ندارند یا به رکورد آنتنِ از پیش موجود در namespace خود وابسته‌اند (بن‌بست شناخته‌شده ۷ قرارداد Assign*). برای انتخاب چند قرارداد در یک کانال، Ctrl را نگه دارید.</p>
+  </div>
+
+  <button id="runBtn" class="btn-primary">🚀 اجرای سناریو</button>
+  <div id="spin" style="display:none"><div class="spinner"></div><p style="text-align:center">در حال جانمایی، اتصال و ثبت روی زنجیره...</p></div>
+
+  <div id="results" style="display:none">
+    <h2>نتایج</h2>
+    <p id="lastInfo" class="note" style="background:#eef4ff;border-color:#cfe0ff;color:#2a4d8f"></p>
+    <div class="cards" id="perfCards">
+      <div class="card"><h4>Seed توپولوژی</h4><p id="rSeed">-</p></div>
+      <div class="card"><h4>کل تراکنش‌ها</h4><p id="rTotal">-</p></div>
+      <div class="card"><h4>موفق / ناموفق</h4><p id="rOk">-</p></div>
+      <div class="card"><h4>گذردهی (TPS)</h4><p id="rTps">-</p></div>
+      <div class="card"><h4>تأخیر میانگین (ms)</h4><p id="rLat">-</p></div>
+      <div class="card"><h4>مدت (s)</h4><p id="rDur">-</p></div>
+    </div>
+
+    <div class="panel">
+      <h3>نقشه آخرین جانمایی اجزا در پهنه ۱۰×۱۰ کیلومتر — فرستنده‌ها (▲ ماکروسل، ◉ IoT) و گیرنده‌ها (■ کاربر)</h3>
+      <div id="mapBox">
+        <svg id="map" width="560" height="560" style="border:1px solid #ddd;border-radius:8px;background:#fafafa"></svg>
+        <div id="legend"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>محدوده هر فرستنده ماکروسل (زیرمجموعه‌های هر سازمان)</h3>
+      <table class="res" id="covTable"></table>
+    </div>
+
+    <div class="panel">
+      <h3>نتایج به تفکیک کانال و نوع تراکنش</h3>
+      <table class="res" id="chTable"></table>
+      <div id="failBox"></div>
+    </div>
+  </div>
+</div>
+
+<script src="scenario-app.js"></script>
+</body>
+</html>
