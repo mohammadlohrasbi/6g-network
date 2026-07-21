@@ -114,7 +114,10 @@ function render(d, fromLast) {
   document.getElementById('rTotal').textContent = P.totalTasks ?? '-';
   document.getElementById('rOk').textContent = P.successCount != null ? `${P.successCount} / ${P.failedCount}` : '-';
   document.getElementById('rTps').textContent = P.tps ?? '-';
-  document.getElementById('rLat').textContent = P.latency ? P.latency.avg : '-';
+  document.getElementById('rLat').textContent = P.latency ? `${P.latency.avg} (${P.latency.min}–${P.latency.max})` : '-';
+  if (P.successCount === 0 && P.totalTasks > 0) {
+    document.getElementById('lastInfo').innerHTML += ' — <b style="color:#c00">همه تراکنش‌ها ناموفق؛ نمونه خطا را پایین ببینید</b>';
+  }
   document.getElementById('rDur').textContent = P.durationMs != null ? (P.durationMs / 1000).toFixed(1) : '-';
 
   drawMap(d);
