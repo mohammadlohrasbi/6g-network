@@ -385,8 +385,15 @@ EOF
   cp "$RCA_CERT" "$OORG/orderers/orderer.example.com/msp/cacerts/${CA_CERT_NAME}"
   cp "$RCA_CERT" "$OORG/users/Admin@example.com/msp/cacerts/${CA_CERT_NAME}"
 
-  mkdir -p "$OORG/msp/tlscacerts"
-  cp "$ROOT_CERT" "$OORG/msp/tlscacerts/ca-cert.pem"
+  # ── tlscacerts فقط وقتی TLS روی سیم فعال است ──
+  # در شبکه بدون TLS، وجود tlscacerts در MSP باعث می‌شود Fabric Gateway
+  # نتیجه بگیرد که باید با TLS/mutual-TLS به peer ها و orderer وصل شود و با
+  # خطای «both Key and Certificate are required when using mutual TLS» شکست بخورد.
+  # برای فعال‌سازی TLS: NETWORK_TLS=true ./network.sh
+  if [ "${NETWORK_TLS:-false}" = "true" ]; then
+    mkdir -p "$OORG/msp/tlscacerts"
+    cp "$ROOT_CERT" "$OORG/msp/tlscacerts/ca-cert.pem"
+  fi
 
   mkdir -p "$OORG/msp/admincerts" "$OORG/orderers/orderer.example.com/msp/admincerts"
   cp "$OORG/users/Admin@example.com/msp/signcerts/cert.pem" "$OORG/msp/admincerts/"
@@ -409,8 +416,11 @@ EOF
     cp "$RCA_CERT" "$PORG/peers/peer0.org${i}.example.com/msp/cacerts/${CA_CERT_NAME}"
     cp "$RCA_CERT" "$PORG/users/Admin@org${i}.example.com/msp/cacerts/${CA_CERT_NAME}"
 
-    mkdir -p "$PORG/msp/tlscacerts"
-    cp "$ROOT_CERT" "$PORG/msp/tlscacerts/ca-cert.pem"
+    # tlscacerts فقط وقتی TLS روی سیم فعال است (توضیح در بخش MSP اوردرر)
+    if [ "${NETWORK_TLS:-false}" = "true" ]; then
+      mkdir -p "$PORG/msp/tlscacerts"
+      cp "$ROOT_CERT" "$PORG/msp/tlscacerts/ca-cert.pem"
+    fi
 
     mkdir -p "$PORG/msp/admincerts" "$PORG/peers/peer0.org${i}.example.com/msp/admincerts"
     cp "$PORG/users/Admin@org${i}.example.com/msp/signcerts/cert.pem" "$PORG/msp/admincerts/"
