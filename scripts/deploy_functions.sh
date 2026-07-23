@@ -4,6 +4,11 @@
 # این بخش جایگزین create_and_join_channels و package_and_install_chaincode می‌شود
 # =====================================================================
 
+# ── سیاست endorsement قراردادها (صریح و قابل resolve برای service discovery) ──
+# امضای هر یک از ۸ سازمان کافی است — مطابق تصمیم «سیاست ساده و سریع».
+# برای اجماع اکثریت، این را به OutOf(5,'org1MSP.member',...,'org8MSP.member') تغییر دهید.
+CC_POLICY="${CC_POLICY:-OR('org1MSP.member','org2MSP.member','org3MSP.member','org4MSP.member','org5MSP.member','org6MSP.member','org7MSP.member','org8MSP.member')}"
+
 # نگاشت کانال↔قرارداد را از فایل جداگانه source می‌کنیم
 # source "$SCRIPTS_DIR/channel_contract_map.sh"
 
@@ -72,6 +77,34 @@ create_and_join_one_channel() {
   done
   wait
   success "کانال $ch ساخته و همه peer‌ها join شدند"
+
+  # ── اعمال anchor peer هر سازمان ──
+  # بدون این گام، gossip بین‌سازمانی برقرار نمی‌شود و service discovery
+  # (که Fabric Gateway به آن متکی است) فقط peer محلی را می‌بیند.
+  log "  اعمال anchor peer ها..."
+  for i in {1..8}; do
+    local PEER="peer0.org${i}.example.com"
+    local PORT="${ORG_PORTS[$i]}"
+    local ATX="$CHANNEL_ARTIFACTS/${ch}_org${i}MSP_anchors.tx"
+    if [ ! -f "$ATX" ]; then
+      log "    org${i}: فایل anchor یافت نشد — رد شد"
+      continue
+    fi
+    docker cp "$ATX" "${PEER}:/tmp/${ch}_anchors_${i}.tx" >/dev/null 2>&1
+    if docker exec \
+        -e CORE_PEER_LOCALMSPID=org${i}MSP \
+        -e CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp \
+        -e CORE_PEER_ADDRESS=${PEER}:${PORT} \
+        -e CORE_PEER_TLS_ENABLED=false \
+        $PEER peer channel update -f /tmp/${ch}_anchors_${i}.tx \
+        -c ${ch} -o orderer.example.com:7050 >/dev/null 2>&1; then
+      log "    org${i}: ✓ anchor peer ست شد"
+    else
+      log "    org${i}: هشدار — anchor peer اعمال نشد (شاید از قبل ست است)"
+    fi
+    sleep 1
+  done
+  success "anchor peer های کانال $ch اعمال شدند"
 }
 
 
@@ -149,7 +182,8 @@ approve_commit_one() {
       $PEER peer lifecycle chaincode approveformyorg \
         -o orderer.example.com:7050 \
         --channelID $ch --name $name --version 1.0 \
-        --package-id "$pkgid" --sequence 1  # ✅ موازی
+        --package-id "$pkgid" --sequence 1 \
+        --signature-policy "$CC_POLICY"
   done
   wait
   log "  approve ۸ سازمان تمام شد"
@@ -166,6 +200,7 @@ approve_commit_one() {
     peer0.org1.example.com peer lifecycle chaincode commit \
       -o orderer.example.com:7050 \
       --channelID $ch --name $name --version 1.0 --sequence 1 \
+      --signature-policy "$CC_POLICY" \
       $PEER_ARGS  \
     && success "✅ $name روی $ch commit شد" \
     || log "هشدار: commit $name/$ch ناموفق"
