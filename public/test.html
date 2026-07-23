@@ -1,201 +1,125 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صفحه تست شبکه ۶G</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <style>
-        .test-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .form-group label {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        .form-group input, .form-group select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .result-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0.1);
-            text-align: center;
-        }
-        .result-card h3 {
-            margin: 0 0 10px 0;
-            color: #666;
-            font-size: 14px;
-        }
-        .result-card p {
-            margin: 0;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        #performanceChart {
-            margin-top: 30px;
-            max-height: 400px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulation · 6G Fabric Console</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="app-header">
-      <div class="brand">
-        <span class="logo">⬡</span>
-        <h1>6G Fabric Dashboard</h1>
+
+<header class="topbar">
+  <a class="wordmark" href="index.html"><span class="glyph">⬡</span> 6G Fabric <span class="sub">Console</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="dashboard.html">Ledger</a>
+    <a href="test.html" aria-current="page">Benchmark</a>
+    <a href="scenario.html">Simulation</a>
+  </nav>
+  <div class="health"><span class="dot" id="healthDot"></span><span id="healthText">Checking</span></div>
+</header>
+
+<main class="shell">
+
+  <div class="page-head">
+    <div class="eyebrow">Throughput and latency</div>
+    <h1>Measure what the ledger can carry</h1>
+    <p>Drive load at a chosen channel with either Tape, a lightweight gRPC generator, or Caliper, the
+       Hyperledger benchmark framework. Tape reports the ceiling of the endorse–order–commit path;
+       Caliper holds a fixed send rate and reports latency alongside it.</p>
+  </div>
+
+  <section class="panel">
+    <div class="panel-title">Load <span class="tag">what to send, and how fast</span></div>
+    <div class="grid cols-3">
+      <div class="field">
+        <label for="toolSelect">Tool</label>
+        <select id="toolSelect">
+          <option value="tape">Tape — raw gRPC</option>
+          <option value="caliper">Caliper — SDK gateway</option>
+        </select>
+        <span class="hint">Tape ignores the rate limit and runs flat out</span>
       </div>
-      <div class="header-actions">
-        <a class="btn" href="scenario.html">🗺️ سناریوی شبیه‌سازی</a>
-        <a class="btn" href="index.html">⬅ بازگشت به داشبورد</a>
+      <div class="field">
+        <label for="scenarioSelect">Scenario</label>
+        <select id="scenarioSelect">
+          <option value="RegisterIoT">Register a device</option>
+          <option value="RegisterUser">Register a user</option>
+          <option value="QueryIoT">Read a device</option>
+          <option value="UpdateIoT">Update device state</option>
+          <option value="RevokeIoT">Revoke a device</option>
+        </select>
+        <span class="hint">Applies to Caliper; Tape uses the channel's own write</span>
       </div>
-    </header>
+      <div class="field">
+        <label for="orgSelect">Submitting organization</label>
+        <select id="orgSelect"></select>
+        <span class="hint">Identity that signs the proposals</span>
+      </div>
+      <div class="field">
+        <label for="channelSelect">Channel</label>
+        <select id="channelSelect"></select>
+        <span class="hint">Must already be deployed</span>
+      </div>
+      <div class="field">
+        <label for="chaincodeSelect">Contract</label>
+        <select id="chaincodeSelect"></select>
+        <span class="hint">Committed on the selected channel</span>
+      </div>
+      <div class="field">
+        <label for="tpsTarget">Target rate</label>
+        <input type="number" id="tpsTarget" value="20" min="1" max="1000">
+        <span class="hint">Transactions per second</span>
+      </div>
+      <div class="field">
+        <label for="duration">Duration</label>
+        <input type="number" id="duration" value="30" min="10" max="600">
+        <span class="hint">Seconds</span>
+      </div>
+      <div class="field">
+        <label for="iotCount">Devices</label>
+        <input type="number" id="iotCount" value="100" min="1" max="1000">
+        <span class="hint">Distinct device keys in the workload</span>
+      </div>
+      <div class="field">
+        <label for="userCount">Users</label>
+        <input type="number" id="userCount" value="50" min="1" max="5000">
+        <span class="hint">Distinct user keys in the workload</span>
+      </div>
+    </div>
+  </section>
 
-    <div class="test-container">
-        <h1>🧪 تست عملکرد شبکه Hyperledger Fabric</h1>
+  <div style="display:flex;gap:14px;align-items:center;margin-bottom:26px;flex-wrap:wrap">
+    <button id="runTestBtn" class="btn primary lg">Start benchmark</button>
+    <div id="loadingSpinner" class="working" style="display:none">
+      <span class="spinner"></span> Generating load — this runs for the full duration you set…
+    </div>
+  </div>
 
-        <div class="form-grid">
-            <div class="form-group">
-                <label>ابزار تست:</label>
-                <select id="toolSelect">
-                    <option value="caliper">Hyperledger Caliper</option>
-                    <option value="tape">Tape</option>
-                </select>
-            </div>
+  <div id="resultsSection" style="display:none">
+    <p class="note info" id="runInfo" style="margin-bottom:18px"></p>
 
-            <div class="form-group">
-                <label>سناریوی تست:</label>
-                <select id="scenarioSelect">
-                    <option value="RegisterIoT">ثبت IoT Device</option>
-                    <option value="RegisterUser">ثبت کاربر</option>
-                <option value="QueryIoT">Query IoT</option>
-                    <option value="UpdateIoT">به‌روزرسانی IoT</option>
-                    <option value="RevokeIoT">لغو IoT</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>کانال:</label>
-                <select id="channelSelect"></select>
-            </div>
-
-            <div class="form-group">
-                <label>Chaincode:</label>
-                <select id="chaincodeSelect"></select>
-            </div>
-
-            <div class="form-group">
-                <label>تعداد IoT Devices:</label>
-                <input type="number" id="iotCount" value="100" min="1" max="1000">
-            </div>
-
-            <div class="form-group">
-                <label>تعداد Users:</label>
-                <input type="number" id="userCount" value="50" min="1" max="5000">
-            </div>
-
-            <div class="form-group">
-                <label>TPS Target:</label>
-                <input type="number" id="tpsTarget" value="100" min="1" max="1000">
-            </div>
-
-            <div class="form-group">
-                <label>مدت زمان (ثانیه):</label>
-                <input type="number" id="duration" value="60" min="10" max="600">
-            </div>
-
-            <div class="form-group">
-                <label>سازمان:</label>
-                <select id="orgSelect"></select>
-            </div>
-        </div>
-
-        <button id="runTestBtn" class="btn-primary">🚀 شروع تست</button>
-
-        <div id="loadingSpinner" style="display:none;">
-            <div class="spinner"></div>
-            <p style="text-align:center;">در حال اجرای تست... لطفاً صبر کنید</p>
-        </div>
-
-        <div id="resultsSection" style="display:none; margin-top: 30px;">
-            <h2>📊 نتایج تست</h2>
-            <div class="results-grid">
-                <div class="result-card">
-                    <h3>TPS واقعی</h3>
-                    <p id="resultTps">-</p>
-                </div>
-                <div class="result-card">
-                    <h3>میانگین Latency (ms)</h3>
-                    <p id="resultLatency">-</p>
-                </div>
-                <div class="result-card">
-                    <h3>Success Rate</h3>
-                    <p id="resultSuccess">-</p>
-                </div>
-                <div class="result-card">
-                    <h3>Failed Transactions</h3>
-                <p id="resultFailed">-</p>
-                </div>
-            </div>
-            <canvas id="performanceChart"></canvas>
-        </div>
+    <div class="readouts">
+      <div class="readout accent-trace"><div class="k">Throughput</div><div class="v" id="resultTps">—<span class="u">tps</span></div></div>
+      <div class="readout accent-signal"><div class="k">Mean latency</div><div class="v" id="resultLatency">—<span class="u">ms</span></div></div>
+      <div class="readout accent-ok"><div class="k">Success rate</div><div class="v" id="resultSuccess">—<span class="u">%</span></div></div>
+      <div class="readout accent-rx"><div class="k">Rejected</div><div class="v" id="resultFailed">—</div></div>
     </div>
 
-    <script src="test-app.js"></script>
+    <section class="panel">
+      <div class="panel-title">Result profile <span class="tag">committed, rejected, rate, latency</span></div>
+      <canvas id="performanceChart" height="120"></canvas>
+    </section>
+
+    <section class="panel" id="outputPanel" style="display:none">
+      <div class="panel-title">Tool output <span class="tag">last lines</span></div>
+      <pre class="output" id="toolOutput"></pre>
+    </section>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script src="test-app.js"></script>
 </body>
 </html>
