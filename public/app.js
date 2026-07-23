@@ -290,7 +290,7 @@ function renderAssets(assets) {
     return;
   }
 
-  // رکوردهای قراردادهای 6G ساختار متفاوتی در هر کانال دارند (entityID/deviceID/userID/...)
+  // Records differ per channel, so probe the common identifier fields in turn.
   const idOf = (a) => a.entityID || a.deviceID || a.userID || a.networkID || a.antennaID || a.policyID || a.ID || a.id || '–';
   const detailsOf = (a) => {
     const skip = new Set(['entityID','deviceID','userID','networkID','antennaID','policyID','ID','id','timestamp','Timestamp']);
