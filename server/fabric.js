@@ -63,22 +63,17 @@ async function queryChaincode(orgNum, channelName, chaincodeName, functionName, 
   });
 }
 
-// همه ۸ سازمان — برای endorse صریح و دور زدن service discovery
-// (شبکه TLS ندارد و سیاست MAJORITY=۵از۸ است؛ discovery نمی‌تواند ترکیب peer را
-//  کشف کند و خطای «policy not found» می‌دهد. با endorsingOrganizations صریح،
-//  gateway دقیقاً مثل --peerAddresses در CLI به همه peerها proposal می‌فرستد.)
-const ALL_ORG_MSPS = ['org1MSP','org2MSP','org3MSP','org4MSP','org5MSP','org6MSP','org7MSP','org8MSP'];
-
-// Generic invoke function with explicit endorsers (no discovery)
+// invoke از طریق gateway. سیاست endorsement این قراردادها در عمل «یک سازمان»
+// است (تأییدشده: invoke بدون --peerAddresses فقط با endorse org1 مقدار VALID می‌گیرد)،
+// پس endorsingOrganizations را مشخص نمی‌کنیم تا gateway از peer در دسترس خودش
+// (همان سازمان کلاینت) endorse بگیرد. تعیین صریح همه ۸ سازمان بدون anchor peer
+// به «failed to find any endorsing peers» منجر می‌شد، چون gossip/discovery بین
+// سازمان‌ها برقرار نیست.
 async function invokeChaincode(orgNum, channelName, chaincodeName, functionName, args = []) {
   return withGateway(orgNum, async (gateway) => {
     const network = gateway.getNetwork(channelName);
     const contract = network.getContract(chaincodeName);
-    // submitAsync با endorsingOrganizations صریح: gateway از همه ۸ سازمان امضا می‌گیرد
-    const resultBytes = await contract.submit(functionName, {
-      arguments: args,
-      endorsingOrganizations: ALL_ORG_MSPS,
-    });
+    const resultBytes = await contract.submitTransaction(functionName, ...args);
     const resultString = Buffer.from(resultBytes).toString('utf8');
     return resultString ? JSON.parse(resultString) : { success: true };
   });
