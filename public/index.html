@@ -1,144 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>6G Fabric Network Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6G Fabric Console</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <span class="logo">⬡</span>
-      <h1>6G Fabric Dashboard</h1>
+
+<header class="topbar">
+  <a class="wordmark" href="index.html"><span class="glyph">⬡</span> 6G Fabric <span class="sub">Console</span></a>
+  <nav class="nav">
+    <a href="index.html" aria-current="page">Overview</a>
+    <a href="dashboard.html">Ledger</a>
+    <a href="test.html">Benchmark</a>
+    <a href="scenario.html">Simulation</a>
+  </nav>
+  <div class="health"><span class="dot" id="healthDot"></span><span id="healthText">Checking</span></div>
+</header>
+
+<main class="shell">
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Permissioned ledger for cellular infrastructure</div>
+      <h1>Eight operators.<br>One <em>shared record</em><br>of the air interface.</h1>
+      <p>Every macro cell is an organization on a Hyperledger Fabric network. Antenna assignments,
+         device attachments and signal measurements are written to channels that all operators can
+         verify but none can rewrite.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n" id="statOrgs">—</div><div class="l">Organizations</div></div>
+        <div class="hero-stat"><div class="n" id="statChannels">—</div><div class="l">Channels</div></div>
+        <div class="hero-stat"><div class="n">86</div><div class="l">Smart contracts</div></div>
+        <div class="hero-stat"><div class="n">10 × 10</div><div class="l">km deployment</div></div>
+      </div>
     </div>
-    <div class="header-actions">
-      <a class="btn primary" href="test.html">Performance Test</a>
-      <div class="status" id="healthStatus">
-        <span class="dot" id="healthDot"></span>
-        <span id="healthText">Checking...</span>
+
+    <div class="hero-map" id="heroStage">
+      <canvas></canvas>
+      <svg xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="empty-state" id="heroEmpty">
+        <div style="font-size:26px;opacity:.5">⬡</div>
+        <div>No deployment on record yet.<br>Run a simulation to place the network.</div>
+        <a class="btn small" href="scenario.html">Open Simulation</a>
       </div>
     </div>
-  </header>
+  </section>
 
-  <main class="layout">
-    <aside class="sidebar">
-      <div class="field">
-        <label for="orgSelect">Organization</label>
-        <select id="orgSelect"></select>
-      </div>
-      <div class="field">
-        <label for="channelSelect">Channel</label>
-        <select id="channelSelect"></select>
-      </div>
-      <button class="btn primary" id="loadBtn">Load Assets</button>
+  <div class="eyebrow">Workspaces</div>
+  <div class="cards">
 
-      <div class="network-summary">
-        <div>Organizations: <span id="orgCount">–</span></div>
-        <div>Channels: <span id="channelCount">–</span></div>
-        <div>Orderer: <span id="ordererInfo">–</span></div>
-      </div>
-    </aside>
+    <a class="card" href="dashboard.html" style="--accent:var(--trace)">
+      <div class="idx">Ledger</div>
+      <h3>Browse the chain</h3>
+      <p>Pick an organization and a channel, then read the records its peers hold —
+         device attachments, bandwidth grants and signal readings, straight from world state.</p>
+      <div class="go">Open →</div>
+    </a>
 
-    <section class="content">
-      <div class="toolbar">
-        <h2 id="contentTitle">Assets</h2>
-        <button class="btn primary" id="createBtn">Create Asset</button>
-      </div>
+    <a class="card" href="test.html" style="--accent:var(--signal)">
+      <div class="idx">Benchmark</div>
+      <h3>Measure throughput</h3>
+      <p>Drive load through Caliper or Tape and read back transactions per second,
+         end-to-end latency and the share of transactions that committed.</p>
+      <div class="go">Open →</div>
+    </a>
 
-      <div class="map-panel">
-        <div id="network-map"></div>
-      </div>
+    <a class="card" href="scenario.html" style="--accent:var(--rx)">
+      <div class="idx">Simulation</div>
+      <h3>Place the network</h3>
+      <p>Scatter macro cells, small cells and users across ten square kilometres,
+         attach every device to its nearest antenna, and commit the result on chain.</p>
+      <div class="go">Open →</div>
+    </a>
 
-      <div class="table-wrapper">
-        <table id="assetsTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Record</th>
-              <th>Timestamp</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="assetsBody">
-            <tr>
-              <td colspan="4" class="empty">Select an org and channel, then load assets.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  </div>
 
-      <div class="log-panel">
-        <h3>Activity Log</h3>
-        <div id="logOutput"></div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Create / Edit Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <h3 id="modalTitle">Create Asset</h3>
-      <form id="assetForm">
-        <div class="field">
-          <label for="fieldId">ID</label>
-          <input type="text" id="fieldId" required />
-        </div>
-        <div class="field">
-          <label for="fieldOwner">Owner</label>
-          <input type="text" id="fieldOwner" placeholder="optional" />
-        </div>
-        <div class="field">
-          <label for="fieldValue">Value</label>
-          <input type="number" id="fieldValue" placeholder="optional" />
-        </div>
-        <div class="field">
-          <label for="fieldSize">Size</label>
-          <input type="number" id="fieldSize" placeholder="optional" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn primary" id="saveBtn">Save</button>
-        </div>
-      </form>
+  <div class="panel" style="margin-top:26px">
+    <div class="panel-title">Last deployment <span class="tag" id="lastTag">none</span></div>
+    <div class="readouts" style="margin-bottom:0">
+      <div class="readout accent-trace"><div class="k">Macro TX</div><div class="v" id="sumMacro">—</div></div>
+      <div class="readout accent-signal"><div class="k">Small-cell TX</div><div class="v" id="sumIot">—</div></div>
+      <div class="readout accent-rx"><div class="k">Receivers</div><div class="v" id="sumUsers">—</div></div>
+      <div class="readout accent-ok"><div class="k">Committed</div><div class="v" id="sumOk">—</div></div>
+      <div class="readout"><div class="k">Throughput</div><div class="v" id="sumTps">—<span class="u">tps</span></div></div>
     </div>
   </div>
 
-  <!-- Transfer Modal -->
-  <div class="modal-overlay" id="transferOverlay">
-    <div class="modal">
-      <h3>Transfer Asset</h3>
-      <form id="transferForm">
-        <div class="field">
-          <label for="transferId">Asset ID</label>
-          <input type="text" id="transferId" disabled />
-        </div>
-        <div class="field">
-          <label for="transferNewOwner">New Owner</label>
-          <input type="text" id="transferNewOwner" required />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn" id="transferCancelBtn">Cancel</button>
-          <button type="submit" class="btn primary">Transfer</button>
-        </div>
-      </form>
-    </div>
-  </div>
+</main>
 
-  <!-- History Modal -->
-  <div class="modal-overlay" id="historyOverlay">
-    <div class="modal">
-      <h3 id="historyTitle">Asset History</h3>
-      <div id="historyContent" class="history-content">
-        <p class="empty">Loading...</p>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" id="historyCloseBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+<script src="coverage-map.js"></script>
+<script src="home.js"></script>
 </body>
 </html>
