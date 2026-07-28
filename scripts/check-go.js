@@ -1,0 +1,132 @@
+#!/usr/bin/env node
+'use strict';
+/* Structural check for the generated Go. No compiler is available here, so
+   this verifies what a compiler would catch first: balanced delimiters,
+   every called helper defined, every import used, no non-deterministic
+   calls, and no duplicate declarations. */
+
+const fs = require('fs');
+const src = fs.readFileSync(process.argv[2], 'utf8');
+
+// Pull each contract's Go out of the heredocs.
+const files = [];
+for (const m of src.matchAll(/^\s{8}(\w+)\)\n\s+cat > chaincode\/\$contract\/chaincode\.go <<'CHAINCODE_EOF'\n([\s\S]*?)\nCHAINCODE_EOF/gm)) {
+  files.push({ name: m[1], go: m[2] });
+}
+
+let fail = 0;
+const bad = (name, msg) => { fail++; console.log(`  ✗ ${name}: ${msg}`); };
+
+// Strip strings, runes and comments so delimiters inside them do not count.
+function strip(go) {
+  let out = '', i = 0;
+  while (i < go.length) {
+    const c = go[i];
+    if (c === '/' && go[i + 1] === '/') { while (i < go.length && go[i] !== '\n') i++; continue; }
+    if (c === '/' && go[i + 1] === '*') { i += 2; while (i < go.length && !(go[i] === '*' && go[i + 1] === '/')) i++; i += 2; continue; }
+    if (c === '`') { i++; while (i < go.length && go[i] !== '`') i++; i++; out += '""'; continue; }
+    if (c === '"') { i++; while (i < go.length && !(go[i] === '"' && go[i - 1] !== '\\')) i++; i++; out += '""'; continue; }
+    if (c === "'") { i++; while (i < go.length && !(go[i] === "'" && go[i - 1] !== '\\')) i++; i++; out += "''"; continue; }
+    out += c; i++;
+  }
+  return out;
+}
+
+const REQUIRED = [
+  'SeedNetwork', 'SetPropagation', 'SetCapacity', 'saveAntenna', 'loadConfig',
+  'listAntennas', 'evaluate', 'admit', 'ServingCell', 'NetworkStatus',
+  'QueryAsset', 'QueryAllAssets', 'ValidateCoverage', 'Init',
+];
+const KERNEL = [
+  'Isqrt', 'Log2Milli', 'Log10Milli', 'exp2FracQ16', 'exp2Q16', 'LinearQ16',
+  'DbmFromLinearQ16', 'fnv1a', 'mix32', 'hashUniform', 'ShadowingMilliDb',
+  'PlaceOnGrid', 'DistanceM', 'PathLossMilliDb', 'NoiseFloorMilliDbm',
+  'RssiMilliDbm', 'SinrMilliDb', 'ShannonBps', 'floorDiv',
+  'parseCoord', 'parseIntOr', 'txTimestamp',
+];
+
+console.log(`contracts found: ${files.length}\n`);
+
+for (const { name, go } of files) {
+  const s = strip(go);
+
+  for (const [open, close, label] of [['{', '}', 'braces'], ['(', ')', 'parens'], ['[', ']', 'brackets']]) {
+    const a = (s.match(new RegExp('\\' + open, 'g')) || []).length;
+    const b = (s.match(new RegExp('\\' + close, 'g')) || []).length;
+    if (a !== b) bad(name, `${label} unbalanced: ${a} vs ${b}`);
+  }
+
+  const defined = new Set();
+  for (const m of go.matchAll(/^func (?:\([^)]*\) )?(\w+)\(/gm)) defined.add(m[1]);
+
+  for (const fn of REQUIRED) {
+    if (!new RegExp(`func \\(s \\*${name}\\) ${fn}\\(`).test(go)) bad(name, `method ${fn} missing`);
+  }
+  for (const fn of KERNEL) {
+    if (!defined.has(fn)) bad(name, `helper ${fn} missing`);
+  }
+
+  // Duplicate top-level declarations would fail to compile.
+  const seen = new Set();
+  for (const m of go.matchAll(/^func (\w+)\(/gm)) {
+    if (seen.has(m[1])) bad(name, `duplicate func ${m[1]}`);
+    seen.add(m[1]);
+  }
+  const types = new Set();
+  for (const m of go.matchAll(/^type (\w+) /gm)) {
+    if (types.has(m[1])) bad(name, `duplicate type ${m[1]}`);
+    types.add(m[1]);
+  }
+
+  // Imports must match usage exactly — Go rejects both unused and missing.
+  const imports = (go.match(/import \(([\s\S]*?)\)/) || ['', ''])[1];
+  for (const pkg of ['json', 'fmt', 'strconv', 'time']) {
+    const declared = imports.includes(`"${pkg}"`) || imports.includes(`/${pkg}"`);
+    const used = new RegExp(`\\b${pkg}\\.`).test(s);
+    if (declared && !used) bad(name, `import ${pkg} unused`);
+    if (!declared && used) bad(name, `import ${pkg} missing`);
+  }
+  if (/\bmath\./.test(s)) bad(name, 'math package used — not bit-reproducible across platforms');
+  if (/\brand\./.test(s)) bad(name, 'rand used — forbidden in chaincode');
+  if (/time\.Now/.test(s)) bad(name, 'time.Now used — forbidden in chaincode');
+  if (/float(32|64)/.test(s)) bad(name, 'floating point used in the model');
+
+  // Every struct field a method reads must exist on that struct. Release
+  // reaches into the record type for ServingCell, which only the
+  // entity-serving contracts have — the antenna-subject one must omit it.
+  for (const m of go.matchAll(/var (\w+) (\w+)\n([\s\S]{0,900}?)\n}/g)) {
+    const [, varName, typeName, body] = m;
+    const tb = (go.match(new RegExp(`type ${typeName} struct \\{([\\s\\S]*?)\\n\\}`)) || [])[1];
+    if (!tb) continue;
+    const tf = new Set([...tb.matchAll(/^\s+(\w+)\s+\w/gm)].map((x) => x[1]));
+    for (const u of body.matchAll(new RegExp(`\\b${varName}\\.(\\w+)`, 'g'))) {
+      if (!tf.has(u[1])) bad(name, `${typeName} has no field ${u[1]} (used as ${varName}.${u[1]})`);
+    }
+  }
+
+  if (!/func main\(\)/.test(go)) bad(name, 'no main');
+  if (!new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
+
+  // Every struct field assigned in the record literal must exist on the
+  // record type — which is not the first struct in the file, that is the
+  // contract receiver.
+  const lit = go.match(/record := (\w+)\{([\s\S]*?)\n    \}/);
+  if (lit) {
+    const recType = lit[1];
+    const recBody = (go.match(new RegExp(`type ${recType} struct \\{([\\s\\S]*?)\\n\\}`)) || ['', ''])[1];
+    const fields = new Set([...recBody.matchAll(/^\s+(\w+)\s+\w/gm)].map((m) => m[1]));
+    if (!fields.size) bad(name, `record type ${recType} not found or empty`);
+    for (const m of lit[2].matchAll(/^\s+(\w+):/gm)) {
+      if (!fields.has(m[1])) bad(name, `record literal sets unknown field ${m[1]}`);
+    }
+    // And every non-optional field should be set.
+    for (const f of fields) {
+      if (!new RegExp(`^\\s+${f}:`, 'm').test(lit[2])) bad(name, `field ${f} never assigned`);
+    }
+  } else {
+    bad(name, 'no record literal found');
+  }
+}
+
+console.log(fail ? `\n✗ ${fail} problems` : '\n✅ all structural checks passed');
+process.exit(fail ? 1 : 0);
