@@ -21,7 +21,16 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const mapPath = path.join(repoRoot, 'server', 'contract-fn-map.js');
-const sigs = require('/tmp/spatial-signatures.json');
+// Shipped beside this script. It used to be read from /tmp, which only
+// existed on the machine that generated it — on a real server the script
+// died with MODULE_NOT_FOUND before doing anything.
+const sigPath = path.join(__dirname, 'spatial-signatures.json');
+if (!fs.existsSync(sigPath)) {
+  console.error(`spatial-signatures.json is missing from ${__dirname}.`);
+  console.error('It ships alongside this script; copy it from the package.');
+  process.exit(1);
+}
+const sigs = require(sigPath);
 
 const { CONTRACT_FN } = require(mapPath);
 const bySig = Object.fromEntries(sigs.map((s) => [s.contract, s]));
