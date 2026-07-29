@@ -148,6 +148,7 @@ type NetworkConfig struct {
     ShadowSigmaMilliDb    int64  \`json:"shadowSigmaMilliDb"\`
     NoiseFigureMilliDb    int64  \`json:"noiseFigureMilliDb"\`
     MinSinrMilliDb        int64  \`json:"minSinrMilliDb"\`
+    TrackCapacity         bool   \`json:"trackCapacity"\`
 }
 
 // CellReport is what the radio evaluation produces for one position.
@@ -170,7 +171,7 @@ const (
     defaultGainMilliDb     = int64(15000)  // 15 dBi
     defaultFreqMHz         = int64(3500)   // 3.5 GHz
     defaultBandwidthHz     = int64(20000000)
-    defaultMaxCapacity     = int64(100000) // effectively unlimited by default
+    defaultMaxCapacity     = int64(0)      // 0 = unlimited, capacity not tracked
     defaultGridSizeM       = int64(10000)  // 10 km square
     defaultAntennaCount    = int64(8)      // one per organization
     defaultExponentMilli   = int64(300)    // n = 3.0, urban
@@ -184,12 +185,22 @@ const (
 // network on every peer and in every replay — which is what makes a
 // benchmark comparable across runs.
 //
-// maxCapacity is how many entities one cell will admit. The default is high
-// enough that a throughput benchmark never hits it — capacity refusals would
-// otherwise appear partway through a long run and be mistaken for network
-// degradation. Set it low deliberately when admission control is the subject
-// of the experiment: load is uneven across cells, so with 8 antennas the
-// busiest one takes roughly 20% of arrivals and saturates first.
+// maxCapacity is how many entities one cell will admit. Zero — the default —
+// means unlimited AND turns off capacity accounting entirely.
+//
+// That second half matters more than it looks. Counting admissions means
+// incrementing a field on the serving cell's record, which is a
+// read-modify-write on one of only eight keys. Fabric validates read sets
+// after ordering: when several transactions in the same block read the same
+// key at the same version, one commits and the rest are rejected with
+// MVCC_READ_CONFLICT. At 20 tps the busiest cell takes about eight
+// transactions per block, so roughly 20% would survive; at 109 tps, under 4%.
+// A throughput benchmark would be measuring lock contention on eight keys
+// rather than anything about the network.
+//
+// So capacity tracking is opt-in. Turn it on when admission control is the
+// subject of the experiment — the contention is then the finding, not an
+// artefact — and leave it off when measuring throughput.
 //
 // Passing "" for a numeric argument accepts the default.
 func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, seed, antennaCount, gridSizeM, maxCapacity string) error {
@@ -199,8 +210,8 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
     count := parseIntOr(antennaCount, defaultAntennaCount)
     grid := parseIntOr(gridSizeM, defaultGridSizeM)
     capacity := parseIntOr(maxCapacity, defaultMaxCapacity)
-    if capacity < 1 {
-        return fmt.Errorf("maxCapacity must be at least 1, got %d", capacity)
+    if capacity < 0 {
+        return fmt.Errorf("maxCapacity cannot be negative, got %d", capacity)
     }
     if count < 1 || count > 256 {
         return fmt.Errorf("antennaCount must be between 1 and 256, got %d", count)
@@ -236,6 +247,7 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
         ShadowSigmaMilliDb:    defaultShadowSigma,
         NoiseFigureMilliDb:    defaultNoiseFigure,
         MinSinrMilliDb:        defaultMinSinr,
+        TrackCapacity:         capacity > 0,
     }
     cfgJSON, err := json.Marshal(cfg)
     if err != nil {
@@ -268,8 +280,8 @@ func (s *${contract}) SetPropagation(ctx contractapi.TransactionContextInterface
 // sweep can vary the limit while holding the layout fixed.
 func (s *${contract}) SetCapacity(ctx contractapi.TransactionContextInterface, maxCapacity string) error {
     capacity := parseIntOr(maxCapacity, defaultMaxCapacity)
-    if capacity < 1 {
-        return fmt.Errorf("maxCapacity must be at least 1, got %d", capacity)
+    if capacity < 0 {
+        return fmt.Errorf("maxCapacity cannot be negative, got %d", capacity)
     }
     antennas, err := s.listAntennas(ctx)
     if err != nil {
@@ -409,7 +421,7 @@ func (s *${contract}) admit(ctx contractapi.TransactionContextInterface, entityI
             "out of coverage: SINR %d mdB on %s is below the %d mdB threshold",
             rep.SinrMilliDb, rep.ServingCell, cfg.MinSinrMilliDb)
     }
-    if best.UsedCapacity >= best.MaxCapacity {
+    if cfg.TrackCapacity && best.UsedCapacity >= best.MaxCapacity {
         return rep, best, fmt.Errorf(
             "cell %s is saturated: %d of %d in use",
             best.AntennaID, best.UsedCapacity, best.MaxCapacity)
@@ -528,6 +540,14 @@ func (s *${c}) Init(ctx contractapi.TransactionContextInterface) error {
 // antenna is relocated to (x,y), the registry is updated so every later
 // evaluation sees the new position, and the resulting coverage radius is
 // computed from the propagation model.
+//
+// Note for benchmarking: updating the registry is inherent here, not
+// optional as it is in the serving contracts. There are only eight cells,
+// so several transactions in one block will touch the same record and all
+// but one will be rejected with MVCC_READ_CONFLICT. That is not a defect —
+// reconfiguring a cell is genuinely a serialised operation — but it means
+// this contract measures contention rather than throughput. Benchmark it at
+// a low rate, or read the rejection rate as the result.
 func (s *${c}) ${r.primary.name}(ctx contractapi.TransactionContextInterface, ${params.join(', ')} string) error {
     if antennaID == "" {
         return fmt.Errorf("antennaID is required")
@@ -744,22 +764,29 @@ func (s *${c}) ${r.primary.name}(ctx contractapi.TransactionContextInterface, ${
     if err != nil {
         return err
     }
-    if seed != "" {
-        if cfg, cerr := s.loadConfig(ctx); cerr == nil && cfg.Seed != seed {
-            return fmt.Errorf(
-                "seed %q does not match the layout in place (%q) — re-seed before mixing scenarios",
-                seed, cfg.Seed)
-        }
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
     }
+    if seed != "" && cfg.Seed != seed {
+        return fmt.Errorf(
+            "seed %q does not match the layout in place (%q) — re-seed before mixing scenarios",
+            seed, cfg.Seed)
+    }
+    trackCapacity := cfg.TrackCapacity
 
     rep, best, err := s.admit(ctx, ${keyParam}, px, py)
     if err != nil {
         return err
     }
 
-    best.UsedCapacity++
-    if err := s.saveAntenna(ctx, best); err != nil {
-        return err
+    // Writing the cell back is what creates the hot key, so it only happens
+    // when capacity is actually being tracked. See SeedNetwork.
+    if trackCapacity {
+        best.UsedCapacity++
+        if err := s.saveAntenna(ctx, best); err != nil {
+            return err
+        }
     }
 
     record := ${rec}{
@@ -863,9 +890,29 @@ const parts = [`#!/bin/bash
 
 set -e
 
-contracts=(
+ALL_CONTRACTS=(
 ${spatial.map((r) => `    "${r.name}"`).join('\n')}
 )
+
+# With no arguments every location-aware contract is regenerated. Named
+# arguments narrow it down, which is what the replacement part1-4 scripts
+# use so the README's generateChaincodes_part*.sh loop keeps working and
+# stays order-independent.
+if [ $# -gt 0 ]; then
+    contracts=("$@")
+    for want in "\${contracts[@]}"; do
+        found=0
+        for have in "\${ALL_CONTRACTS[@]}"; do
+            [ "$want" = "$have" ] && found=1 && break
+        done
+        if [ "$found" = "0" ]; then
+            echo "$want is not a location-aware contract — it is generated by generateChaincodes_part5..10.sh" >&2
+            exit 1
+        fi
+    done
+else
+    contracts=("\${ALL_CONTRACTS[@]}")
+fi
 
 for contract in "\${contracts[@]}"; do
     mkdir -p chaincode/$contract
@@ -895,7 +942,7 @@ parts.push(`        *)
     )
 done
 
-echo "Regenerated \${#contracts[@]} location-aware contracts."
+echo "Regenerated \${#contracts[@]} of \${#ALL_CONTRACTS[@]} location-aware contracts."
 for contract in "\${contracts[@]}"; do
     if [ -f "chaincode/$contract/chaincode.go" ]; then
         echo " - $contract: OK"
