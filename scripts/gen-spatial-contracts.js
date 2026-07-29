@@ -890,6 +890,14 @@ const parts = [`#!/bin/bash
 
 set -e
 
+# The generated Go lands beside the part5..10 scripts, in scripts/chaincode —
+# that is where deploy_functions.sh looks for it. Anchoring to this script's
+# own location rather than the current directory means it no longer matters
+# where you run it from; running from the repository root used to put the
+# contracts one level up, and deploy then reported "directory not found".
+SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 ALL_CONTRACTS=(
 ${spatial.map((r) => `    "${r.name}"`).join('\n')}
 )
@@ -942,7 +950,7 @@ parts.push(`        *)
     )
 done
 
-echo "Regenerated \${#contracts[@]} of \${#ALL_CONTRACTS[@]} location-aware contracts."
+echo "Regenerated \${#contracts[@]} of \${#ALL_CONTRACTS[@]} location-aware contracts in $SCRIPT_DIR/chaincode"
 for contract in "\${contracts[@]}"; do
     if [ -f "chaincode/$contract/chaincode.go" ]; then
         echo " - $contract: OK"
