@@ -204,7 +204,49 @@ echo -e "${GREEN}✓ Directory structure created${NC}"
 echo -e "\n${YELLOW}Installing Hyperledger Caliper...${NC}"
 
 cd "${SERVER_DIR}"
-npm install -g --unsafe-perm @hyperledger/caliper-cli@0.6.0
+
+# npm نمی‌تواند روی نصب سراسری نیمه‌کاره بنویسد: پوشه قدیمی را rename می‌کند و
+# اگر خالی نباشد با ENOTEMPTY می‌ایستد. پاک‌سازی پیش از نصب همین را حل می‌کند.
+# نکته مهم: خروجی npm پیش از این بررسی نمی‌شد، پس شکست نصب بی‌صدا رد می‌شد و
+# همه گام‌های بعدی روی نصب ناقص اجرا می‌شدند.
+CALIPER_GLOBAL="$(npm root -g 2>/dev/null)/@hyperledger"
+if [ -d "${CALIPER_GLOBAL}" ]; then
+    # بازمانده‌های تلاش ناموفق قبلی
+    rm -rf "${CALIPER_GLOBAL}"/.caliper-cli-* 2>/dev/null
+fi
+
+install_caliper() {
+    npm install -g --unsafe-perm @hyperledger/caliper-cli@0.6.0 2>&1
+}
+
+CALIPER_LOG="$(install_caliper)"
+CALIPER_RC=$?
+
+if [ $CALIPER_RC -ne 0 ] && echo "$CALIPER_LOG" | grep -q "ENOTEMPTY"; then
+    echo -e "${YELLOW}نصب قبلی ناقص مانده — پاک‌سازی و تلاش دوباره...${NC}"
+    rm -rf "${CALIPER_GLOBAL}/caliper-cli" "${CALIPER_GLOBAL}"/.caliper-cli-* 2>/dev/null
+    CALIPER_LOG="$(install_caliper)"
+    CALIPER_RC=$?
+fi
+
+if [ $CALIPER_RC -ne 0 ]; then
+    echo "$CALIPER_LOG" | tail -15
+    echo -e "${RED}✗ نصب Caliper ناموفق بود.${NC}"
+    echo -e "  بدون آن، بنچمارک Caliper کار نمی‌کند (Tape مستقل است)."
+    echo -e "  پاک‌سازی دستی و تلاش دوباره:"
+    echo -e "    ${GREEN}rm -rf ${CALIPER_GLOBAL}/caliper-cli ${CALIPER_GLOBAL}/.caliper-cli-*${NC}"
+    echo -e "    ${GREEN}npm install -g --unsafe-perm @hyperledger/caliper-cli@0.6.0${NC}"
+    exit 1
+fi
+
+# نصب موفق را تأیید کن، نه فقط کد خروجی npm را
+if ! command -v caliper >/dev/null 2>&1 \
+   && [ ! -f "$(npm root -g)/@hyperledger/caliper-cli/caliper.js" ]; then
+    echo -e "${RED}✗ npm موفق گزارش داد ولی باینری caliper پیدا نشد.${NC}"
+    echo -e "  بررسی: ${GREEN}npm list -g --depth=0 | grep caliper${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Caliper CLI نصب شد${NC}"
 
 echo -e "${YELLOW}Detecting Fabric version...${NC}"
 if docker ps | grep -q "peer0.org1.example.com"; then
@@ -229,7 +271,11 @@ else
 fi
 
 echo -e "${YELLOW}Binding Caliper to Fabric ${BIND_VERSION}...${NC}"
-caliper bind --caliper-bind-sut fabric:${BIND_VERSION} --caliper-bind-cwd "${SERVER_DIR}"
+if ! caliper bind --caliper-bind-sut fabric:${BIND_VERSION} --caliper-bind-cwd "${SERVER_DIR}"; then
+    echo -e "${RED}✗ caliper bind ناموفق — SDK فابریک نصب نشد.${NC}"
+    echo -e "  بدون آن Caliper به شبکه وصل نمی‌شود."
+    exit 1
+fi
 echo -e "${GREEN}✓ Caliper installed and bound to Fabric ${BIND_VERSION}${NC}"
 
 # CLI سراسری است ولی bind فقط در server/node_modules نصب می‌کند؛
