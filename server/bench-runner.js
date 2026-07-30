@@ -33,7 +33,61 @@ const TAPE_CONFIG_DIR =
 // Read at spawn time, not at load time, so the binary path can be changed
 // without restarting the server.
 const tapeBin = () => process.env.TAPE_BIN || path.join(os.homedir(), 'go', 'bin', 'tape');
-const caliperBin = () => process.env.CALIPER_BIN || 'npx';
+/* Resolving the Caliper executable.
+ *
+ * `npx caliper` looked fine but fails with "could not determine executable to
+ * run" when the dashboard is started by systemd: the unit's PATH usually
+ * omits /usr/local/bin, which is where a global npm install puts the binary,
+ * and npx with no network cannot fall back to fetching it.
+ *
+ * So the launcher is located explicitly instead. Each candidate is checked on
+ * disk, in order, and the resolution is cached per process.
+ */
+let caliperCmdCache = null;
+
+function resolveCaliper(workspace) {
+  if (caliperCmdCache) return caliperCmdCache;
+
+  if (process.env.CALIPER_BIN) {
+    const explicit = process.env.CALIPER_BIN;
+    caliperCmdCache = explicit.endsWith('.js')
+      ? { cmd: process.execPath, prefix: [explicit] }
+      : { cmd: explicit, prefix: [] };
+    return caliperCmdCache;
+  }
+
+  // A launcher script: invoked directly, with "caliper" already implied.
+  const scripts = [
+    path.join(workspace, 'node_modules', '.bin', 'caliper'),
+    '/usr/local/bin/caliper',
+    '/usr/bin/caliper',
+    path.join(os.homedir(), '.npm-global', 'bin', 'caliper'),
+  ];
+  for (const p of scripts) {
+    if (fs.existsSync(p)) {
+      caliperCmdCache = { cmd: p, prefix: [] };
+      return caliperCmdCache;
+    }
+  }
+
+  // The CLI entry point: run it with this process's own node, so the result
+  // does not depend on PATH at all.
+  const entries = [
+    '/usr/local/lib/node_modules/@hyperledger/caliper-cli/caliper.js',
+    '/usr/lib/node_modules/@hyperledger/caliper-cli/caliper.js',
+    path.join(os.homedir(), '.npm-global', 'lib', 'node_modules',
+      '@hyperledger', 'caliper-cli', 'caliper.js'),
+    path.join(workspace, 'node_modules', '@hyperledger', 'caliper-cli', 'caliper.js'),
+  ];
+  for (const p of entries) {
+    if (fs.existsSync(p)) {
+      caliperCmdCache = { cmd: process.execPath, prefix: [p] };
+      return caliperCmdCache;
+    }
+  }
+
+  return null;
+}
 const RUN_DIR = process.env.BENCH_RUN_DIR || path.join(TEST_TOOLS_DIR, 'bench-runs');
 
 /* ── Endorsement policy ───────────────────────────────────────────────
@@ -379,10 +433,21 @@ function parseCaliper(text) {
 
   if (!rows.length) {
     if (!m.roundError) {
-      const generic = text.match(/error code:\s*(\d+)/i);
-      m.roundError = generic
-        ? `Caliper reported no results (error code ${generic[1]})`
-        : 'Caliper produced no result table';
+      // npm-level failures never reach Caliper's own error reporting, so they
+      // have to be recognised here or the operator only sees "no result
+      // table" and has nothing to act on.
+      if (/could not determine executable to run/i.test(text)) {
+        m.roundError = 'The Caliper CLI could not be launched — npx found no '
+          + 'caliper executable. Install it globally, or set CALIPER_BIN.';
+      } else {
+        const npmErr = text.match(/npm ERR!\s*(.+)/);
+        const generic = text.match(/error code:\s*(\d+)/i);
+        m.roundError = npmErr
+          ? `npm could not start Caliper: ${npmErr[1].trim()}`
+          : generic
+            ? `Caliper reported no results (error code ${generic[1]})`
+            : 'Caliper produced no result table';
+      }
     }
     return m;
   }
@@ -424,8 +489,19 @@ function runCaliperTarget(target, opts, job) {
       return resolve({ ok: false, error: `Could not write the benchmark file: ${err.message}` });
     }
 
+    const launcher = resolveCaliper(CALIPER_WORKSPACE);
+    if (!launcher) {
+      return resolve({
+        ok: false,
+        error: 'Could not find the Caliper CLI. Install it with: '
+          + 'npm install -g --unsafe-perm @hyperledger/caliper-cli@0.6.0 '
+          + '— or set CALIPER_BIN to its path.',
+      });
+    }
+
     const args = [
-      'caliper', 'launch', 'manager',
+      ...launcher.prefix,
+      'launch', 'manager',
       '--caliper-workspace', CALIPER_WORKSPACE,
       '--caliper-networkconfig', netPath,
       '--caliper-benchconfig', benchPath,
@@ -435,7 +511,7 @@ function runCaliperTarget(target, opts, job) {
     let out = '';
     let child;
     try {
-      child = spawn(caliperBin(), args, {
+      child = spawn(launcher.cmd, args, {
         cwd: CALIPER_WORKSPACE,
         env: { ...process.env, CORE_PEER_TLS_ENABLED: String(config.tlsEnabled) },
       });
