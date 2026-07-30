@@ -427,9 +427,19 @@ function parseCaliper(text) {
   const rows = [...text.matchAll(
     /^\s*\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|\s*$/gm)]
     .map((r) => r.slice(1).map((c) => c.trim()))
-    // Drop the header and the +---+ separators: a data row has a numeric
-    // value in all seven columns after the label.
-    .filter((c) => c.slice(1).every((v) => v !== '' && Number.isFinite(Number(v))));
+    // Drop the header and the +---+ separators. Succ, Fail and Send Rate are
+    // always numeric; the three latency columns print as "-" when a round
+    // committed nothing, which is exactly the case worth reporting. Requiring
+    // numbers everywhere threw that row away and left the run looking like
+    // Caliper had produced no table at all.
+    .filter((c) => {
+      if (c.length < 8) return false;
+      const numeric = (v) => v !== '' && Number.isFinite(Number(v));
+      const dashOrNumeric = (v) => v === '-' || numeric(v);
+      return numeric(c[1]) && numeric(c[2]) && numeric(c[3])
+        && dashOrNumeric(c[4]) && dashOrNumeric(c[5]) && dashOrNumeric(c[6])
+        && numeric(c[7]);
+    });
 
   if (!rows.length) {
     if (!m.roundError) {
@@ -455,17 +465,28 @@ function parseCaliper(text) {
   // With a read round configured there are two rows; the write round is
   // the one that describes commit throughput.
   const row = rows.find((c) => /^write-/.test(c[0])) || rows[0];
+  const ms = (v) => (v === '-' ? NaN : Number(v) * 1000);
   m.successCount = Number(row[1]);
   m.failedCount = Number(row[2]);
-  m.latencyMax = Number(row[4]) * 1000;
-  m.latencyMin = Number(row[5]) * 1000;
-  m.latencyAvg = Number(row[6]) * 1000;
+  m.latencyMax = ms(row[4]);
+  m.latencyMin = ms(row[5]);
+  m.latencyAvg = ms(row[6]);
   m.tps = Number(row[7]);
+
+  // Caliper reports send rate as throughput when nothing commits, which reads
+  // as a healthy figure next to a column of zeros. Throughput is what landed
+  // on the ledger, so with no successes it is zero.
+  if (m.successCount === 0) {
+    m.tps = 0;
+    m.roundError = m.roundError
+      || `every transaction was rejected (${m.failedCount} of ${m.failedCount}) — `
+         + 'open the tool output for the chaincode error';
+  }
 
   const read = rows.find((c) => /^read-/.test(c[0]));
   if (read) {
-    m.readTps = Number(read[7]);
-    m.readLatencyAvg = Number(read[6]) * 1000;
+    m.readTps = Number(read[1]) === 0 ? 0 : Number(read[7]);
+    m.readLatencyAvg = ms(read[6]);
     m.readSuccessCount = Number(read[1]);
   }
 
