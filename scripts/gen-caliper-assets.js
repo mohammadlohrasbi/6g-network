@@ -56,6 +56,8 @@ function write(file, content) {
 // Every contract's write function and parameter order, embedded so the
 // workload can still build correct arguments when the contract is
 // overridden at run time and no explicit params are supplied.
+const { GRID_SIZE_M, BENCH_SEED } = catalog;
+
 const CONTRACT_TABLE = JSON.stringify(
   Object.fromEntries(
     Object.entries(catalog.CONTRACT_FN).map(([name, d]) => [name, { fn: d.fn, params: d.params }])
@@ -128,10 +130,20 @@ const ID_PARAMS = new Set([
   'policyID', 'sessionID', 'channelID', 'resourceID',
 ]);
 
+// Generated from server/bench-catalog.js — the values below are injected at
+// generation time so the workload and the catalog cannot drift apart. They
+// did once: the workload kept its own copy, never learned about the 'seed'
+// parameter, and sent 'v-1' instead. Every transaction was then rejected with
+// a seed mismatch — 500 failures out of 500, with nothing in the summary
+// table to say why.
+const GRID_SIZE_M = ${GRID_SIZE_M};
+const BENCH_SEED = ${JSON.stringify(BENCH_SEED)};
+
 function paramValue(name, i) {
   switch (name) {
-    case 'x':                 return String(1 + (i * 7) % 100);
-    case 'y':                 return String(1 + (i * 13) % 100);
+    case 'seed':              return BENCH_SEED;
+    case 'x':                 return String((i * 2654435761) % GRID_SIZE_M);
+    case 'y':                 return String((i * 1597334677) % GRID_SIZE_M);
     case 'signal':            return String(-60 - (i % 40));
     case 'signalQuality':     return String(50 + (i % 50));
     case 'load':              return String(10 + (i % 90));
