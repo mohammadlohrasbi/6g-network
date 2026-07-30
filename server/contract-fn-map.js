@@ -94,4 +94,5 @@ const CONTRACT_FN = {
   UpdatePolicy: { fn: 'Update', params: ["policyID","policy"], antennaDep: false, needsSeed: false },
   VerifyIdentity: { fn: 'Verify', params: ["entityID","verified"], antennaDep: false, needsSeed: false },
 };
+
 module.exports = { CONTRACT_FN };
