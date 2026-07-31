@@ -36,12 +36,16 @@ const REQUIRED = [
   'SeedNetwork', 'SetPropagation', 'SetCapacity', 'saveAntenna', 'loadConfig',
   'listAntennas', 'evaluate', 'admit', 'ServingCell', 'NetworkStatus',
   'QueryAsset', 'QueryAllAssets', 'ValidateCoverage', 'Init',
+  'SetResources', 'SetAssociation', 'SetTier', 'SetEconomy', 'RankCells',
+  'LoadBalance', 'BalanceOf', 'Credit', 'Transfer', 'Quote', 'accountOf',
 ];
 const KERNEL = [
   'Isqrt', 'Log2Milli', 'Log10Milli', 'exp2FracQ16', 'exp2Q16', 'LinearQ16',
   'DbmFromLinearQ16', 'fnv1a', 'mix32', 'hashUniform', 'ShadowingMilliDb',
   'PlaceOnGrid', 'DistanceM', 'PathLossMilliDb', 'NoiseFloorMilliDbm',
   'RssiMilliDbm', 'SinrMilliDb', 'ShannonBps', 'floorDiv',
+  'MicroWattFromMilliDbm', 'TransmitTimeMicroS', 'TransmitEnergyMicroJ',
+  'fairShareHz', 'loadDeviation', 'transactionCost',
   'parseCoord', 'parseIntOr', 'txTimestamp',
 ];
 
