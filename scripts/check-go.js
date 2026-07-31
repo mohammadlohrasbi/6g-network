@@ -175,6 +175,25 @@ for (const { name, go, isShared } of files) {
     }
   });
 
+  // A named type used but never declared. Go catches this immediately;
+  // the structural check did not, which is how GenericRecord — a name
+  // passed to the shared template but never defined — reached the
+  // compiler.
+  const declaredTypes = new Set([...both.matchAll(/^type (\w+) /gm)].map((m) => m[1]));
+  const builtin = new Set(['Antenna', 'Account', 'NetworkConfig', 'CellReport',
+    'EnergyBudget', 'WorkTask', 'RelayDeal', 'SpectrumGrant', 'TokenAccount',
+    'GenericRecord', 'NetworkBase']);
+  for (const m of both.matchAll(/\bvar \w+ ([A-Z]\w+)\b/g)) {
+    if (!declaredTypes.has(m[1]) && !builtin.has(m[1])) {
+      bad(name, `type ${m[1]} is used but never declared`);
+    }
+  }
+  for (const t of builtin) {
+    if (new RegExp(`\\bvar \\w+ ${t}\\b`).test(both) && !declaredTypes.has(t)) {
+      bad(name, `type ${t} is used but never declared`);
+    }
+  }
+
   if (!isShared && !/func main\(\)/.test(go)) bad(name, 'no main');
   if (!isShared && !new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
 
