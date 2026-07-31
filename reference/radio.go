@@ -254,3 +254,39 @@ func ShannonBps(bandwidthHz, sinrMdb int64) int64 {
 	}
 	return (bandwidthHz * spectral) / 1000
 }
+
+/* ── power, time and energy ──────────────────────────────────────────
+   The paper this follows models uplink cost as transmit time and the
+   energy that time consumes: t = D/R and e = P·D/R, with a budget
+   constraint e ≤ E_max. Both need transmit power as a linear quantity,
+   which is what MicroWattFromMilliDbm provides.
+
+   Units: power µW, time µs, energy µJ. One mW for one µs is one nJ, so
+   µW × µs lands in picojoules and the divisor below converts to µJ.
+   int64 holds a 5 J budget (5×10⁶ µJ) with room to spare.                */
+
+// MicroWattFromMilliDbm converts milli-dBm to microwatts.
+// 23 dBm → 199526 µW (the reference value; this returns within 0.2%).
+func MicroWattFromMilliDbm(mdbm int64) int64 {
+    // µW = 10^(dBm/10) × 1000, so the log2 exponent is (dBm/10 + 3)·log2(10)
+    e := floorDiv((mdbm+30000)*log2_10Over10, 10000)
+    return exp2Q16(e) >> radioQ
+}
+
+// TransmitTimeMicroS returns how long dataBits takes at rateBps.
+func TransmitTimeMicroS(dataBits, rateBps int64) int64 {
+    if rateBps <= 0 {
+        return -1 // no usable link
+    }
+    return (dataBits * 1000000) / rateBps
+}
+
+// TransmitEnergyMicroJ is P × t, the energy that transmission costs.
+func TransmitEnergyMicroJ(txPowerMilliDbm, dataBits, rateBps int64) int64 {
+    t := TransmitTimeMicroS(dataBits, rateBps)
+    if t < 0 {
+        return -1
+    }
+    // µW × µs = pJ; divide by 10^6 for µJ
+    return (MicroWattFromMilliDbm(txPowerMilliDbm) * t) / 1000000
+}
