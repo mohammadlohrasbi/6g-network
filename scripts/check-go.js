@@ -14,6 +14,14 @@ for (const m of src.matchAll(/^\s{8}(\w+)\)\n\s+cat > chaincode\/\$contract\/cha
   files.push({ name: m[1], go: m[2] });
 }
 
+// The shared half lives in a second file written once per contract. Go
+// compiles both as one package, so a check that only saw chaincode.go
+// would report every shared helper as missing.
+const sharedMatch = src.match(/cat > chaincode\/\$contract\/shared\.go <<'SHARED_EOF'\n([\s\S]*?)\nSHARED_EOF/);
+const shared = sharedMatch ? sharedMatch[1] : '';
+if (!shared) console.log('  ! no shared.go template found');
+files.push({ name: 'shared.go', go: shared, isShared: true });
+
 let fail = 0;
 const bad = (name, msg) => { fail++; console.log(`  ✗ ${name}: ${msg}`); };
 
@@ -37,7 +45,7 @@ const REQUIRED = [
   'listAntennas', 'evaluate', 'admit', 'ServingCell', 'NetworkStatus',
   'QueryAsset', 'QueryAllAssets', 'ValidateCoverage', 'Init',
   'SetResources', 'SetAssociation', 'SetTier', 'SetEconomy', 'RankCells',
-  'LoadBalance', 'BalanceOf', 'Credit', 'Transfer', 'Quote', 'accountOf',
+  'LoadBalance', 'BalanceOf', 'Transfer', 'accountOf',
 ];
 const KERNEL = [
   'Isqrt', 'Log2Milli', 'Log10Milli', 'exp2FracQ16', 'exp2Q16', 'LinearQ16',
@@ -51,7 +59,9 @@ const KERNEL = [
 
 console.log(`contracts found: ${files.length}\n`);
 
-for (const { name, go } of files) {
+for (const { name, go, isShared } of files) {
+  // Methods and helpers may live in either file; check against both.
+  const both = isShared ? go : go + '\n' + shared;
   const s = strip(go);
 
   for (const [open, close, label] of [['{', '}', 'braces'], ['(', ')', 'parens'], ['[', ']', 'brackets']]) {
@@ -63,23 +73,45 @@ for (const { name, go } of files) {
   const defined = new Set();
   for (const m of go.matchAll(/^func (?:\([^)]*\) )?(\w+)\(/gm)) defined.add(m[1]);
 
-  for (const fn of REQUIRED) {
-    if (!new RegExp(`func \\(s \\*${name}\\) ${fn}\\(`).test(go)) bad(name, `method ${fn} missing`);
+  if (!isShared) {
+    // Shared methods hang off NetworkBase, which the contract embeds.
+    for (const fn of REQUIRED) {
+      const own = new RegExp(`func \\(s \\*${name}\\) ${fn}\\(`).test(go);
+      const inherited = new RegExp(`func \\(s \\*NetworkBase\\) ${fn}\\(`).test(shared);
+      if (!own && !inherited) bad(name, `method ${fn} missing from both files`);
+    }
+    if (!/NetworkBase/.test(go)) bad(name, 'does not embed NetworkBase');
   }
+  const definedBoth = new Set();
+  for (const m of both.matchAll(/^func (?:\([^)]*\) )?(\w+)\(/gm)) definedBoth.add(m[1]);
   for (const fn of KERNEL) {
-    if (!defined.has(fn)) bad(name, `helper ${fn} missing`);
+    if (!definedBoth.has(fn)) bad(name, `helper ${fn} missing`);
   }
 
   // Duplicate top-level declarations would fail to compile.
+  // Duplicates across the two files break the build just as surely as
+  // duplicates within one — that is exactly how BalanceOf ended up
+  // declared twice.
   const seen = new Set();
-  for (const m of go.matchAll(/^func (\w+)\(/gm)) {
+  for (const m of both.matchAll(/^func (\w+)\(/gm)) {
     if (seen.has(m[1])) bad(name, `duplicate func ${m[1]}`);
     seen.add(m[1]);
   }
+  const methods = new Set();
+  for (const m of both.matchAll(/^func \((?:\w+ )?\*(\w+)\) (\w+)\(/gm)) {
+    const key = `${m[1]}.${m[2]}`;
+    if (methods.has(key)) bad(name, `duplicate method ${key}`);
+    methods.add(key);
+  }
   const types = new Set();
-  for (const m of go.matchAll(/^type (\w+) /gm)) {
+  for (const m of both.matchAll(/^type (\w+) /gm)) {
     if (types.has(m[1])) bad(name, `duplicate type ${m[1]}`);
     types.add(m[1]);
+  }
+  const consts = new Set();
+  for (const m of both.matchAll(/^\s{4}(\w+)\s+=\s/gm)) {
+    if (consts.has(m[1])) bad(name, `duplicate constant ${m[1]}`);
+    consts.add(m[1]);
   }
 
   // Imports must match usage exactly — Go rejects both unused and missing.
@@ -143,8 +175,8 @@ for (const { name, go } of files) {
     }
   });
 
-  if (!/func main\(\)/.test(go)) bad(name, 'no main');
-  if (!new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
+  if (!isShared && !/func main\(\)/.test(go)) bad(name, 'no main');
+  if (!isShared && !new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
 
   // Every struct field assigned in the record literal must exist on the
   // record type — which is not the first struct in the file, that is the
@@ -162,7 +194,7 @@ for (const { name, go } of files) {
     for (const f of fields) {
       if (!new RegExp(`^\\s+${f}:`, 'm').test(lit[2])) bad(name, `field ${f} never assigned`);
     }
-  } else {
+  } else if (!isShared) {
     bad(name, 'no record literal found');
   }
 }
