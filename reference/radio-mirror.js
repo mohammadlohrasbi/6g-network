@@ -204,8 +204,25 @@ function shannonBps(bandwidthHz, sinrMdb) {
   return Math.floor((bandwidthHz * spectralMilli) / 1000);
 }
 
+
+/* ── power, time and energy ───────────────────────────────────────── */
+function microWattFromMilliDbm(mdbm) {
+  const e = floorDiv((mdbm + 30000) * LOG2_10_OVER_10, 10000);
+  return Number(exp2Q16(e) >> BigInt(Q));
+}
+function transmitTimeMicroS(dataBits, rateBps) {
+  if (rateBps <= 0) return -1;
+  return Math.floor((dataBits * 1000000) / rateBps);
+}
+function transmitEnergyMicroJ(txPowerMilliDbm, dataBits, rateBps) {
+  const t = transmitTimeMicroS(dataBits, rateBps);
+  if (t < 0) return -1;
+  return Math.floor((microWattFromMilliDbm(txPowerMilliDbm) * t) / 1000000);
+}
+
 module.exports = {
   isqrt, log2Milli, log10Milli, exp2Q16, linearQ16, dbmFromLinearQ16,
   shadowingMilliDb, distanceM, pathLossMilliDb, noiseFloorMilliDbm, log2MilliBig,
   rssiMilliDbm, sinrMilliDb, shannonBps, fnv1a, mix32, floorDiv, ONE, DB_OFFSET,
+  microWattFromMilliDbm, transmitTimeMicroS, transmitEnergyMicroJ,
 };
