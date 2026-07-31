@@ -32,6 +32,7 @@ const fs = require('fs');
 const path = require('path');
 
 const deep = require('/tmp/deep.json');
+const marketBlock = require('./market-block');
 const RADIO_GO = fs.readFileSync(
   path.join(__dirname, '..', 'radio', 'radio.go'), 'utf8');
 
@@ -98,8 +99,18 @@ func (s *${contract}) Release(ctx contractapi.TransactionContextInterface, entit
     if err := json.Unmarshal(ab, &a); err != nil {
         return err
     }
+    cfg, cerr := s.loadConfig(ctx)
+    if cerr != nil {
+        return cerr
+    }
     if a.UsedCapacity > 0 {
         a.UsedCapacity--
+    }
+    if cfg.TrackBandwidth {
+        a.AllocatedHz -= cfg.RequestHz
+        if a.AllocatedHz < 0 {
+            a.AllocatedHz = 0
+        }
     }
     if err := s.saveAntenna(ctx, &a); err != nil {
         return err
@@ -135,6 +146,9 @@ type Antenna struct {
     BandwidthHz     int64  \`json:"bandwidthHz"\`
     MaxCapacity     int64  \`json:"maxCapacity"\`
     UsedCapacity    int64  \`json:"usedCapacity"\`
+    AllocatedHz     int64  \`json:"allocatedHz"\`
+    LoadFactor      int64  \`json:"loadFactorHundredths"\`
+    EarnedMicro     int64  \`json:"earnedMicro"\`
 }
 
 // NetworkConfig holds the propagation parameters the whole cell layout
@@ -149,6 +163,66 @@ type NetworkConfig struct {
     NoiseFigureMilliDb    int64  \`json:"noiseFigureMilliDb"\`
     MinSinrMilliDb        int64  \`json:"minSinrMilliDb"\`
     TrackCapacity         bool   \`json:"trackCapacity"\`
+
+    // Resource accounting, modelled on the uplink cost formulation in
+    // Zuo, Jin & Zhang (VTC2021-Fall): a bandwidth share per entity, a
+    // rate that follows from that share, and an energy budget spent at
+    // e = P·D/R with the constraint e ≤ E_max.
+    //
+    // Both are off by default. Turning on bandwidth means writing the
+    // cell record on every admission, which is a read-modify-write on one
+    // of only eight keys — see SetCapacity for what that costs. Energy is
+    // keyed per entity, so it carries no such contention.
+    TrackBandwidth        bool   \`json:"trackBandwidth"\`
+    RequestHz             int64  \`json:"requestHz"\`
+    TrackEnergy           bool   \`json:"trackEnergy"\`
+    EnergyBudgetMicroJ    int64  \`json:"energyBudgetMicroJ"\`
+    TxPowerMilliDbm       int64  \`json:"txPowerMilliDbm"\`
+    PayloadBits           int64  \`json:"payloadBits"\`
+
+    // Association policy. "nearest" picks the strongest cell and stops —
+    // the traditional NBA rule. "loadaware" implements Algorithm 2 of Zuo,
+    // Jin & Zhang: walk the candidates strongest-first and take the first
+    // one whose load is still under its share, so a busy cell hands its
+    // overflow to the next-best rather than refusing service.
+    // Market
+    Stripes               int64  \`json:"stripes"\`
+    PriceScale            int64  \`json:"priceScale"\`
+    RelayShareHundred     int64  \`json:"relaySharePercent"\`
+    WorkReward            int64  \`json:"workReward"\`
+
+    AssociationMode       string \`json:"associationMode"\`
+    LoadToleranceHundred  int64  \`json:"loadToleranceHundredths"\`
+
+    // Charging, following the cost/revenue structure of the same paper:
+    // users pay for the spectrum they hold and the data they move, and the
+    // operator of the serving cell is credited.
+    TrackEconomy          bool   \`json:"trackEconomy"\`
+    PricePerKHzMicro      int64  \`json:"pricePerKHzMicro"\`
+    PricePerKbitMicro     int64  \`json:"pricePerKbitMicro"\`
+    InitialBalanceMicro   int64  \`json:"initialBalanceMicro"\`
+}
+
+// TokenAccount is one entity's wallet. Like the energy budget it lives
+// under its own key, so spending never contends between entities.
+type TokenAccount struct {
+    EntityID     string \`json:"entityID"\`
+    BalanceMicro int64  \`json:"balanceMicro"\`
+    SpentMicro   int64  \`json:"spentMicro"\`
+    TxCount      int64  \`json:"txCount"\`
+    Timestamp    string \`json:"timestamp"\`
+}
+
+// EnergyBudget is one entity's battery. It lives under its own key, so
+// two entities never contend — the asymmetry with the shared bandwidth
+// pool is the point worth measuring.
+type EnergyBudget struct {
+    EntityID        string \`json:"entityID"\`
+    TotalMicroJ     int64  \`json:"totalMicroJ"\`
+    RemainingMicroJ int64  \`json:"remainingMicroJ"\`
+    SpentMicroJ     int64  \`json:"spentMicroJ"\`
+    TxCount         int64  \`json:"txCount"\`
+    Timestamp       string \`json:"timestamp"\`
 }
 
 // CellReport is what the radio evaluation produces for one position.
@@ -163,6 +237,22 @@ type CellReport struct {
     Candidates    int64  \`json:"candidates"\`
     UsedCapacity  int64  \`json:"usedCapacity"\`
     MaxCapacity   int64  \`json:"maxCapacity"\`
+    GrantedHz     int64  \`json:"grantedHz"\`
+    FreeHz        int64  \`json:"freeHz"\`
+    TxTimeMicroS  int64  \`json:"txTimeMicroS"\`
+    EnergyMicroJ  int64  \`json:"energyMicroJ"\`
+    Rank          int64  \`json:"rank"\`
+}
+
+// CellLoad is one cell's spectrum load against the share it should carry.
+type CellLoad struct {
+    AntennaID    string \`json:"antennaID"\`
+    AllocatedHz  int64  \`json:"allocatedHz"\`
+    BandwidthHz  int64  \`json:"bandwidthHz"\`
+    FairShareHz  int64  \`json:"fairShareHz"\`
+    DeviationHz  int64  \`json:"deviationHz"\`
+    UsedCapacity int64  \`json:"usedCapacity"\`
+    EarnedMicro  int64  \`json:"earnedMicro"\`
 }
 
 // Defaults model a 3.5 GHz macrocell deployment.
@@ -178,6 +268,17 @@ const (
     defaultShadowSigma     = int64(8000)   // 8 dB
     defaultNoiseFigure     = int64(7000)   // 7 dB
     defaultMinSinr         = int64(-6000)  // −6 dB decoding floor
+    defaultRequestHz       = int64(100000) // 100 kHz per entity
+    defaultEnergyMicroJ    = int64(5000000) // 5 J, the budget used in the paper
+    defaultTxPowerMilliDbm = int64(23000)  // 23 dBm entity uplink
+    defaultPayloadBits     = int64(3808)   // 608-bit header + 100 × 32-bit
+    defaultLoadFactor      = int64(100)    // ε = 1.0; a macro tier would be higher
+    defaultLoadTolerance   = int64(120)    // admit up to 1.2× the fair share
+    defaultPricePerKHz     = int64(10)     // micro-coin per kHz held
+    defaultPricePerKbit    = int64(100)    // micro-coin per kbit moved
+    defaultInitialBalance  = int64(1000000000) // 1000 coins
+    energyPrefix           = "~NRG:"
+    tokenPrefix            = "~TOK:"
 )
 
 // SeedNetwork lays out the antenna grid. Placement is pseudo-random but
@@ -233,6 +334,9 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
             BandwidthHz:     defaultBandwidthHz,
             MaxCapacity:     capacity,
             UsedCapacity:    0,
+            AllocatedHz:     0,
+            LoadFactor:      defaultLoadFactor,
+            EarnedMicro:     0,
         }
         if err := s.saveAntenna(ctx, &a); err != nil {
             return err
@@ -248,6 +352,22 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
         NoiseFigureMilliDb:    defaultNoiseFigure,
         MinSinrMilliDb:        defaultMinSinr,
         TrackCapacity:         capacity > 0,
+        TrackBandwidth:        false,
+        RequestHz:             defaultRequestHz,
+        TrackEnergy:           false,
+        EnergyBudgetMicroJ:    defaultEnergyMicroJ,
+        TxPowerMilliDbm:       defaultTxPowerMilliDbm,
+        PayloadBits:           defaultPayloadBits,
+        Stripes:               defaultStripes,
+        PriceScale:            defaultPriceScale,
+        RelayShareHundred:     50,
+        WorkReward:            defaultWorkReward,
+        AssociationMode:       "nearest",
+        LoadToleranceHundred:  defaultLoadTolerance,
+        TrackEconomy:          false,
+        PricePerKHzMicro:      defaultPricePerKHz,
+        PricePerKbitMicro:     defaultPricePerKbit,
+        InitialBalanceMicro:   defaultInitialBalance,
     }
     cfgJSON, err := json.Marshal(cfg)
     if err != nil {
@@ -294,6 +414,282 @@ func (s *${contract}) SetCapacity(ctx contractapi.TransactionContextInterface, m
         }
     }
     return nil
+}
+
+// SetResources turns the two accounting mechanisms on or off and sets
+// their parameters. Both default to off so a throughput benchmark is not
+// silently measuring something else.
+//
+//   requestHz     spectrum each entity is granted; 0 keeps the current value
+//   energyMicroJ  starting battery per entity
+//   txPowerMdbm   entity uplink power, used for e = P·D/R
+//   payloadBits   how much each transaction transmits
+//
+// Pass "off" for trackBandwidth or trackEnergy to disable, "on" to enable.
+func (s *${contract}) SetResources(ctx contractapi.TransactionContextInterface, trackBandwidth, trackEnergy, requestHz, energyMicroJ, txPowerMdbm, payloadBits string) error {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    if trackBandwidth != "" {
+        cfg.TrackBandwidth = trackBandwidth == "on" || trackBandwidth == "true"
+    }
+    if trackEnergy != "" {
+        cfg.TrackEnergy = trackEnergy == "on" || trackEnergy == "true"
+    }
+    cfg.RequestHz = parseIntOr(requestHz, cfg.RequestHz)
+    cfg.EnergyBudgetMicroJ = parseIntOr(energyMicroJ, cfg.EnergyBudgetMicroJ)
+    cfg.TxPowerMilliDbm = parseIntOr(txPowerMdbm, cfg.TxPowerMilliDbm)
+    cfg.PayloadBits = parseIntOr(payloadBits, cfg.PayloadBits)
+
+    if cfg.RequestHz < 1 {
+        return fmt.Errorf("requestHz must be positive, got %d", cfg.RequestHz)
+    }
+    if cfg.PayloadBits < 1 {
+        return fmt.Errorf("payloadBits must be positive, got %d", cfg.PayloadBits)
+    }
+    cfgJSON, err := json.Marshal(cfg)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SetAssociation switches between the traditional nearest-cell rule and
+// the load-aware alternative, and sets how far above its share a cell may
+// go before it starts handing entities on.
+//
+//   mode       "nearest" or "loadaware"
+//   tolerance  hundredths; 120 means 1.2× the fair share
+func (s *${contract}) SetAssociation(ctx contractapi.TransactionContextInterface, mode, toleranceHundredths string) error {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    if mode != "" {
+        if mode != "nearest" && mode != "loadaware" {
+            return fmt.Errorf("mode must be \"nearest\" or \"loadaware\", got %q", mode)
+        }
+        cfg.AssociationMode = mode
+    }
+    cfg.LoadToleranceHundred = parseIntOr(toleranceHundredths, cfg.LoadToleranceHundred)
+    if cfg.LoadToleranceHundred < 100 {
+        return fmt.Errorf("tolerance below 100 would refuse every cell")
+    }
+    cfgJSON, err := json.Marshal(cfg)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SetTier sets one cell's load factor — ε_m in the paper. A macro cell
+// carrying twice its neighbours' load is SetTier("antenna-1", "200").
+func (s *${contract}) SetTier(ctx contractapi.TransactionContextInterface, antennaID, loadFactorHundredths string) error {
+    b, err := ctx.GetStub().GetState(antennaPrefix + antennaID)
+    if err != nil {
+        return err
+    }
+    if b == nil {
+        return fmt.Errorf("antenna %s is not registered", antennaID)
+    }
+    var a Antenna
+    if err := json.Unmarshal(b, &a); err != nil {
+        return err
+    }
+    a.LoadFactor = parseIntOr(loadFactorHundredths, a.LoadFactor)
+    if a.LoadFactor < 1 {
+        return fmt.Errorf("load factor must be positive")
+    }
+    return s.saveAntenna(ctx, &a)
+}
+
+// SetEconomy turns charging on or off and sets the tariff.
+func (s *${contract}) SetEconomy(ctx contractapi.TransactionContextInterface, track, pricePerKHz, pricePerKbit, initialBalance string) error {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    if track != "" {
+        cfg.TrackEconomy = track == "on" || track == "true"
+    }
+    cfg.PricePerKHzMicro = parseIntOr(pricePerKHz, cfg.PricePerKHzMicro)
+    cfg.PricePerKbitMicro = parseIntOr(pricePerKbit, cfg.PricePerKbitMicro)
+    cfg.InitialBalanceMicro = parseIntOr(initialBalance, cfg.InitialBalanceMicro)
+    cfgJSON, err := json.Marshal(cfg)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// energyOf reads an entity's battery, creating it at full charge on first
+// use so a benchmark does not need a separate provisioning pass.
+func (s *${contract}) energyOf(ctx contractapi.TransactionContextInterface, entityID string, cfg *NetworkConfig) (*EnergyBudget, error) {
+    b, err := ctx.GetStub().GetState(energyPrefix + entityID)
+    if err != nil {
+        return nil, err
+    }
+    if b == nil {
+        return &EnergyBudget{
+            EntityID:        entityID,
+            TotalMicroJ:     cfg.EnergyBudgetMicroJ,
+            RemainingMicroJ: cfg.EnergyBudgetMicroJ,
+        }, nil
+    }
+    var e EnergyBudget
+    if err := json.Unmarshal(b, &e); err != nil {
+        return nil, err
+    }
+    return &e, nil
+}
+
+// EnergyOf reports an entity's remaining battery.
+func (s *${contract}) EnergyOf(ctx contractapi.TransactionContextInterface, entityID string) (*EnergyBudget, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return nil, err
+    }
+    return s.energyOf(ctx, entityID, cfg)
+}
+
+// RechargeEntity restores a battery to full — the counterpart to depletion.
+func (s *${contract}) RechargeEntity(ctx contractapi.TransactionContextInterface, entityID string) error {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    e := EnergyBudget{
+        EntityID:        entityID,
+        TotalMicroJ:     cfg.EnergyBudgetMicroJ,
+        RemainingMicroJ: cfg.EnergyBudgetMicroJ,
+        Timestamp:       txTimestamp(ctx),
+    }
+    b, err := json.Marshal(e)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(energyPrefix+entityID, b)
+}
+
+// SpectrumStatus reports how much of each cell's spectrum is committed.
+func (s *${contract}) SpectrumStatus(ctx contractapi.TransactionContextInterface) ([]*Antenna, error) {
+    return s.listAntennas(ctx)
+}
+
+// transactionCost prices one service grant, following the cost structure
+// of the paper: a charge for the spectrum held and a charge for the data
+// moved. Deterministic and integer, like everything else here.
+func transactionCost(cfg *NetworkConfig) int64 {
+    spectrum := (cfg.RequestHz / 1000) * cfg.PricePerKHzMicro
+    data := (cfg.PayloadBits / 1000) * cfg.PricePerKbitMicro
+    return spectrum + data
+}
+
+func (s *${contract}) accountOf(ctx contractapi.TransactionContextInterface, entityID string, cfg *NetworkConfig) (*TokenAccount, error) {
+    b, err := ctx.GetStub().GetState(tokenPrefix + entityID)
+    if err != nil {
+        return nil, err
+    }
+    if b == nil {
+        return &TokenAccount{EntityID: entityID, BalanceMicro: cfg.InitialBalanceMicro}, nil
+    }
+    var a TokenAccount
+    if err := json.Unmarshal(b, &a); err != nil {
+        return nil, err
+    }
+    return &a, nil
+}
+
+// BalanceOf reports an entity's wallet.
+func (s *${contract}) BalanceOf(ctx contractapi.TransactionContextInterface, entityID string) (*TokenAccount, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return nil, err
+    }
+    return s.accountOf(ctx, entityID, cfg)
+}
+
+// Credit tops up a wallet.
+func (s *${contract}) Credit(ctx contractapi.TransactionContextInterface, entityID, amountMicro string) error {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    amount := parseIntOr(amountMicro, 0)
+    if amount <= 0 {
+        return fmt.Errorf("amount must be positive, got %d", amount)
+    }
+    acct, err := s.accountOf(ctx, entityID, cfg)
+    if err != nil {
+        return err
+    }
+    acct.BalanceMicro += amount
+    acct.Timestamp = txTimestamp(ctx)
+    b, err := json.Marshal(acct)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(tokenPrefix+entityID, b)
+}
+
+// Transfer moves value between two wallets.
+//
+// Both keys are per-entity, so two transfers between different pairs never
+// contend. Two transfers from the SAME payer in one block do — that is the
+// account-model limit in Fabric, and it is inherent rather than a defect
+// of this code.
+func (s *${contract}) Transfer(ctx contractapi.TransactionContextInterface, fromID, toID, amountMicro string) error {
+    if fromID == toID {
+        return fmt.Errorf("cannot transfer to the same account")
+    }
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    amount := parseIntOr(amountMicro, 0)
+    if amount <= 0 {
+        return fmt.Errorf("amount must be positive, got %d", amount)
+    }
+    from, err := s.accountOf(ctx, fromID, cfg)
+    if err != nil {
+        return err
+    }
+    if from.BalanceMicro < amount {
+        return fmt.Errorf("%s has %d micro-coin, cannot send %d",
+            fromID, from.BalanceMicro, amount)
+    }
+    to, err := s.accountOf(ctx, toID, cfg)
+    if err != nil {
+        return err
+    }
+    from.BalanceMicro -= amount
+    from.SpentMicro += amount
+    from.Timestamp = txTimestamp(ctx)
+    to.BalanceMicro += amount
+    to.Timestamp = txTimestamp(ctx)
+
+    fb, err := json.Marshal(from)
+    if err != nil {
+        return err
+    }
+    if err := ctx.GetStub().PutState(tokenPrefix+fromID, fb); err != nil {
+        return err
+    }
+    tb, err := json.Marshal(to)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(tokenPrefix+toID, tb)
+}
+
+// Quote prices a service grant without charging for it.
+func (s *${contract}) Quote(ctx contractapi.TransactionContextInterface) (int64, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return 0, err
+    }
+    return transactionCost(cfg), nil
 }
 
 func (s *${contract}) saveAntenna(ctx contractapi.TransactionContextInterface, a *Antenna) error {
@@ -344,65 +740,148 @@ func (s *${contract}) listAntennas(ctx contractapi.TransactionContextInterface) 
     return out, nil
 }
 
-// evaluate is where the network decision actually happens.
+// evaluate ranks every cell for a position.
 //
-// Every antenna is a candidate. Received power is computed for each one
-// through path loss and a per-link shadow fade; the strongest becomes the
-// serving cell and all the others become interference. SINR follows from
-// summing that interference with thermal noise in the linear domain.
-func (s *${contract}) evaluate(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y int64) (*CellReport, *Antenna, error) {
-    var best *Antenna
-    bestRssi := int64(-1 << 40)
-    rssi := make([]int64, len(antennas))
-    bestIdx := 0
-    bestDist := int64(0)
-    bestPl := int64(0)
-    bestShadow := int64(0)
+// Received power is computed for each antenna through path loss and a
+// per-link shadow fade. The candidates come back ordered strongest-first;
+// for each one, SINR treats that cell as the server and all others as
+// interference, so the figures are correct whichever candidate is finally
+// chosen. That is what makes Algorithm 2 possible: falling back to the
+// second-best cell needs the second-best cell's SINR, not the first's.
+func (s *${contract}) evaluate(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y int64) ([]*CellReport, []*Antenna, error) {
+    n := len(antennas)
+    if n == 0 {
+        return nil, nil, fmt.Errorf("no antennas registered")
+    }
+
+    rssi := make([]int64, n)
+    dist := make([]int64, n)
+    pl := make([]int64, n)
+    shadow := make([]int64, n)
 
     for i, a := range antennas {
-        d := DistanceM(x, y, a.X, a.Y)
-        pl := PathLossMilliDb(d, a.FreqMHz, cfg.PathLossExponentMilli)
-        sh := ShadowingMilliDb(cfg.Seed, entityID, a.AntennaID, cfg.ShadowSigmaMilliDb)
-        rssi[i] = RssiMilliDbm(a.TxPowerMilliDbm, a.GainMilliDb, pl, sh)
-        if rssi[i] > bestRssi {
-            bestRssi = rssi[i]
-            best = a
-            bestIdx = i
-            bestDist = d
-            bestPl = pl
-            bestShadow = sh
-        }
-    }
-    if best == nil {
-        return nil, nil, fmt.Errorf("no serving cell could be selected")
+        dist[i] = DistanceM(x, y, a.X, a.Y)
+        pl[i] = PathLossMilliDb(dist[i], a.FreqMHz, cfg.PathLossExponentMilli)
+        shadow[i] = ShadowingMilliDb(cfg.Seed, entityID, a.AntennaID, cfg.ShadowSigmaMilliDb)
+        rssi[i] = RssiMilliDbm(a.TxPowerMilliDbm, a.GainMilliDb, pl[i], shadow[i])
     }
 
-    interferers := make([]int64, 0, len(antennas)-1)
-    for i := range antennas {
-        if i != bestIdx {
-            interferers = append(interferers, rssi[i])
-        }
+    // Order by received power, strongest first. Insertion sort: eight cells
+    // makes anything cleverer pointless, and this stays deterministic.
+    order := make([]int, n)
+    for i := range order {
+        order[i] = i
     }
-    noise := NoiseFloorMilliDbm(best.BandwidthHz, cfg.NoiseFigureMilliDb)
-    sinr := SinrMilliDb(bestRssi, interferers, noise)
+    for i := 1; i < n; i++ {
+        k := order[i]
+        j := i - 1
+        for j >= 0 && rssi[order[j]] < rssi[k] {
+            order[j+1] = order[j]
+            j--
+        }
+        order[j+1] = k
+    }
 
-    return &CellReport{
-        ServingCell:   best.AntennaID,
-        DistanceM:     bestDist,
-        RssiMilliDbm:  bestRssi,
-        SinrMilliDb:   sinr,
-        CapacityBps:   ShannonBps(best.BandwidthHz, sinr),
-        PathLossMilli: bestPl,
-        ShadowMilliDb: bestShadow,
-        Candidates:    int64(len(antennas)),
-        UsedCapacity:  best.UsedCapacity,
-        MaxCapacity:   best.MaxCapacity,
-    }, best, nil
+    reports := make([]*CellReport, n)
+    cells := make([]*Antenna, n)
+
+    for rank, idx := range order {
+        a := antennas[idx]
+        interferers := make([]int64, 0, n-1)
+        for j := range antennas {
+            if j != idx {
+                interferers = append(interferers, rssi[j])
+            }
+        }
+        noise := NoiseFloorMilliDbm(a.BandwidthHz, cfg.NoiseFigureMilliDb)
+        sinr := SinrMilliDb(rssi[idx], interferers, noise)
+
+        // With spectrum accounting on, the achievable rate follows from the
+        // slice this entity is granted rather than the whole cell. That is
+        // the difference between "this link could carry 77 Mbps" and "this
+        // entity can carry 0.39 Mbps".
+        rateBandwidth := a.BandwidthHz
+        granted := int64(0)
+        free := a.BandwidthHz
+        if cfg.TrackBandwidth {
+            granted = cfg.RequestHz
+            free = a.BandwidthHz - a.AllocatedHz
+            rateBandwidth = cfg.RequestHz
+        }
+        capacity := ShannonBps(rateBandwidth, sinr)
+
+        reports[rank] = &CellReport{
+            ServingCell:   a.AntennaID,
+            DistanceM:     dist[idx],
+            RssiMilliDbm:  rssi[idx],
+            SinrMilliDb:   sinr,
+            CapacityBps:   capacity,
+            PathLossMilli: pl[idx],
+            ShadowMilliDb: shadow[idx],
+            Candidates:    int64(n),
+            UsedCapacity:  a.UsedCapacity,
+            MaxCapacity:   a.MaxCapacity,
+            GrantedHz:     granted,
+            FreeHz:        free,
+            TxTimeMicroS:  TransmitTimeMicroS(cfg.PayloadBits, capacity),
+            EnergyMicroJ:  TransmitEnergyMicroJ(cfg.TxPowerMilliDbm, cfg.PayloadBits, capacity),
+            Rank:          int64(rank + 1),
+        }
+        cells[rank] = a
+    }
+    return reports, cells, nil
 }
 
-// admit runs the evaluation and applies the two rules that can refuse a
-// connection: coverage and capacity. Refusal is the point — before this
-// change every transaction succeeded, because nothing was ever checked.
+// fairShareHz is the load each cell would carry if spectrum were spread
+// evenly, scaled by that cell's tier factor — X̄ and ε_m in the paper.
+func fairShareHz(antennas []*Antenna) int64 {
+    total := int64(0)
+    for _, a := range antennas {
+        total += a.AllocatedHz
+    }
+    return total / int64(len(antennas))
+}
+
+// loadDeviation is |Σ X_j − ε_m·X̄|, the balance metric the paper reports.
+func loadDeviation(a *Antenna, share int64) int64 {
+    target := (share * a.LoadFactor) / 100
+    d := a.AllocatedHz - target
+    if d < 0 {
+        return -d
+    }
+    return d
+}
+
+// LoadBalance reports each cell's spectrum load against its fair share.
+// Lower deviation means better balance — the comparison the paper draws
+// between nearest-cell association and its load-aware alternative.
+func (s *${contract}) LoadBalance(ctx contractapi.TransactionContextInterface) ([]*CellLoad, error) {
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return nil, err
+    }
+    share := fairShareHz(antennas)
+    out := make([]*CellLoad, 0, len(antennas))
+    for _, a := range antennas {
+        out = append(out, &CellLoad{
+            AntennaID:   a.AntennaID,
+            AllocatedHz: a.AllocatedHz,
+            BandwidthHz: a.BandwidthHz,
+            FairShareHz: (share * a.LoadFactor) / 100,
+            DeviationHz: loadDeviation(a, share),
+            UsedCapacity: a.UsedCapacity,
+            EarnedMicro: a.EarnedMicro,
+        })
+    }
+    return out, nil
+}
+
+// admit chooses a cell and applies every constraint that can refuse one.
+//
+// Under "nearest" only the strongest candidate is considered, and a full
+// cell means refusal. Under "loadaware" the candidates are walked in order
+// and the first one that clears every check wins — so an overloaded cell
+// sheds to its neighbour instead of dropping the entity.
 func (s *${contract}) admit(ctx contractapi.TransactionContextInterface, entityID string, x, y int64) (*CellReport, *Antenna, error) {
     cfg, err := s.loadConfig(ctx)
     if err != nil {
@@ -412,21 +891,109 @@ func (s *${contract}) admit(ctx contractapi.TransactionContextInterface, entityI
     if err != nil {
         return nil, nil, err
     }
-    rep, best, err := s.evaluate(antennas, cfg, entityID, x, y)
+    reports, cells, err := s.evaluate(antennas, cfg, entityID, x, y)
     if err != nil {
         return nil, nil, err
     }
-    if rep.SinrMilliDb < cfg.MinSinrMilliDb {
-        return rep, best, fmt.Errorf(
-            "out of coverage: SINR %d mdB on %s is below the %d mdB threshold",
-            rep.SinrMilliDb, rep.ServingCell, cfg.MinSinrMilliDb)
+
+    loadAware := cfg.AssociationMode == "loadaware" && cfg.TrackBandwidth
+    share := fairShareHz(antennas)
+
+    // The paper computes X̄ from the whole user population up front. A
+    // ledger sees entities one at a time, so the running average stands in
+    // for it — but early on that average is near zero and the rule would
+    // refuse every cell. It only starts biting once there is load to
+    // balance, which is one grant per cell.
+    applyLoadRule := loadAware && share >= cfg.RequestHz
+
+    var firstRep *CellReport
+    var firstCell *Antenna
+    var lastErr error
+
+    // Two passes. The first honours the load rule; if no cell is under its
+    // share, the second drops that rule and takes the best cell that has
+    // room. Refusing service because every cell is busy would be worse than
+    // an unbalanced assignment.
+    for pass := 0; pass < 2; pass++ {
+        useLoadRule := applyLoadRule && pass == 0
+        if pass == 1 && !applyLoadRule {
+            break // the first pass already had no load rule
+        }
+        limit := 1
+        if loadAware {
+            limit = len(reports)
+        }
+
+        for i := 0; i < limit; i++ {
+            rep, cell := reports[i], cells[i]
+            if firstRep == nil {
+                firstRep, firstCell = rep, cell
+            }
+
+            if rep.SinrMilliDb < cfg.MinSinrMilliDb {
+                lastErr = fmt.Errorf(
+                    "out of coverage: SINR %d mdB on %s is below the %d mdB threshold",
+                    rep.SinrMilliDb, rep.ServingCell, cfg.MinSinrMilliDb)
+                continue
+            }
+            if cfg.TrackCapacity && cell.UsedCapacity >= cell.MaxCapacity {
+                lastErr = fmt.Errorf("cell %s is saturated: %d of %d in use",
+                    cell.AntennaID, cell.UsedCapacity, cell.MaxCapacity)
+                continue
+            }
+            if cfg.TrackBandwidth && cell.AllocatedHz+cfg.RequestHz > cell.BandwidthHz {
+                lastErr = fmt.Errorf("cell %s has no spectrum left: %d Hz free, %d Hz requested",
+                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, cfg.RequestHz)
+                continue
+            }
+            if useLoadRule {
+                tolerated := (share * cell.LoadFactor * cfg.LoadToleranceHundred) / 10000
+                if cell.AllocatedHz+cfg.RequestHz > tolerated {
+                    lastErr = fmt.Errorf("cell %s is above its share: %d Hz against %d Hz tolerated",
+                        cell.AntennaID, cell.AllocatedHz, tolerated)
+                    continue
+                }
+            }
+
+            if cfg.TrackEnergy {
+                if rep.EnergyMicroJ < 0 {
+                    lastErr = fmt.Errorf("link to %s carries no usable rate", cell.AntennaID)
+                    continue
+                }
+                budget, berr := s.energyOf(ctx, entityID, cfg)
+                if berr != nil {
+                    return rep, cell, berr
+                }
+                if budget.RemainingMicroJ < rep.EnergyMicroJ {
+                    // A flat battery is the entity's problem, not the cell's,
+                    // so another cell cannot help — a weaker one costs more.
+                    return rep, cell, fmt.Errorf(
+                        "%s has %d µJ left but the transmission costs %d µJ",
+                        entityID, budget.RemainingMicroJ, rep.EnergyMicroJ)
+                }
+            }
+
+            if cfg.TrackEconomy {
+                cost := transactionCost(cfg)
+                acct, aerr := s.accountOf(ctx, entityID, cfg)
+                if aerr != nil {
+                    return rep, cell, aerr
+                }
+                if acct.BalanceMicro < cost {
+                    return rep, cell, fmt.Errorf(
+                        "%s has %d micro-coin but the service costs %d",
+                        entityID, acct.BalanceMicro, cost)
+                }
+            }
+
+            return rep, cell, nil
+        }
     }
-    if cfg.TrackCapacity && best.UsedCapacity >= best.MaxCapacity {
-        return rep, best, fmt.Errorf(
-            "cell %s is saturated: %d of %d in use",
-            best.AntennaID, best.UsedCapacity, best.MaxCapacity)
+
+    if lastErr == nil {
+        lastErr = fmt.Errorf("no cell could serve this position")
     }
-    return rep, best, nil
+    return firstRep, firstCell, lastErr
 }
 
 // ServingCell reports which cell would serve a position, without writing.
@@ -448,8 +1015,34 @@ func (s *${contract}) ServingCell(ctx contractapi.TransactionContextInterface, e
     if err != nil {
         return nil, err
     }
-    rep, _, err := s.evaluate(antennas, cfg, entityID, px, py)
-    return rep, err
+    reports, _, err := s.evaluate(antennas, cfg, entityID, px, py)
+    if err != nil {
+        return nil, err
+    }
+    return reports[0], nil
+}
+
+// RankCells returns every candidate for a position, strongest first — what
+// load-aware association walks through when the best cell is busy.
+func (s *${contract}) RankCells(ctx contractapi.TransactionContextInterface, entityID, x, y string) ([]*CellReport, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return nil, err
+    }
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return nil, err
+    }
+    px, err := parseCoord(x)
+    if err != nil {
+        return nil, err
+    }
+    py, err := parseCoord(y)
+    if err != nil {
+        return nil, err
+    }
+    reports, _, err := s.evaluate(antennas, cfg, entityID, px, py)
+    return reports, err
 }
 
 // NetworkStatus returns the current load of every cell.
@@ -676,6 +1269,7 @@ func (s *${c}) ValidateCoverage(ctx contractapi.TransactionContextInterface, ant
     return asset.CoverageM > 0, nil
 }
 ${networkBlock(c, rec, false)}
+${marketBlock(c, rec)}
 ${RADIO_BODY}
 
 func main() {
@@ -740,6 +1334,9 @@ ${fieldLines.join('\n')}
     RssiMilliDbm  int64  \`json:"rssiMilliDbm"\`
     SinrMilliDb   int64  \`json:"sinrMilliDb"\`
     CapacityBps   int64  \`json:"capacityBps"\`
+    GrantedHz     int64  \`json:"grantedHz"\`
+    TxTimeMicroS  int64  \`json:"txTimeMicroS"\`
+    EnergyMicroJ  int64  \`json:"energyMicroJ"\`
     Timestamp     string \`json:"timestamp"\`
 }
 
@@ -781,11 +1378,81 @@ func (s *${c}) ${r.primary.name}(ctx contractapi.TransactionContextInterface, ${
     }
 
     // Writing the cell back is what creates the hot key, so it only happens
-    // when capacity is actually being tracked. See SeedNetwork.
+    // when something on the cell actually changes. See SeedNetwork.
+    cellChanged := false
     if trackCapacity {
         best.UsedCapacity++
+        cellChanged = true
+    }
+    if cfg.TrackBandwidth {
+        best.AllocatedHz += cfg.RequestHz
+        cellChanged = true
+    }
+    // The operator of the serving cell is credited for the service. This
+    // lands on the cell record, which is already a hot key when spectrum
+    // is tracked — see SetCapacity for what that costs.
+    if cfg.TrackEconomy {
+        best.EarnedMicro += transactionCost(cfg)
+        cellChanged = true
+    }
+    if cellChanged {
         if err := s.saveAntenna(ctx, best); err != nil {
             return err
+        }
+    }
+
+    // The wallet is keyed per entity, so debiting never contends between
+    // entities — unlike crediting the operator above.
+    if cfg.TrackEconomy {
+        acct, aerr := s.accountOf(ctx, ${keyParam}, cfg)
+        if aerr != nil {
+            return aerr
+        }
+        cost := transactionCost(cfg)
+        acct.BalanceMicro -= cost
+        acct.SpentMicro += cost
+        acct.TxCount++
+        acct.Timestamp = txTimestamp(ctx)
+        ab, aerr := json.Marshal(acct)
+        if aerr != nil {
+            return aerr
+        }
+        if aerr := ctx.GetStub().PutState(tokenPrefix+${keyParam}, ab); aerr != nil {
+            return aerr
+        }
+    }
+
+    // Record what this entity now holds, so a later sublet can be checked
+    // against a figure this contract issued rather than one the caller
+    // claims to own.
+    if cfg.TrackBandwidth {
+        g, gerr := s.grantOf(ctx, ${keyParam})
+        if gerr != nil {
+            return gerr
+        }
+        g.Cell = rep.ServingCell
+        g.HeldHz += cfg.RequestHz
+        if gerr := s.saveGrant(ctx, g); gerr != nil {
+            return gerr
+        }
+    }
+
+    // The battery is keyed per entity, so this write never contends.
+    if cfg.TrackEnergy {
+        budget, berr := s.energyOf(ctx, ${keyParam}, cfg)
+        if berr != nil {
+            return berr
+        }
+        budget.RemainingMicroJ -= rep.EnergyMicroJ
+        budget.SpentMicroJ += rep.EnergyMicroJ
+        budget.TxCount++
+        budget.Timestamp = txTimestamp(ctx)
+        bb, berr := json.Marshal(budget)
+        if berr != nil {
+            return berr
+        }
+        if berr := ctx.GetStub().PutState(energyPrefix+${keyParam}, bb); berr != nil {
+            return berr
         }
     }
 
@@ -798,6 +1465,9 @@ ${assignLines.join('\n')}
         RssiMilliDbm: rep.RssiMilliDbm,
         SinrMilliDb:  rep.SinrMilliDb,
         CapacityBps:  rep.CapacityBps,
+        GrantedHz:    rep.GrantedHz,
+        TxTimeMicroS: rep.TxTimeMicroS,
+        EnergyMicroJ: rep.EnergyMicroJ,
         Timestamp:    txTimestamp(ctx),
     }
     recordJSON, err := json.Marshal(record)
@@ -862,6 +1532,7 @@ func (s *${c}) ValidateCoverage(ctx contractapi.TransactionContextInterface, ${k
     return asset.SinrMilliDb >= cfg.MinSinrMilliDb, nil
 }
 ${networkBlock(c, rec, true)}
+${marketBlock(c, rec)}
 ${RADIO_BODY}
 
 func main() {
