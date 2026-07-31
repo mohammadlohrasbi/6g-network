@@ -108,6 +108,41 @@ for (const { name, go } of files) {
     }
   }
 
+  // A string literal directly adjacent to an identifier is a syntax error
+  // in Go, and it is exactly what mangled escaping produces: a nested \"
+  // inside a JavaScript template literal collapses to a bare " and turns
+  //     "must be \\"nearest\\" or ..."
+  // into
+  //     "must be "nearest" or ..."
+  // which still has an even number of quotes, so counting them proves
+  // nothing. Walking the line and checking what follows each closing quote
+  // does catch it.
+  go.split('\n').forEach((line, i) => {
+    const text = line.replace(/\/\/.*$/, '');
+    let k = 0;
+    while (k < text.length) {
+      if (text[k] === '`') {            // raw string — skip to its end
+        k++;
+        while (k < text.length && text[k] !== '`') k++;
+        k++;
+        continue;
+      }
+      if (text[k] !== '"') { k++; continue; }
+      k++;                              // opening quote
+      while (k < text.length) {
+        if (text[k] === '\\') { k += 2; continue; }
+        if (text[k] === '"') break;
+        k++;
+      }
+      k++;                              // closing quote
+      const next = text[k];
+      if (next && /[A-Za-z0-9_]/.test(next)) {
+        bad(name, `line ${i + 1}: a string literal is glued to \`${next}\` — escaping is mangled: ${text.trim().slice(0, 72)}`);
+        break;
+      }
+    }
+  });
+
   if (!/func main\(\)/.test(go)) bad(name, 'no main');
   if (!new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
 
