@@ -8287,6 +8287,18 @@ type NetworkBase struct {
     contractapi.Contract
 }
 
+// GenericRecord is the part of a written record that the shared code needs
+// to read back. Each contract writes its own record type — Assignment,
+// Bandwidth, SignalStrengthRecord and so on — and those differ, but every
+// one of them carries the serving cell. Decoding into this minimal shape
+// works for all of them, because encoding/json ignores fields it does not
+// recognise. That is what lets Release live here rather than being
+// duplicated into all 34 contracts.
+type GenericRecord struct {
+    ServingCell string `json:"servingCell"`
+    GrantedHz   int64  `json:"grantedHz"`
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Network model — antenna registry, cell selection and admission control.
 //
