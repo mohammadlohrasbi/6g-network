@@ -56,7 +56,15 @@ function write(file, content) {
 // Every contract's write function and parameter order, embedded so the
 // workload can still build correct arguments when the contract is
 // overridden at run time and no explicit params are supplied.
-const { GRID_SIZE_M, BENCH_SEED } = catalog;
+const { GRID_SIZE_M, BENCH_SEED, MARKET_FN } = catalog;
+
+const MARKET_TABLE = JSON.stringify(
+  Object.fromEntries(
+    Object.entries(MARKET_FN).map(([k, d]) => [k, { fn: d.fn, params: d.params }])
+  ),
+  null,
+  2
+);
 
 const CONTRACT_TABLE = JSON.stringify(
   Object.fromEntries(
@@ -123,6 +131,34 @@ try {
 // Write function and parameter order for every contract on the network.
 // Used when the benchmark file names a contract but not its parameters.
 const CONTRACTS = ${CONTRACT_TABLE};
+
+// Market operations. A round that names one of these calls it instead of
+// the contract's own write function — the market is a second family of
+// writes on the same contract, with its own argument shapes.
+const MARKET = ${MARKET_TABLE};
+
+const GRID = ${GRID_SIZE_M};
+
+function marketValue(name, i, prefix) {
+  switch (name) {
+    case 'accountID':
+    case 'entityID':
+    case 'from':
+    case 'edgeEntity':   return prefix + '-a-' + i;
+    case 'to':
+    case 'relayEntity':  return prefix + '-b-' + i;
+    case 'dealID':       return prefix + '-deal-' + i;
+    case 'amount':       return '1000';
+    case 'tier':         return String(1 + (i % 2));
+    case 'hz':           return '20000';
+    case 'priceMicro':   return '500';
+    case 'edgeX':        return String(500 + (i * 37) % 1500);
+    case 'edgeY':        return String(500 + (i * 53) % 1500);
+    case 'relayX':       return String(4000 + (i * 71) % 2000);
+    case 'relayY':       return String(4000 + (i * 89) % 2000);
+    default:             return 'v-' + i;
+  }
+}
 
 const SHARED_REF = new Set(['antennaID']);
 const ID_PARAMS = new Set([
@@ -199,9 +235,18 @@ class GenericWrite extends WorkloadModuleBase {
     // one. Explicit roundArguments still take priority over both.
     // contractId is Caliper's unique alias (channel-qualified); the
     // argument shape is keyed by the plain contract name.
-    const known = CONTRACTS[a.contractName || this.contractId];
-    this.fn = known ? known.fn : a.contractFunction;
-    this.params = known ? known.params : a.params;
+    // A market operation replaces both the function and the argument shape.
+    this.market = a.marketOperation && MARKET[a.marketOperation]
+      ? MARKET[a.marketOperation]
+      : null;
+    if (this.market) {
+      this.fn = this.market.fn;
+      this.params = this.market.params;
+    } else {
+      const known = CONTRACTS[a.contractName || this.contractId];
+      this.fn = known ? known.fn : a.contractFunction;
+      this.params = known ? known.params : a.params;
+    }
 
     if (!this.fn) {
       throw new Error('No write function known for contract ' + this.contractId);
@@ -212,6 +257,9 @@ class GenericWrite extends WorkloadModuleBase {
   }
 
   buildArgs(i) {
+    if (this.market) {
+      return this.params.map((p) => marketValue(p, i, this.prefix));
+    }
     let keyTaken = false;
     return this.params.map((p) => {
       if (!keyTaken && ID_PARAMS.has(p)) { keyTaken = true; return this.prefix + '-' + i; }
