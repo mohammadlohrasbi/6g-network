@@ -187,7 +187,7 @@ function buildTapeConfig({ target, orgNums, policyPath, connections, clientsPerC
     policyFile: policyPath,
     channel: target.channel,
     chaincode: target.contract,
-    args: [target.fn, ...buildArgs(target.contract, 1, keyPrefix)],
+    args: [target.fn, ...buildArgs(target.contract, 1, keyPrefix, target.operation)],
     mspid: signer.mspId,
     private_key: firstFileIn(signer.adminKeyDir),
     sign_cert: firstFileIn(signer.adminCertDir),
@@ -335,7 +335,7 @@ function runTapeTarget(target, opts, job) {
 
 function buildCaliperBenchmark(target, opts) {
   const rounds = [{
-    label: `write-${target.contract}`,
+    label: `write-${target.operation || target.contract}`,
     txNumber: opts.txNumber,
     rateControl: { type: 'fixed-rate', opts: { tps: opts.rate } },
     workload: {
@@ -346,6 +346,10 @@ function buildCaliperBenchmark(target, opts) {
         contractId: target.caliperId,
         contractName: target.contract,
         contractFunction: target.fn,
+        // A market target overrides the contract's own write function, so
+        // the workload builds arguments for the operation rather than for
+        // the contract.
+        marketOperation: target.operation || '',
         params: target.params,
         keyPrefix: opts.keyPrefix,
         mspId: config.getOrg(opts.orgNums[0]).mspId,
