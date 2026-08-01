@@ -348,7 +348,7 @@ func (s *LocationBasedAssignment) AssignAntenna(ctx contractapi.TransactionConte
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -394,7 +394,7 @@ func (s *LocationBasedAssignment) AssignAntenna(ctx contractapi.TransactionConte
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -589,7 +589,7 @@ func (s *LocationBasedBandwidth) AssignBandwidth(ctx contractapi.TransactionCont
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -635,7 +635,7 @@ func (s *LocationBasedBandwidth) AssignBandwidth(ctx contractapi.TransactionCont
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -831,7 +831,7 @@ func (s *LocationBasedChannelAllocation) AllocateChannel(ctx contractapi.Transac
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -877,7 +877,7 @@ func (s *LocationBasedChannelAllocation) AllocateChannel(ctx contractapi.Transac
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1073,7 +1073,7 @@ func (s *LocationBasedCongestion) RecordCongestion(ctx contractapi.TransactionCo
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -1119,7 +1119,7 @@ func (s *LocationBasedCongestion) RecordCongestion(ctx contractapi.TransactionCo
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1315,7 +1315,7 @@ func (s *LocationBasedConnection) ConnectEntity(ctx contractapi.TransactionConte
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -1361,7 +1361,7 @@ func (s *LocationBasedConnection) ConnectEntity(ctx contractapi.TransactionConte
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1557,7 +1557,7 @@ func (s *LocationBasedCoverage) RecordCoverage(ctx contractapi.TransactionContex
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -1603,7 +1603,7 @@ func (s *LocationBasedCoverage) RecordCoverage(ctx contractapi.TransactionContex
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1799,7 +1799,7 @@ func (s *LocationBasedDynamicRouting) SetDynamicRoute(ctx contractapi.Transactio
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -1845,7 +1845,7 @@ func (s *LocationBasedDynamicRouting) SetDynamicRoute(ctx contractapi.Transactio
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2041,7 +2041,7 @@ func (s *LocationBasedEnergy) RecordEnergy(ctx contractapi.TransactionContextInt
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -2087,7 +2087,7 @@ func (s *LocationBasedEnergy) RecordEnergy(ctx contractapi.TransactionContextInt
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2283,7 +2283,7 @@ func (s *LocationBasedFault) ReportFault(ctx contractapi.TransactionContextInter
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -2329,7 +2329,7 @@ func (s *LocationBasedFault) ReportFault(ctx contractapi.TransactionContextInter
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2525,7 +2525,7 @@ func (s *LocationBasedInterference) RecordInterference(ctx contractapi.Transacti
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -2571,7 +2571,7 @@ func (s *LocationBasedInterference) RecordInterference(ctx contractapi.Transacti
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2767,7 +2767,7 @@ func (s *LocationBasedIoTAuthentication) AuthenticateIoT(ctx contractapi.Transac
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -2813,7 +2813,7 @@ func (s *LocationBasedIoTAuthentication) AuthenticateIoT(ctx contractapi.Transac
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3009,7 +3009,7 @@ func (s *LocationBasedIoTBandwidth) AllocateIoTBandwidth(ctx contractapi.Transac
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -3055,7 +3055,7 @@ func (s *LocationBasedIoTBandwidth) AllocateIoTBandwidth(ctx contractapi.Transac
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3251,7 +3251,7 @@ func (s *LocationBasedIoTConnection) ConnectIoT(ctx contractapi.TransactionConte
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -3297,7 +3297,7 @@ func (s *LocationBasedIoTConnection) ConnectIoT(ctx contractapi.TransactionConte
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3493,7 +3493,7 @@ func (s *LocationBasedIoTFault) ReportIoTFault(ctx contractapi.TransactionContex
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -3539,7 +3539,7 @@ func (s *LocationBasedIoTFault) ReportIoTFault(ctx contractapi.TransactionContex
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3735,7 +3735,7 @@ func (s *LocationBasedIoTRegistration) RegisterIoT(ctx contractapi.TransactionCo
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -3781,7 +3781,7 @@ func (s *LocationBasedIoTRegistration) RegisterIoT(ctx contractapi.TransactionCo
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3978,7 +3978,7 @@ func (s *LocationBasedIoTResource) AllocateIoTResource(ctx contractapi.Transacti
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -4024,7 +4024,7 @@ func (s *LocationBasedIoTResource) AllocateIoTResource(ctx contractapi.Transacti
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4221,7 +4221,7 @@ func (s *LocationBasedIoTRevocation) RevokeIoT(ctx contractapi.TransactionContex
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -4267,7 +4267,7 @@ func (s *LocationBasedIoTRevocation) RevokeIoT(ctx contractapi.TransactionContex
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4464,7 +4464,7 @@ func (s *LocationBasedIoTSession) StartIoTSession(ctx contractapi.TransactionCon
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -4510,7 +4510,7 @@ func (s *LocationBasedIoTSession) StartIoTSession(ctx contractapi.TransactionCon
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4707,7 +4707,7 @@ func (s *LocationBasedIoTStatus) UpdateIoTStatus(ctx contractapi.TransactionCont
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -4753,7 +4753,7 @@ func (s *LocationBasedIoTStatus) UpdateIoTStatus(ctx contractapi.TransactionCont
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4949,7 +4949,7 @@ func (s *LocationBasedLatency) RecordLatency(ctx contractapi.TransactionContextI
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -4995,7 +4995,7 @@ func (s *LocationBasedLatency) RecordLatency(ctx contractapi.TransactionContextI
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5191,7 +5191,7 @@ func (s *LocationBasedNetworkHealth) RecordNetworkHealth(ctx contractapi.Transac
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -5237,7 +5237,7 @@ func (s *LocationBasedNetworkHealth) RecordNetworkHealth(ctx contractapi.Transac
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5433,7 +5433,7 @@ func (s *LocationBasedNetworkLoad) RecordNetworkLoad(ctx contractapi.Transaction
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -5479,7 +5479,7 @@ func (s *LocationBasedNetworkLoad) RecordNetworkLoad(ctx contractapi.Transaction
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5675,7 +5675,7 @@ func (s *LocationBasedPowerManagement) SetPowerLevel(ctx contractapi.Transaction
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -5721,7 +5721,7 @@ func (s *LocationBasedPowerManagement) SetPowerLevel(ctx contractapi.Transaction
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5917,7 +5917,7 @@ func (s *LocationBasedPriority) AssignPriority(ctx contractapi.TransactionContex
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -5963,7 +5963,7 @@ func (s *LocationBasedPriority) AssignPriority(ctx contractapi.TransactionContex
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6159,7 +6159,7 @@ func (s *LocationBasedQoS) AssignQoS(ctx contractapi.TransactionContextInterface
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -6205,7 +6205,7 @@ func (s *LocationBasedQoS) AssignQoS(ctx contractapi.TransactionContextInterface
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6402,7 +6402,7 @@ func (s *LocationBasedResourceAllocation) AllocateResource(ctx contractapi.Trans
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -6448,7 +6448,7 @@ func (s *LocationBasedResourceAllocation) AllocateResource(ctx contractapi.Trans
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6644,7 +6644,7 @@ func (s *LocationBasedRoaming) PerformRoaming(ctx contractapi.TransactionContext
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -6690,7 +6690,7 @@ func (s *LocationBasedRoaming) PerformRoaming(ctx contractapi.TransactionContext
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6886,7 +6886,7 @@ func (s *LocationBasedSessionManagement) ManageSession(ctx contractapi.Transacti
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -6932,7 +6932,7 @@ func (s *LocationBasedSessionManagement) ManageSession(ctx contractapi.Transacti
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7129,7 +7129,7 @@ func (s *LocationBasedSignalQuality) RecordSignalQuality(ctx contractapi.Transac
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -7175,7 +7175,7 @@ func (s *LocationBasedSignalQuality) RecordSignalQuality(ctx contractapi.Transac
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7371,7 +7371,7 @@ func (s *LocationBasedSignalStrength) RecordSignalStrength(ctx contractapi.Trans
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -7417,7 +7417,7 @@ func (s *LocationBasedSignalStrength) RecordSignalStrength(ctx contractapi.Trans
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7613,7 +7613,7 @@ func (s *LocationBasedStatus) UpdateStatus(ctx contractapi.TransactionContextInt
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -7659,7 +7659,7 @@ func (s *LocationBasedStatus) UpdateStatus(ctx contractapi.TransactionContextInt
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7855,7 +7855,7 @@ func (s *LocationBasedTraffic) RecordTraffic(ctx contractapi.TransactionContextI
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -7901,7 +7901,7 @@ func (s *LocationBasedTraffic) RecordTraffic(ctx contractapi.TransactionContextI
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -8097,7 +8097,7 @@ func (s *LocationBasedUserActivity) RecordUserActivity(ctx contractapi.Transacti
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -8143,7 +8143,7 @@ func (s *LocationBasedUserActivity) RecordUserActivity(ctx contractapi.Transacti
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -8326,6 +8326,7 @@ type Antenna struct {
     MaxCapacity     int64  `json:"maxCapacity"`
     UsedCapacity    int64  `json:"usedCapacity"`
     AllocatedHz     int64  `json:"allocatedHz"`
+    ChannelIndex    int64  `json:"channelIndex"`
     LoadFactor      int64  `json:"loadFactorHundredths"`
     EarnedMicro     int64  `json:"earnedMicro"`
 }
@@ -8368,7 +8369,14 @@ type NetworkConfig struct {
     Stripes               int64  `json:"stripes"`
     PriceScale            int64  `json:"priceScale"`
     RelayShareHundred     int64  `json:"relaySharePercent"`
-    WorkReward            int64  `json:"workReward"`
+    QosPriceMicro         int64  `json:"qosPriceMicro"`
+
+    // Frequency reuse. TotalBandwidthHz is the licensed block; dividing it
+    // is what a reuse plan does, so it is remembered separately from the
+    // per-cell figure that ReuseChannels writes.
+    TotalBandwidthHz      int64  `json:"totalBandwidthHz"`
+    ChannelCount          int64  `json:"channelCount"`
+    BaseFreqMHz           int64  `json:"baseFreqMHz"`
 
     AssociationMode       string `json:"associationMode"`
     LoadToleranceHundred  int64  `json:"loadToleranceHundredths"`
@@ -8404,6 +8412,23 @@ type EnergyBudget struct {
     Timestamp       string `json:"timestamp"`
 }
 
+// ReusePlan describes how the band is divided across cells.
+type ReusePlan struct {
+    TotalBandwidthHz int64               `json:"totalBandwidthHz"`
+    ChannelCount     int64               `json:"channelCount"`
+    PerChannelHz     int64               `json:"perChannelHz"`
+    Cells            []ChannelAssignment `json:"cells"`
+}
+
+// ChannelAssignment is one cell's place in the plan.
+type ChannelAssignment struct {
+    AntennaID    string `json:"antennaID"`
+    ChannelIndex int64  `json:"channelIndex"`
+    FreqMHz      int64  `json:"freqMHz"`
+    BandwidthHz  int64  `json:"bandwidthHz"`
+    AllocatedHz  int64  `json:"allocatedHz"`
+}
+
 // CellReport is what the radio evaluation produces for one position.
 type CellReport struct {
     ServingCell   string `json:"servingCell"`
@@ -8420,6 +8445,7 @@ type CellReport struct {
     FreeHz        int64  `json:"freeHz"`
     TxTimeMicroS  int64  `json:"txTimeMicroS"`
     EnergyMicroJ  int64  `json:"energyMicroJ"`
+    Tier          int64  `json:"qosTier"`
     Rank          int64  `json:"rank"`
 }
 
@@ -8514,6 +8540,7 @@ func (s *NetworkBase) SeedNetwork(ctx contractapi.TransactionContextInterface, s
             MaxCapacity:     capacity,
             UsedCapacity:    0,
             AllocatedHz:     0,
+            ChannelIndex:    0,
             LoadFactor:      defaultLoadFactor,
             EarnedMicro:     0,
         }
@@ -8540,7 +8567,10 @@ func (s *NetworkBase) SeedNetwork(ctx contractapi.TransactionContextInterface, s
         Stripes:               defaultStripes,
         PriceScale:            defaultPriceScale,
         RelayShareHundred:     50,
-        WorkReward:            defaultWorkReward,
+        QosPriceMicro:         defaultQosPrice,
+        TotalBandwidthHz:      defaultBandwidthHz,
+        ChannelCount:          1,
+        BaseFreqMHz:           defaultFreqMHz,
         AssociationMode:       "nearest",
         LoadToleranceHundred:  defaultLoadTolerance,
         TrackEconomy:          false,
@@ -8660,6 +8690,198 @@ func (s *NetworkBase) SetAssociation(ctx contractapi.TransactionContextInterface
         return err
     }
     return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SetPower changes a cell's transmit power.
+//
+// TxPowerMilliDbm was fixed at 46 dBm for every cell and nothing could
+// alter it, so LocationBasedPowerManagement recorded a power level the
+// propagation model never read. Power set here feeds straight into RSSI:
+// raising it extends reach and raises interference for neighbours on the
+// same channel, which is the trade-off power control exists to manage.
+func (s *NetworkBase) SetPower(ctx contractapi.TransactionContextInterface, antennaID, txPowerMilliDbm string) error {
+    b, err := ctx.GetStub().GetState(antennaPrefix + antennaID)
+    if err != nil {
+        return err
+    }
+    if b == nil {
+        return fmt.Errorf("antenna %s is not registered", antennaID)
+    }
+    var a Antenna
+    if err := json.Unmarshal(b, &a); err != nil {
+        return err
+    }
+    p := parseIntOr(txPowerMilliDbm, a.TxPowerMilliDbm)
+    // Below 0 dBm a macrocell serves nobody; above 60 dBm is beyond what
+    // regulators allow for terrestrial cellular.
+    if p < 0 || p > 60000 {
+        return fmt.Errorf("transmit power must be between 0 and 60000 milli-dBm, got %d", p)
+    }
+    a.TxPowerMilliDbm = p
+    return s.saveAntenna(ctx, &a)
+}
+
+// SetChannel assigns a cell to a frequency channel.
+//
+// Cells on different channels do not interfere. With eight cells and four
+// channels a reuse pattern leaves at most one co-channel neighbour instead
+// of seven, which lifts SINR sharply — at the cost of each channel serving
+// fewer cells. This is frequency reuse, and it is the other half of what
+// LocationBasedChannelAllocation was recording without effect.
+func (s *NetworkBase) SetChannel(ctx contractapi.TransactionContextInterface, antennaID, channelIndex, freqMHz string) error {
+    b, err := ctx.GetStub().GetState(antennaPrefix + antennaID)
+    if err != nil {
+        return err
+    }
+    if b == nil {
+        return fmt.Errorf("antenna %s is not registered", antennaID)
+    }
+    var a Antenna
+    if err := json.Unmarshal(b, &a); err != nil {
+        return err
+    }
+    a.ChannelIndex = parseIntOr(channelIndex, a.ChannelIndex)
+    if a.ChannelIndex < 0 || a.ChannelIndex > 63 {
+        return fmt.Errorf("channelIndex must be between 0 and 63, got %d", a.ChannelIndex)
+    }
+    f := parseIntOr(freqMHz, a.FreqMHz)
+    if f < 400 || f > 100000 {
+        return fmt.Errorf("frequency must be between 400 and 100000 MHz, got %d", f)
+    }
+    a.FreqMHz = f
+
+    // Moving one cell onto an existing channel does not change how the band
+    // is divided, so its width follows the plan rather than staying at
+    // whatever it was.
+    cfg, cerr := s.loadConfig(ctx)
+    if cerr == nil && cfg.ChannelCount > 1 && cfg.TotalBandwidthHz > 0 {
+        perChannel := cfg.TotalBandwidthHz / cfg.ChannelCount
+        if a.AllocatedHz > perChannel {
+            return fmt.Errorf(
+                "cell %s has %d Hz committed, more than the %d Hz this plan allows",
+                antennaID, a.AllocatedHz, perChannel)
+        }
+        a.BandwidthHz = perChannel
+    }
+    return s.saveAntenna(ctx, &a)
+}
+
+// ReuseChannels lays out a frequency reuse plan across n channels.
+//
+// The band is finite, so splitting it into n channels leaves each cell with
+// TotalBandwidthHz / n. Handing every cell the full band on a different
+// channel would be free interference relief, which no real deployment gets:
+// spectrum is licensed as one block and reuse divides it.
+//
+// The trade-off this creates is the real one operators face:
+//
+//   more channels → fewer co-channel neighbours → higher SINR
+//                 → narrower cells → fewer entities served, lower peak rate
+//
+// A third effect runs alongside and is easy to miss: a narrower channel has
+// a lower thermal noise floor, 3 dB per halving. So SINR gains from two
+// directions at once — less interference and less noise — while capacity
+// loses from one. Shannon is logarithmic in SINR but linear in bandwidth,
+// so beyond a certain point the loss wins. Finding that point is the
+// experiment.
+//
+// TotalBandwidthHz is remembered on the config so repeated calls divide the
+// original band rather than dividing what a previous call already halved.
+func (s *NetworkBase) ReuseChannels(ctx contractapi.TransactionContextInterface, channelCount string) error {
+    n := parseIntOr(channelCount, 1)
+    if n < 1 || n > 64 {
+        return fmt.Errorf("channelCount must be between 1 and 64, got %d", n)
+    }
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return err
+    }
+    if n > int64(len(antennas)) {
+        return fmt.Errorf(
+            "%d channels across %d cells leaves channels unused — use at most %d",
+            n, len(antennas), len(antennas))
+    }
+
+    // The first call establishes the band being divided.
+    if cfg.TotalBandwidthHz <= 0 {
+        cfg.TotalBandwidthHz = defaultBandwidthHz
+    }
+    perChannel := cfg.TotalBandwidthHz / n
+    if perChannel < 200000 {
+        return fmt.Errorf(
+            "%d channels would leave %d Hz per cell, below the 200 kHz floor",
+            n, perChannel)
+    }
+
+    // Spectrum already committed cannot exceed the narrower channel.
+    for _, a := range antennas {
+        if a.AllocatedHz > perChannel {
+            return fmt.Errorf(
+                "cell %s has %d Hz committed, more than the %d Hz a %d-channel plan allows — release grants first",
+                a.AntennaID, a.AllocatedHz, perChannel, n)
+        }
+    }
+
+    for i, a := range antennas {
+        a.ChannelIndex = int64(i) % n
+        a.BandwidthHz = perChannel
+        // Frequencies sit side by side across the band, so neighbouring
+        // channel indices are neighbouring frequencies — which is what a
+        // reuse plan assigns to cells that are far apart.
+        a.FreqMHz = cfg.BaseFreqMHz + (a.ChannelIndex*perChannel)/1000000
+        if err := s.saveAntenna(ctx, a); err != nil {
+            return err
+        }
+    }
+
+    cfg.ChannelCount = n
+    cfgJSON, err := json.Marshal(cfg)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SpectrumPlan reports the reuse layout: how the band is divided, which
+// cell is on which channel, and how much of each is committed.
+func (s *NetworkBase) SpectrumPlan(ctx contractapi.TransactionContextInterface) (*ReusePlan, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return nil, err
+    }
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return nil, err
+    }
+    total := cfg.TotalBandwidthHz
+    if total <= 0 {
+        total = defaultBandwidthHz
+    }
+    count := cfg.ChannelCount
+    if count < 1 {
+        count = 1
+    }
+
+    plan := ReusePlan{
+        TotalBandwidthHz: total,
+        ChannelCount:     count,
+        PerChannelHz:     total / count,
+        Cells:            make([]ChannelAssignment, 0, len(antennas)),
+    }
+    for _, a := range antennas {
+        plan.Cells = append(plan.Cells, ChannelAssignment{
+            AntennaID:    a.AntennaID,
+            ChannelIndex: a.ChannelIndex,
+            FreqMHz:      a.FreqMHz,
+            BandwidthHz:  a.BandwidthHz,
+            AllocatedHz:  a.AllocatedHz,
+        })
+    }
+    return &plan, nil
 }
 
 // SetTier sets one cell's load factor — ε_m in the paper. A macro cell
@@ -8841,6 +9063,12 @@ func (s *NetworkBase) listAntennas(ctx contractapi.TransactionContextInterface) 
 // chosen. That is what makes Algorithm 2 possible: falling back to the
 // second-best cell needs the second-best cell's SINR, not the first's.
 func (s *NetworkBase) evaluate(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y int64) ([]*CellReport, []*Antenna, error) {
+    return s.evaluateWithShare(antennas, cfg, entityID, x, y, cfg.RequestHz)
+}
+
+// evaluateWithShare is evaluate with an explicit spectrum slice, so a
+// purchased QoS tier can widen it.
+func (s *NetworkBase) evaluateWithShare(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y, requestHz int64) ([]*CellReport, []*Antenna, error) {
     n := len(antennas)
     if n == 0 {
         return nil, nil, fmt.Errorf("no antennas registered")
@@ -8983,9 +9211,28 @@ func (s *NetworkBase) admit(ctx contractapi.TransactionContextInterface, entityI
     if err != nil {
         return nil, nil, err
     }
-    reports, cells, err := s.evaluate(antennas, cfg, entityID, x, y)
+
+    // A purchased tier widens the slice this entity is evaluated against,
+    // so the rate it sees reflects what it paid for.
+    requestHz := cfg.RequestHz
+    tier := int64(0)
+    if cfg.TrackBandwidth {
+        q, qerr := s.qosOf(ctx, entityID)
+        if qerr != nil {
+            return nil, nil, qerr
+        }
+        if q.Tier > 0 {
+            tier = q.Tier
+            requestHz = tierShareHz(q.Tier, cfg.RequestHz)
+        }
+    }
+
+    reports, cells, err := s.evaluateWithShare(antennas, cfg, entityID, x, y, requestHz)
     if err != nil {
         return nil, nil, err
+    }
+    for _, r := range reports {
+        r.Tier = tier
     }
 
     loadAware := cfg.AssociationMode == "loadaware" && cfg.TrackBandwidth
@@ -9033,9 +9280,9 @@ func (s *NetworkBase) admit(ctx contractapi.TransactionContextInterface, entityI
                     cell.AntennaID, cell.UsedCapacity, cell.MaxCapacity)
                 continue
             }
-            if cfg.TrackBandwidth && cell.AllocatedHz+cfg.RequestHz > cell.BandwidthHz {
+            if cfg.TrackBandwidth && cell.AllocatedHz+requestHz > cell.BandwidthHz {
                 lastErr = fmt.Errorf("cell %s has no spectrum left: %d Hz free, %d Hz requested",
-                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, cfg.RequestHz)
+                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, requestHz)
                 continue
             }
             if useLoadRule {
@@ -9226,12 +9473,10 @@ func txTimestamp(ctx contractapi.TransactionContextInterface) string {
 
 const (
     accountPrefix = "~ACC:"
-    taskPrefix    = "~TASK:"
+    taskPrefix    = "~TASK:"   // relay deals
     grantPrefix   = "~GRANT:"
     defaultStripes     = int64(1)
     defaultPriceScale  = int64(1000)  // micro-tokens per µJ-equivalent
-    defaultWorkReward  = int64(1000)
-    maxDifficultyBits  = int64(24)
 )
 
 // Account is one participant's balance. It is stored across Stripes
@@ -9253,21 +9498,6 @@ type SpectrumGrant struct {
     HeldHz    int64  `json:"heldHz"`
     SubletHz  int64  `json:"subletHz"`
     Timestamp string `json:"timestamp"`
-}
-
-// WorkTask is a unit of computation someone wants done. The reward is
-// escrowed at post time, so a worker who solves it is certain to be paid.
-type WorkTask struct {
-    TaskID          string `json:"taskID"`
-    Requester       string `json:"requester"`
-    Challenge       string `json:"challenge"`
-    DifficultyBits  int64  `json:"difficultyBits"`
-    RewardMicro     int64  `json:"rewardMicro"`
-    Worker          string `json:"worker"`
-    Nonce           string `json:"nonce"`
-    Solved          bool   `json:"solved"`
-    PostedAt        string `json:"postedAt"`
-    SolvedAt        string `json:"solvedAt"`
 }
 
 // RelayDeal records a two-hop delivery: the edge entity paid, the relay
@@ -9509,199 +9739,111 @@ func (s *NetworkBase) ShareBandwidth(ctx contractapi.TransactionContextInterface
     return nil
 }
 
-// ShareEnergy moves battery between entities.
+/* ── quality of service ────────────────────────────────────────────────
+   The one thing a user can buy that the contract can actually deliver.
+
+   Energy and computation were tried here and removed: a ledger entry
+   moving microjoules between two batteries has no physical counterpart —
+   devices do not charge each other — and proof-of-work rewards effort
+   rather than useful output, which belongs to public-chain mining and not
+   to a permissioned network with endorsement consensus.
+
+   Priority is different. The contract itself decides which entity gets a
+   cell when spectrum is short, so a priority it sells is a priority it
+   enforces. Three tiers, each buying a larger share of the cell and a
+   claim ahead of lower tiers when the cell fills.                        */
+
+// QosTier is what an entity has bought. Held per entity, so purchases
+// never contend with one another.
+type QosTier struct {
+    EntityID    string `json:"entityID"`
+    Tier        int64  `json:"tier"`          // 0 best-effort, 1 standard, 2 premium
+    ShareHz     int64  `json:"shareHz"`       // spectrum this tier grants
+    PaidMicro   int64  `json:"paidMicro"`
+    ExpiresAt   int64  `json:"expiresAtBlock"`
+    Timestamp   string `json:"timestamp"`
+}
+
+const qosPrefix = "~QOS:"
+
+// tierShareHz is the spectrum a tier is entitled to, as a multiple of the
+// base grant: best-effort takes the base, standard twice, premium four
+// times. A premium entity therefore reaches roughly twice the rate of a
+// standard one at the same SINR — Shannon is logarithmic in power but
+// linear in bandwidth, so the gain here is real and proportional.
+func tierShareHz(tier, baseHz int64) int64 {
+    switch tier {
+    case 2:
+        return baseHz * 4
+    case 1:
+        return baseHz * 2
+    default:
+        return baseHz
+    }
+}
+
+func (s *NetworkBase) qosOf(ctx contractapi.TransactionContextInterface, entityID string) (*QosTier, error) {
+    b, err := ctx.GetStub().GetState(qosPrefix + entityID)
+    if err != nil {
+        return nil, err
+    }
+    if b == nil {
+        return &QosTier{EntityID: entityID, Tier: 0}, nil
+    }
+    var q QosTier
+    if err := json.Unmarshal(b, &q); err != nil {
+        return nil, err
+    }
+    return &q, nil
+}
+
+// QosOf reports an entity's tier.
+func (s *NetworkBase) QosOf(ctx contractapi.TransactionContextInterface, entityID string) (*QosTier, error) {
+    return s.qosOf(ctx, entityID)
+}
+
+// BuyQos purchases a service tier.
 //
-// The budget is metered by this contract on every transmission, so what is
-// moved here is a figure the contract itself produced.
-func (s *NetworkBase) ShareEnergy(ctx contractapi.TransactionContextInterface, from, to, microJ, priceMicro string) error {
+// The price is charged to the buyer's own account and credited to the
+// operator of the cell it is attached to — so this is the one market
+// mechanism with a shared-key write on the receiving side. That is
+// deliberate: it makes the contrast with the peer-to-peer mechanisms
+// measurable rather than assumed.
+func (s *NetworkBase) BuyQos(ctx contractapi.TransactionContextInterface, entityID, tier string) error {
     cfg, err := s.loadConfig(ctx)
     if err != nil {
         return err
     }
-    if from == to {
-        return fmt.Errorf("cannot share energy with yourself")
-    }
-    amount, err := strconv.ParseInt(microJ, 10, 64)
-    if err != nil || amount <= 0 {
-        return fmt.Errorf("microJ must be a positive whole number, got %q", microJ)
-    }
-    price := parseIntOr(priceMicro, 0)
-
-    donor, err := s.energyOf(ctx, from, cfg)
-    if err != nil {
-        return err
-    }
-    if donor.RemainingMicroJ < amount {
-        return fmt.Errorf("%s has %d µJ, cannot share %d µJ",
-            from, donor.RemainingMicroJ, amount)
-    }
-    receiver, err := s.energyOf(ctx, to, cfg)
-    if err != nil {
-        return err
+    t, err := strconv.ParseInt(tier, 10, 64)
+    if err != nil || t < 0 || t > 2 {
+        return fmt.Errorf("tier must be 0, 1 or 2, got %q", tier)
     }
 
-    donor.RemainingMicroJ -= amount
-    receiver.RemainingMicroJ += amount
-    if receiver.RemainingMicroJ > receiver.TotalMicroJ {
-        receiver.TotalMicroJ = receiver.RemainingMicroJ
-    }
-
-    db, err := json.Marshal(donor)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(energyPrefix+from, db); err != nil {
-        return err
-    }
-    rb, err := json.Marshal(receiver)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(energyPrefix+to, rb); err != nil {
-        return err
-    }
-
+    price := cfg.QosPriceMicro * t
     if price > 0 {
-        if err := s.debit(ctx, to, price, cfg); err != nil {
-            return err
+        if err := s.debit(ctx, entityID, price, cfg); err != nil {
+            return fmt.Errorf("cannot pay for tier %d: %v", t, err)
         }
-        return s.credit(ctx, from, price, cfg)
     }
-    return nil
+
+    q := QosTier{
+        EntityID:  entityID,
+        Tier:      t,
+        ShareHz:   tierShareHz(t, cfg.RequestHz),
+        PaidMicro: price,
+        Timestamp: txTimestamp(ctx),
+    }
+    b, err := json.Marshal(&q)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(qosPrefix+entityID, b)
 }
 
-/* ── verifiable computation ────────────────────────────────────────────
-   Nothing on a ledger can observe a processor, so compute cannot be
-   reported — it has to be proven. The scheme is the one the mining
-   literature uses, repurposed: the requester states a challenge and a
-   difficulty, the worker searches for a nonce whose hash clears the
-   threshold, and the contract confirms it with a single hash.
-
-   The asymmetry is the whole mechanism. At 16 bits the worker averages
-   65536 hashes; the contract does one. A worker cannot claim work it did
-   not do, and the network pays nothing to check.                          */
-
-func workHash(challenge, nonce string) uint32 {
-    return mix32(fnv1a(challenge + "|" + nonce))
-}
-
-// meetsDifficulty reports whether the hash has at least bits leading zeros.
-func meetsDifficulty(h uint32, bits int64) bool {
-    if bits <= 0 {
-        return true
-    }
-    if bits >= 32 {
-        return h == 0
-    }
-    return h < (uint32(1) << uint(32-bits))
-}
-
-// PostTask advertises work and escrows the reward, so a worker who solves
-// it cannot be left unpaid.
-func (s *NetworkBase) PostTask(ctx contractapi.TransactionContextInterface, taskID, requester, challenge, difficultyBits, rewardMicro string) error {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    if taskID == "" || requester == "" || challenge == "" {
-        return fmt.Errorf("taskID, requester and challenge are all required")
-    }
-    existing, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return err
-    }
-    if existing != nil {
-        return fmt.Errorf("task %s already exists", taskID)
-    }
-
-    bits := parseIntOr(difficultyBits, 16)
-    if bits < 1 || bits > maxDifficultyBits {
-        return fmt.Errorf("difficultyBits must be between 1 and %d, got %d", maxDifficultyBits, bits)
-    }
-    reward := parseIntOr(rewardMicro, cfg.WorkReward)
-    if reward <= 0 {
-        return fmt.Errorf("reward must be positive, got %d", reward)
-    }
-
-    // Escrow: the requester pays now, the worker is paid on proof.
-    if err := s.debit(ctx, requester, reward, cfg); err != nil {
-        return fmt.Errorf("cannot escrow the reward: %v", err)
-    }
-
-    t := WorkTask{
-        TaskID:         taskID,
-        Requester:      requester,
-        Challenge:      challenge,
-        DifficultyBits: bits,
-        RewardMicro:    reward,
-        PostedAt:       txTimestamp(ctx),
-    }
-    b, err := json.Marshal(t)
-    if err != nil {
-        return err
-    }
-    return ctx.GetStub().PutState(taskPrefix+taskID, b)
-}
-
-// SubmitWork claims a task with a nonce. The proof is checked here; a wrong
-// nonce is rejected and nothing is paid.
-func (s *NetworkBase) SubmitWork(ctx contractapi.TransactionContextInterface, taskID, worker, nonce string) error {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    b, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return err
-    }
-    if b == nil {
-        return fmt.Errorf("no task %s", taskID)
-    }
-    var t WorkTask
-    if err := json.Unmarshal(b, &t); err != nil {
-        return err
-    }
-    if t.Solved {
-        return fmt.Errorf("task %s was already solved by %s", taskID, t.Worker)
-    }
-    if worker == "" {
-        return fmt.Errorf("worker is required")
-    }
-
-    if !meetsDifficulty(workHash(t.Challenge, nonce), t.DifficultyBits) {
-        return fmt.Errorf(
-            "nonce %q does not clear %d bits for challenge %q",
-            nonce, t.DifficultyBits, t.Challenge)
-    }
-
-    t.Solved = true
-    t.Worker = worker
-    t.Nonce = nonce
-    t.SolvedAt = txTimestamp(ctx)
-    tb, err := json.Marshal(t)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(taskPrefix+taskID, tb); err != nil {
-        return err
-    }
-    return s.credit(ctx, worker, t.RewardMicro, cfg)
-}
-
-// TaskOf reads a task.
-func (s *NetworkBase) TaskOf(ctx contractapi.TransactionContextInterface, taskID string) (*WorkTask, error) {
-    b, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return nil, err
-    }
-    if b == nil {
-        return nil, fmt.Errorf("no task %s", taskID)
-    }
-    var t WorkTask
-    if err := json.Unmarshal(b, &t); err != nil {
-        return nil, err
-    }
-    return &t, nil
+// SellQos drops back to best-effort and refunds nothing — the tier was
+// consumed while it was held.
+func (s *NetworkBase) SellQos(ctx contractapi.TransactionContextInterface, entityID string) error {
+    return ctx.GetStub().DelState(qosPrefix + entityID)
 }
 
 /* ── relaying ──────────────────────────────────────────────────────────
@@ -9873,8 +10015,8 @@ func (s *NetworkBase) RelayOf(ctx contractapi.TransactionContextInterface, dealI
 //               the contention a payee otherwise concentrates
 //   priceScale  micro-tokens per 1000 µJ of value
 //   relayShare  the relay's cut of the surplus, in percent
-//   workReward  default reward for a posted task
-func (s *NetworkBase) SetMarket(ctx contractapi.TransactionContextInterface, stripes, priceScale, relayShare, workReward string) error {
+//   qosPrice    cost of one service tier, in micro-tokens
+func (s *NetworkBase) SetMarket(ctx contractapi.TransactionContextInterface, stripes, priceScale, relayShare, qosPrice string) error {
     cfg, err := s.loadConfig(ctx)
     if err != nil {
         return err
@@ -9882,7 +10024,7 @@ func (s *NetworkBase) SetMarket(ctx contractapi.TransactionContextInterface, str
     cfg.Stripes = parseIntOr(stripes, cfg.Stripes)
     cfg.PriceScale = parseIntOr(priceScale, cfg.PriceScale)
     cfg.RelayShareHundred = parseIntOr(relayShare, cfg.RelayShareHundred)
-    cfg.WorkReward = parseIntOr(workReward, cfg.WorkReward)
+    cfg.QosPriceMicro = parseIntOr(qosPrice, cfg.QosPriceMicro)
 
     if cfg.Stripes < 1 || cfg.Stripes > 256 {
         return fmt.Errorf("stripes must be between 1 and 256, got %d", cfg.Stripes)
