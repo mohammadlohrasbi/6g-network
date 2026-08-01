@@ -204,6 +204,8 @@ function selection() {
     mode: state.mode,
     includeAntennaDep: $('includeAntennaDep').checked,
     includeReadOnly: $('includeReadOnly').checked,
+    includeMarket: $('includeMarket') ? $('includeMarket').checked : false,
+    marketOnly: $('marketOnly') ? $('marketOnly').checked : false,
   };
   switch (state.mode) {
     case 'contract':
@@ -583,6 +585,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('chanOnly').addEventListener('change', schedulePreview);
   $('includeAntennaDep').addEventListener('change', schedulePreview);
   $('includeReadOnly').addEventListener('change', schedulePreview);
+  ['includeMarket', 'marketOnly'].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      // The two are mutually exclusive: "only" supersedes "include".
+      if (id === 'marketOnly' && el.checked) $('includeMarket').checked = false;
+      if (id === 'includeMarket' && el.checked) $('marketOnly').checked = false;
+      schedulePreview();
+    });
+  });
   $('targetFilter').addEventListener('input', filterTargets);
   $('tapePolicy').addEventListener('change', () => { describePolicy(); schedulePreview(); });
 
