@@ -141,6 +141,9 @@ const GRID = ${GRID_SIZE_M};
 
 function marketValue(name, i, prefix) {
   switch (name) {
+    // The same key the primary write function produces, so this entity has
+    // already been admitted and holds a grant to sell.
+    case 'fromAdmitted': return prefix + '-' + i;
     case 'accountID':
     case 'entityID':
     case 'from':
@@ -152,10 +155,15 @@ function marketValue(name, i, prefix) {
     case 'tier':         return String(1 + (i % 2));
     case 'hz':           return '20000';
     case 'priceMicro':   return '500';
-    case 'edgeX':        return String(500 + (i * 37) % 1500);
-    case 'edgeY':        return String(500 + (i * 53) % 1500);
-    case 'relayX':       return String(4000 + (i * 71) % 2000);
-    case 'relayY':       return String(4000 + (i * 89) % 2000);
+    // Regions derived from the seed-42 antenna layout: the edge sits in the
+    // corner furthest from every cell, the relay almost on top of one.
+    // Seed-42 layout: the relay sits 565 m from the edge entity, close
+    // enough for the device-to-device hop and far enough to reach a
+    // different cell.
+    case 'edgeX':        return String(3600 - 200 + (i * 79) % 400);
+    case 'edgeY':        return String(8400 - 200 + (i * 113) % 400);
+    case 'relayX':       return String(3600 - 200 + (i * 79) % 400 - 400);
+    case 'relayY':       return String(8400 - 200 + (i * 113) % 400 - 400);
     default:             return 'v-' + i;
   }
 }
