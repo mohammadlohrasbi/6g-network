@@ -41,6 +41,53 @@ const RADIO_BODY = RADIO_GO.slice(RADIO_GO.indexOf('package main') + 'package ma
 
 const spatial = deep.filter((r) => r.spatial && r.primary);
 
+/* ── shared body ──────────────────────────────────────────────────────
+   networkBlock and marketBlock are written against a receiver type, but
+   the code inside them is identical for all 34 contracts. Emitting it once
+   against a shared embedded type — instead of 34 times against 34 named
+   types — cuts this script from 2.4 MB to about 0.3 MB and makes each
+   chaincode directory two small files rather than one enormous one.
+
+   Go compiles every file in a directory as one package, so the contract
+   type embeds NetworkBase and picks up all of these methods.             */
+const SHARED_RECEIVER = 'NetworkBase';
+
+const SHARED_BODY = `package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "strconv"
+    "time"
+
+    "github.com/hyperledger/fabric-contract-api-go/contractapi"
+)
+
+// NetworkBase carries the radio model, the resource accounting and the
+// market. Every contract embeds it, so every contract exposes the same set
+// of network operations without the code being repeated.
+type NetworkBase struct {
+    contractapi.Contract
+}
+
+// GenericRecord is the part of a written record that the shared code needs
+// to read back. Each contract writes its own record type — Assignment,
+// Bandwidth, SignalStrengthRecord and so on — and those differ, but every
+// one of them carries the serving cell. Decoding into this minimal shape
+// works for all of them, because encoding/json ignores fields it does not
+// recognise. That is what lets Release live here rather than being
+// duplicated into all 34 contracts.
+type GenericRecord struct {
+    ServingCell string \`json:"servingCell"\`
+    GrantedHz   int64  \`json:"grantedHz"\`
+}
+${networkBlock(SHARED_RECEIVER, 'GenericRecord', true)}
+${marketBlock(SHARED_RECEIVER, 'GenericRecord')}
+${RADIO_BODY}
+`;
+
+
+
 /* ── parameter transformation ────────────────────────────────────────
    antennaID leaves the signature: the contract now chooses the serving
    cell rather than being told which one to use. seed joins it, so the
@@ -147,6 +194,7 @@ type Antenna struct {
     MaxCapacity     int64  \`json:"maxCapacity"\`
     UsedCapacity    int64  \`json:"usedCapacity"\`
     AllocatedHz     int64  \`json:"allocatedHz"\`
+    ChannelIndex    int64  \`json:"channelIndex"\`
     LoadFactor      int64  \`json:"loadFactorHundredths"\`
     EarnedMicro     int64  \`json:"earnedMicro"\`
 }
@@ -189,7 +237,14 @@ type NetworkConfig struct {
     Stripes               int64  \`json:"stripes"\`
     PriceScale            int64  \`json:"priceScale"\`
     RelayShareHundred     int64  \`json:"relaySharePercent"\`
-    WorkReward            int64  \`json:"workReward"\`
+    QosPriceMicro         int64  \`json:"qosPriceMicro"\`
+
+    // Frequency reuse. TotalBandwidthHz is the licensed block; dividing it
+    // is what a reuse plan does, so it is remembered separately from the
+    // per-cell figure that ReuseChannels writes.
+    TotalBandwidthHz      int64  \`json:"totalBandwidthHz"\`
+    ChannelCount          int64  \`json:"channelCount"\`
+    BaseFreqMHz           int64  \`json:"baseFreqMHz"\`
 
     AssociationMode       string \`json:"associationMode"\`
     LoadToleranceHundred  int64  \`json:"loadToleranceHundredths"\`
@@ -225,6 +280,23 @@ type EnergyBudget struct {
     Timestamp       string \`json:"timestamp"\`
 }
 
+// ReusePlan describes how the band is divided across cells.
+type ReusePlan struct {
+    TotalBandwidthHz int64               \`json:"totalBandwidthHz"\`
+    ChannelCount     int64               \`json:"channelCount"\`
+    PerChannelHz     int64               \`json:"perChannelHz"\`
+    Cells            []ChannelAssignment \`json:"cells"\`
+}
+
+// ChannelAssignment is one cell's place in the plan.
+type ChannelAssignment struct {
+    AntennaID    string \`json:"antennaID"\`
+    ChannelIndex int64  \`json:"channelIndex"\`
+    FreqMHz      int64  \`json:"freqMHz"\`
+    BandwidthHz  int64  \`json:"bandwidthHz"\`
+    AllocatedHz  int64  \`json:"allocatedHz"\`
+}
+
 // CellReport is what the radio evaluation produces for one position.
 type CellReport struct {
     ServingCell   string \`json:"servingCell"\`
@@ -241,6 +313,7 @@ type CellReport struct {
     FreeHz        int64  \`json:"freeHz"\`
     TxTimeMicroS  int64  \`json:"txTimeMicroS"\`
     EnergyMicroJ  int64  \`json:"energyMicroJ"\`
+    Tier          int64  \`json:"qosTier"\`
     Rank          int64  \`json:"rank"\`
 }
 
@@ -270,7 +343,7 @@ const (
     defaultMinSinr         = int64(-6000)  // −6 dB decoding floor
     defaultRequestHz       = int64(100000) // 100 kHz per entity
     defaultEnergyMicroJ    = int64(5000000) // 5 J, the budget used in the paper
-    defaultTxPowerMilliDbm = int64(23000)  // 23 dBm entity uplink
+    defaultEntityTxMilliDbm = int64(23000) // 23 dBm entity uplink
     defaultPayloadBits     = int64(3808)   // 608-bit header + 100 × 32-bit
     defaultLoadFactor      = int64(100)    // ε = 1.0; a macro tier would be higher
     defaultLoadTolerance   = int64(120)    // admit up to 1.2× the fair share
@@ -335,6 +408,7 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
             MaxCapacity:     capacity,
             UsedCapacity:    0,
             AllocatedHz:     0,
+            ChannelIndex:    0,
             LoadFactor:      defaultLoadFactor,
             EarnedMicro:     0,
         }
@@ -356,12 +430,15 @@ func (s *${contract}) SeedNetwork(ctx contractapi.TransactionContextInterface, s
         RequestHz:             defaultRequestHz,
         TrackEnergy:           false,
         EnergyBudgetMicroJ:    defaultEnergyMicroJ,
-        TxPowerMilliDbm:       defaultTxPowerMilliDbm,
+        TxPowerMilliDbm:       defaultEntityTxMilliDbm,
         PayloadBits:           defaultPayloadBits,
         Stripes:               defaultStripes,
         PriceScale:            defaultPriceScale,
         RelayShareHundred:     50,
-        WorkReward:            defaultWorkReward,
+        QosPriceMicro:         defaultQosPrice,
+        TotalBandwidthHz:      defaultBandwidthHz,
+        ChannelCount:          1,
+        BaseFreqMHz:           defaultFreqMHz,
         AssociationMode:       "nearest",
         LoadToleranceHundred:  defaultLoadTolerance,
         TrackEconomy:          false,
@@ -468,7 +545,7 @@ func (s *${contract}) SetAssociation(ctx contractapi.TransactionContextInterface
     }
     if mode != "" {
         if mode != "nearest" && mode != "loadaware" {
-            return fmt.Errorf("mode must be \"nearest\" or \"loadaware\", got %q", mode)
+            return fmt.Errorf("mode must be nearest or loadaware, got %q", mode)
         }
         cfg.AssociationMode = mode
     }
@@ -481,6 +558,198 @@ func (s *${contract}) SetAssociation(ctx contractapi.TransactionContextInterface
         return err
     }
     return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SetPower changes a cell's transmit power.
+//
+// TxPowerMilliDbm was fixed at 46 dBm for every cell and nothing could
+// alter it, so LocationBasedPowerManagement recorded a power level the
+// propagation model never read. Power set here feeds straight into RSSI:
+// raising it extends reach and raises interference for neighbours on the
+// same channel, which is the trade-off power control exists to manage.
+func (s *${contract}) SetPower(ctx contractapi.TransactionContextInterface, antennaID, txPowerMilliDbm string) error {
+    b, err := ctx.GetStub().GetState(antennaPrefix + antennaID)
+    if err != nil {
+        return err
+    }
+    if b == nil {
+        return fmt.Errorf("antenna %s is not registered", antennaID)
+    }
+    var a Antenna
+    if err := json.Unmarshal(b, &a); err != nil {
+        return err
+    }
+    p := parseIntOr(txPowerMilliDbm, a.TxPowerMilliDbm)
+    // Below 0 dBm a macrocell serves nobody; above 60 dBm is beyond what
+    // regulators allow for terrestrial cellular.
+    if p < 0 || p > 60000 {
+        return fmt.Errorf("transmit power must be between 0 and 60000 milli-dBm, got %d", p)
+    }
+    a.TxPowerMilliDbm = p
+    return s.saveAntenna(ctx, &a)
+}
+
+// SetChannel assigns a cell to a frequency channel.
+//
+// Cells on different channels do not interfere. With eight cells and four
+// channels a reuse pattern leaves at most one co-channel neighbour instead
+// of seven, which lifts SINR sharply — at the cost of each channel serving
+// fewer cells. This is frequency reuse, and it is the other half of what
+// LocationBasedChannelAllocation was recording without effect.
+func (s *${contract}) SetChannel(ctx contractapi.TransactionContextInterface, antennaID, channelIndex, freqMHz string) error {
+    b, err := ctx.GetStub().GetState(antennaPrefix + antennaID)
+    if err != nil {
+        return err
+    }
+    if b == nil {
+        return fmt.Errorf("antenna %s is not registered", antennaID)
+    }
+    var a Antenna
+    if err := json.Unmarshal(b, &a); err != nil {
+        return err
+    }
+    a.ChannelIndex = parseIntOr(channelIndex, a.ChannelIndex)
+    if a.ChannelIndex < 0 || a.ChannelIndex > 63 {
+        return fmt.Errorf("channelIndex must be between 0 and 63, got %d", a.ChannelIndex)
+    }
+    f := parseIntOr(freqMHz, a.FreqMHz)
+    if f < 400 || f > 100000 {
+        return fmt.Errorf("frequency must be between 400 and 100000 MHz, got %d", f)
+    }
+    a.FreqMHz = f
+
+    // Moving one cell onto an existing channel does not change how the band
+    // is divided, so its width follows the plan rather than staying at
+    // whatever it was.
+    cfg, cerr := s.loadConfig(ctx)
+    if cerr == nil && cfg.ChannelCount > 1 && cfg.TotalBandwidthHz > 0 {
+        perChannel := cfg.TotalBandwidthHz / cfg.ChannelCount
+        if a.AllocatedHz > perChannel {
+            return fmt.Errorf(
+                "cell %s has %d Hz committed, more than the %d Hz this plan allows",
+                antennaID, a.AllocatedHz, perChannel)
+        }
+        a.BandwidthHz = perChannel
+    }
+    return s.saveAntenna(ctx, &a)
+}
+
+// ReuseChannels lays out a frequency reuse plan across n channels.
+//
+// The band is finite, so splitting it into n channels leaves each cell with
+// TotalBandwidthHz / n. Handing every cell the full band on a different
+// channel would be free interference relief, which no real deployment gets:
+// spectrum is licensed as one block and reuse divides it.
+//
+// The trade-off this creates is the real one operators face:
+//
+//   more channels → fewer co-channel neighbours → higher SINR
+//                 → narrower cells → fewer entities served, lower peak rate
+//
+// A third effect runs alongside and is easy to miss: a narrower channel has
+// a lower thermal noise floor, 3 dB per halving. So SINR gains from two
+// directions at once — less interference and less noise — while capacity
+// loses from one. Shannon is logarithmic in SINR but linear in bandwidth,
+// so beyond a certain point the loss wins. Finding that point is the
+// experiment.
+//
+// TotalBandwidthHz is remembered on the config so repeated calls divide the
+// original band rather than dividing what a previous call already halved.
+func (s *${contract}) ReuseChannels(ctx contractapi.TransactionContextInterface, channelCount string) error {
+    n := parseIntOr(channelCount, 1)
+    if n < 1 || n > 64 {
+        return fmt.Errorf("channelCount must be between 1 and 64, got %d", n)
+    }
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return err
+    }
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return err
+    }
+    if n > int64(len(antennas)) {
+        return fmt.Errorf(
+            "%d channels across %d cells leaves channels unused — use at most %d",
+            n, len(antennas), len(antennas))
+    }
+
+    // The first call establishes the band being divided.
+    if cfg.TotalBandwidthHz <= 0 {
+        cfg.TotalBandwidthHz = defaultBandwidthHz
+    }
+    perChannel := cfg.TotalBandwidthHz / n
+    if perChannel < 200000 {
+        return fmt.Errorf(
+            "%d channels would leave %d Hz per cell, below the 200 kHz floor",
+            n, perChannel)
+    }
+
+    // Spectrum already committed cannot exceed the narrower channel.
+    for _, a := range antennas {
+        if a.AllocatedHz > perChannel {
+            return fmt.Errorf(
+                "cell %s has %d Hz committed, more than the %d Hz a %d-channel plan allows — release grants first",
+                a.AntennaID, a.AllocatedHz, perChannel, n)
+        }
+    }
+
+    for i, a := range antennas {
+        a.ChannelIndex = int64(i) % n
+        a.BandwidthHz = perChannel
+        // Frequencies sit side by side across the band, so neighbouring
+        // channel indices are neighbouring frequencies — which is what a
+        // reuse plan assigns to cells that are far apart.
+        a.FreqMHz = cfg.BaseFreqMHz + (a.ChannelIndex*perChannel)/1000000
+        if err := s.saveAntenna(ctx, a); err != nil {
+            return err
+        }
+    }
+
+    cfg.ChannelCount = n
+    cfgJSON, err := json.Marshal(cfg)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(configKey, cfgJSON)
+}
+
+// SpectrumPlan reports the reuse layout: how the band is divided, which
+// cell is on which channel, and how much of each is committed.
+func (s *${contract}) SpectrumPlan(ctx contractapi.TransactionContextInterface) (*ReusePlan, error) {
+    cfg, err := s.loadConfig(ctx)
+    if err != nil {
+        return nil, err
+    }
+    antennas, err := s.listAntennas(ctx)
+    if err != nil {
+        return nil, err
+    }
+    total := cfg.TotalBandwidthHz
+    if total <= 0 {
+        total = defaultBandwidthHz
+    }
+    count := cfg.ChannelCount
+    if count < 1 {
+        count = 1
+    }
+
+    plan := ReusePlan{
+        TotalBandwidthHz: total,
+        ChannelCount:     count,
+        PerChannelHz:     total / count,
+        Cells:            make([]ChannelAssignment, 0, len(antennas)),
+    }
+    for _, a := range antennas {
+        plan.Cells = append(plan.Cells, ChannelAssignment{
+            AntennaID:    a.AntennaID,
+            ChannelIndex: a.ChannelIndex,
+            FreqMHz:      a.FreqMHz,
+            BandwidthHz:  a.BandwidthHz,
+            AllocatedHz:  a.AllocatedHz,
+        })
+    }
+    return &plan, nil
 }
 
 // SetTier sets one cell's load factor — ε_m in the paper. A macro cell
@@ -601,96 +870,9 @@ func (s *${contract}) accountOf(ctx contractapi.TransactionContextInterface, ent
     return &a, nil
 }
 
-// BalanceOf reports an entity's wallet.
-func (s *${contract}) BalanceOf(ctx contractapi.TransactionContextInterface, entityID string) (*TokenAccount, error) {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return nil, err
-    }
-    return s.accountOf(ctx, entityID, cfg)
-}
 
-// Credit tops up a wallet.
-func (s *${contract}) Credit(ctx contractapi.TransactionContextInterface, entityID, amountMicro string) error {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    amount := parseIntOr(amountMicro, 0)
-    if amount <= 0 {
-        return fmt.Errorf("amount must be positive, got %d", amount)
-    }
-    acct, err := s.accountOf(ctx, entityID, cfg)
-    if err != nil {
-        return err
-    }
-    acct.BalanceMicro += amount
-    acct.Timestamp = txTimestamp(ctx)
-    b, err := json.Marshal(acct)
-    if err != nil {
-        return err
-    }
-    return ctx.GetStub().PutState(tokenPrefix+entityID, b)
-}
 
-// Transfer moves value between two wallets.
-//
-// Both keys are per-entity, so two transfers between different pairs never
-// contend. Two transfers from the SAME payer in one block do — that is the
-// account-model limit in Fabric, and it is inherent rather than a defect
-// of this code.
-func (s *${contract}) Transfer(ctx contractapi.TransactionContextInterface, fromID, toID, amountMicro string) error {
-    if fromID == toID {
-        return fmt.Errorf("cannot transfer to the same account")
-    }
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    amount := parseIntOr(amountMicro, 0)
-    if amount <= 0 {
-        return fmt.Errorf("amount must be positive, got %d", amount)
-    }
-    from, err := s.accountOf(ctx, fromID, cfg)
-    if err != nil {
-        return err
-    }
-    if from.BalanceMicro < amount {
-        return fmt.Errorf("%s has %d micro-coin, cannot send %d",
-            fromID, from.BalanceMicro, amount)
-    }
-    to, err := s.accountOf(ctx, toID, cfg)
-    if err != nil {
-        return err
-    }
-    from.BalanceMicro -= amount
-    from.SpentMicro += amount
-    from.Timestamp = txTimestamp(ctx)
-    to.BalanceMicro += amount
-    to.Timestamp = txTimestamp(ctx)
 
-    fb, err := json.Marshal(from)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(tokenPrefix+fromID, fb); err != nil {
-        return err
-    }
-    tb, err := json.Marshal(to)
-    if err != nil {
-        return err
-    }
-    return ctx.GetStub().PutState(tokenPrefix+toID, tb)
-}
-
-// Quote prices a service grant without charging for it.
-func (s *${contract}) Quote(ctx contractapi.TransactionContextInterface) (int64, error) {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return 0, err
-    }
-    return transactionCost(cfg), nil
-}
 
 func (s *${contract}) saveAntenna(ctx contractapi.TransactionContextInterface, a *Antenna) error {
     b, err := json.Marshal(a)
@@ -749,6 +931,12 @@ func (s *${contract}) listAntennas(ctx contractapi.TransactionContextInterface) 
 // chosen. That is what makes Algorithm 2 possible: falling back to the
 // second-best cell needs the second-best cell's SINR, not the first's.
 func (s *${contract}) evaluate(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y int64) ([]*CellReport, []*Antenna, error) {
+    return s.evaluateWithShare(antennas, cfg, entityID, x, y, cfg.RequestHz)
+}
+
+// evaluateWithShare is evaluate with an explicit spectrum slice, so a
+// purchased QoS tier can widen it.
+func (s *${contract}) evaluateWithShare(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y, requestHz int64) ([]*CellReport, []*Antenna, error) {
     n := len(antennas)
     if n == 0 {
         return nil, nil, fmt.Errorf("no antennas registered")
@@ -891,9 +1079,28 @@ func (s *${contract}) admit(ctx contractapi.TransactionContextInterface, entityI
     if err != nil {
         return nil, nil, err
     }
-    reports, cells, err := s.evaluate(antennas, cfg, entityID, x, y)
+
+    // A purchased tier widens the slice this entity is evaluated against,
+    // so the rate it sees reflects what it paid for.
+    requestHz := cfg.RequestHz
+    tier := int64(0)
+    if cfg.TrackBandwidth {
+        q, qerr := s.qosOf(ctx, entityID)
+        if qerr != nil {
+            return nil, nil, qerr
+        }
+        if q.Tier > 0 {
+            tier = q.Tier
+            requestHz = tierShareHz(q.Tier, cfg.RequestHz)
+        }
+    }
+
+    reports, cells, err := s.evaluateWithShare(antennas, cfg, entityID, x, y, requestHz)
     if err != nil {
         return nil, nil, err
+    }
+    for _, r := range reports {
+        r.Tier = tier
     }
 
     loadAware := cfg.AssociationMode == "loadaware" && cfg.TrackBandwidth
@@ -941,9 +1148,9 @@ func (s *${contract}) admit(ctx contractapi.TransactionContextInterface, entityI
                     cell.AntennaID, cell.UsedCapacity, cell.MaxCapacity)
                 continue
             }
-            if cfg.TrackBandwidth && cell.AllocatedHz+cfg.RequestHz > cell.BandwidthHz {
+            if cfg.TrackBandwidth && cell.AllocatedHz+requestHz > cell.BandwidthHz {
                 lastErr = fmt.Errorf("cell %s has no spectrum left: %d Hz free, %d Hz requested",
-                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, cfg.RequestHz)
+                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, requestHz)
                 continue
             }
             if useLoadRule {
@@ -1101,14 +1308,16 @@ function antennaSubjectSource(r) {
 import (
     "encoding/json"
     "fmt"
-    "strconv"
-    "time"
 
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
+// The contract embeds NetworkBase, which lives in shared.go and carries
+// the radio model, the resource accounting and the market. Go compiles
+// every file in this directory as one package, so those methods are part
+// of this contract's interface without being duplicated into it.
 type ${c} struct {
-    contractapi.Contract
+    NetworkBase
 }
 
 // ${rec} records a cell reconfiguration: where the antenna now stands and
@@ -1268,9 +1477,6 @@ func (s *${c}) ValidateCoverage(ctx contractapi.TransactionContextInterface, ant
     }
     return asset.CoverageM > 0, nil
 }
-${networkBlock(c, rec, false)}
-${marketBlock(c, rec)}
-${RADIO_BODY}
 
 func main() {
     chaincode, err := contractapi.NewChaincode(new(${c}))
@@ -1313,14 +1519,16 @@ function contractSource(r) {
 import (
     "encoding/json"
     "fmt"
-    "strconv"
-    "time"
 
     "github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
+// The contract embeds NetworkBase, which lives in shared.go and carries
+// the radio model, the resource accounting and the market. Go compiles
+// every file in this directory as one package, so those methods are part
+// of this contract's interface without being duplicated into it.
 type ${c} struct {
-    contractapi.Contract
+    NetworkBase
 }
 
 // ${rec} is what a successful admission writes: the domain fields the
@@ -1385,7 +1593,7 @@ func (s *${c}) ${r.primary.name}(ctx contractapi.TransactionContextInterface, ${
         cellChanged = true
     }
     if cfg.TrackBandwidth {
-        best.AllocatedHz += cfg.RequestHz
+        best.AllocatedHz += rep.GrantedHz
         cellChanged = true
     }
     // The operator of the serving cell is credited for the service. This
@@ -1431,7 +1639,7 @@ func (s *${c}) ${r.primary.name}(ctx contractapi.TransactionContextInterface, ${
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += cfg.RequestHz
+        g.HeldHz += rep.GrantedHz
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1531,9 +1739,6 @@ func (s *${c}) ValidateCoverage(ctx contractapi.TransactionContextInterface, ${k
     }
     return asset.SinrMilliDb >= cfg.MinSinrMilliDb, nil
 }
-${networkBlock(c, rec, true)}
-${marketBlock(c, rec)}
-${RADIO_BODY}
 
 func main() {
     chaincode, err := contractapi.NewChaincode(new(${c}))
@@ -1609,6 +1814,15 @@ parts.push(`        *)
             exit 1
             ;;
     esac
+
+    # The network model, the market and the radio kernel are identical in
+    # every contract. Go treats every file in a directory as one package, so
+    # they go into a second file written once per contract from a single
+    # template here — rather than being pasted into all 34 case branches,
+    # which made this script ten times larger than it needed to be.
+    cat > chaincode/$contract/shared.go <<'SHARED_EOF'
+${SHARED_BODY}
+SHARED_EOF
 
     (
       cd chaincode/$contract
