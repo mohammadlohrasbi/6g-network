@@ -33,6 +33,16 @@ router.get('/catalog', (req, res) => {
       // disagree, the benchmark and the ledger pages are describing
       // different networks.
       drift: drift.length ? drift : undefined,
+      market: {
+        operations: Object.keys(catalogue.MARKET_FN).map((op) => ({
+          operation: op,
+          ...catalogue.MARKET_FN[op],
+        })),
+        spatialContracts: catalogue.SPATIAL_CONTRACTS.size,
+        note: 'Market operations are opt-in: pass includeMarket to add them '
+          + 'to a selection, or marketOnly to benchmark them alone. Only the '
+          + 'location-aware contracts carry the market code.',
+      },
       notes: {
         needsSeed:
           'Location-aware contracts pick their own serving cell, so the antenna layout must exist before they accept a write. Run scripts/seed-network.sh once after upgrading.',
