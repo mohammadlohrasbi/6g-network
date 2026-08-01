@@ -217,7 +217,19 @@ function parseTape(text) {
     durationSec: NaN,
     blockCount: NaN,
     avgBlockSize: NaN,
+    roundError: null,
   };
+  // gRPC keepalive: the peer closes the connection when pings arrive faster
+  // than CORE_PEER_KEEPALIVE_MININTERVAL allows. It surfaces when every
+  // transaction is rejected, because tape then cycles far faster than it
+  // would while waiting for commits — so the real fault is usually upstream.
+  if (/too_many_pings|ENHANCE_YOUR_CALM/.test(text)) {
+    m.roundError = 'the peer closed the connection for sending gRPC pings too '
+      + 'quickly. This normally follows every transaction being rejected — read '
+      + 'the chaincode error above it. If the run was otherwise healthy, lower '
+      + 'the connection or client count.';
+  }
+
 
   const summary = text.match(/tx:\s*(\d+),\s*duration:\s*([\d.]+)s,\s*tps:\s*([\d.]+)/i);
   if (summary) {
@@ -824,7 +836,19 @@ async function runJob(job) {
 
       let outcome;
       try {
-        outcome = await runner(target, opts, job);
+        if (tool === 'tape' && target.market && target.tapeSafe === false) {
+          // Refusing here is more useful than a run of identical failures:
+          // the operation needs a fresh id each time and Tape cannot vary
+          // its arguments.
+          outcome = {
+            ok: false,
+            error: `${target.operation} cannot be benchmarked with Tape — `
+              + 'it needs a unique id per call and Tape repeats one argument '
+              + 'set for the whole run. Use Caliper for this target.',
+          };
+        } else {
+          outcome = await runner(target, opts, job);
+        }
       } catch (err) {
         outcome = { ok: false, error: err.message };
       }
