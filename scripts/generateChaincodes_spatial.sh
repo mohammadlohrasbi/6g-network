@@ -9943,8 +9943,13 @@ func (s *NetworkBase) RelayFor(ctx contractapi.TransactionContextInterface, deal
     d2dDist := DistanceM(ex, ey, rx, ry)
     d2dPl := PathLossMilliDb(d2dDist, defaultFreqMHz, cfg.PathLossExponentMilli)
     d2dRssi := RssiMilliDbm(cfg.TxPowerMilliDbm, 0, d2dPl, 0)
+    // Noise scales with the bandwidth actually occupied, and a device-to-
+    // device hop occupies the entity's slice — not the cell's whole band.
+    // Measuring it against 20 MHz overstated the noise floor by 23 dB and
+    // made every hop beyond a few hundred metres carry no usable rate, so
+    // no relay deal could ever clear.
     d2dSinr := SinrMilliDb(d2dRssi, []int64{},
-        NoiseFloorMilliDbm(defaultBandwidthHz, cfg.NoiseFigureMilliDb))
+        NoiseFloorMilliDbm(cfg.RequestHz, cfg.NoiseFigureMilliDb))
     d2dRate := ShannonBps(cfg.RequestHz, d2dSinr)
     d2dEnergy := TransmitEnergyMicroJ(cfg.TxPowerMilliDbm, cfg.PayloadBits, d2dRate)
     if d2dEnergy < 0 {
