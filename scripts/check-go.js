@@ -194,6 +194,21 @@ for (const { name, go, isShared } of files) {
     }
   }
 
+  // An identifier that looks like a package-level constant but is never
+  // declared. Go rejects this at once; the structural check did not, which
+  // is how defaultQosPrice — referenced from the network block but declared
+  // nowhere — reached the compiler.
+  const declaredConsts = new Set();
+  for (const m of both.matchAll(/^\s{4}(\w+)\s+=\s/gm)) declaredConsts.add(m[1]);
+  for (const m of both.matchAll(/^\s*(?:const|var)\s+(\w+)\s/gm)) declaredConsts.add(m[1]);
+  const referenced = new Set();
+  // Only the default* family: max* collides with parameter names such as
+  // maxCapacity, which are locals rather than package constants.
+  for (const m of both.matchAll(/\bdefault[A-Z]\w+\b/g)) referenced.add(m[0]);
+  for (const id of referenced) {
+    if (!declaredConsts.has(id)) bad(name, `constant ${id} is used but never declared`);
+  }
+
   if (!isShared && !/func main\(\)/.test(go)) bad(name, 'no main');
   if (!isShared && !new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
 
