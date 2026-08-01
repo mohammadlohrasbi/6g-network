@@ -102,7 +102,7 @@ fs.writeFileSync('/tmp/inventory.json', JSON.stringify(report, null, 1));
 
 const inCatalog = new Set(Object.values(CHANNELS).flat());
 console.log(`Go sources parsed:        ${sources.size}`);
-console.log(`Contracts in the catalog: ${inCatalog.size}`);
+console.log(`Contracts in the Catalog: ${inCatalog.size}`);
 console.log(`Missing Go source:        ${[...inCatalog].filter((c) => !sources.has(c)).join(', ') || 'none'}`);
 console.log(`Not on any channel:       ${[...sources.keys()].filter((c) => !contractChannels.has(c)).join(', ') || 'none'}`);
 console.log('');
