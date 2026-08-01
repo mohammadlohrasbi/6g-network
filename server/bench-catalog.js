@@ -220,31 +220,41 @@ const MARKET_FN = {
     params: ['accountID', 'amount'],
     writePattern: 'unique',
     note: 'creates tokens on one account stripe',
+    tapeSafe: true,
   },
   Transfer: {
     fn: 'Transfer',
     params: ['from', 'to', 'amount'],
     writePattern: 'unique',
     note: 'two account stripes, both per-entity',
+    tapeSafe: true,
   },
   BuyQos: {
     fn: 'BuyQos',
     params: ['entityID', 'tier'],
     writePattern: 'unique',
     note: 'buyer account plus their QoS record',
+    tapeSafe: true,
   },
   ShareBandwidth: {
     fn: 'ShareBandwidth',
     params: ['from', 'to', 'hz', 'priceMicro'],
     writePattern: 'unique',
     note: 'two grants and two accounts, all per-entity',
-    needsGrant: true,
+    tapeSafe: true,
+    requires: 'trackBandwidth on, and the selling entity admitted first — '
+      + 'a grant only exists once the contract has issued one',
   },
   RelayFor: {
     fn: 'RelayFor',
     params: ['dealID', 'edgeEntity', 'edgeX', 'edgeY', 'relayEntity', 'relayX', 'relayY'],
     writePattern: 'unique',
     note: 'deal record plus two batteries and two accounts',
+    // Every deal needs a fresh id. Tape repeats one argument set for the
+    // whole run, so the first call succeeds and the rest collide with it.
+    tapeSafe: false,
+    requires: 'a unique deal id per call, so Caliper only — Tape repeats '
+      + 'its arguments and every call after the first hits the same deal',
   },
 };
 
@@ -301,6 +311,8 @@ function marketTargets(channel, contract) {
       operation: op,
       writePattern: def.writePattern,
       note: def.note,
+      tapeSafe: def.tapeSafe !== false,
+      requires: def.requires || null,
       needsGrant: !!def.needsGrant,
       sampleArgs: buildMarketArgs(op, 1),
     };
