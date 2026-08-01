@@ -2,7 +2,7 @@
 
 # Fixed and Complete generateChaincodes_part5.sh
 # This script generates full Go chaincode for 9 contracts in part 5.
-# Fix: Used <<'EOF' to prevent bash substitution of backticks in Go JSON tags.
+# Fix: Used <<'EOF' to  prevent bash substitution of backticks in Go JSON tags.
 # Added complete case for all contracts with customized structs and functions based on fields from errors.
 # The Go code is complete with Init, Authenticate/Register/Revoke/Assign functions, Query, and other relevant methods.
 
