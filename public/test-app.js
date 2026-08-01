@@ -611,4 +611,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   describePolicy();
   schedulePreview();
 });
-
