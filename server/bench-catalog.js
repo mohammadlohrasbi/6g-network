@@ -76,6 +76,13 @@ function assertCatalogInSync() {
 const READ_ONLY_CONTRACTS = new Set(['GetPolicy']);
 
 // Every generated contract exposes these two read functions.
+// Only these carry the market code; the 52 record-only contracts do not.
+const SPATIAL_CONTRACTS = new Set(
+  Object.values(CONTRACT_FN)
+    .map((d, i) => Object.keys(CONTRACT_FN)[i])
+    .filter((name) => CONTRACT_FN[name] && CONTRACT_FN[name].needsSeed)
+);
+
 const READ_FN = 'QueryAsset';
 const READ_ALL_FN = 'QueryAllAssets';
 
@@ -152,7 +159,10 @@ function paramValue(name, i, keyPrefix) {
  * Build the full argument list for one write transaction.
  * The first parameter is treated as the ledger key.
  */
-function buildArgs(contract, i, keyPrefix = 'bench') {
+function buildArgs(contract, i, keyPrefix = 'bench', operation = null) {
+  // A market target names its operation; the contract's own primary
+  // function is used when it does not.
+  if (operation) return buildMarketArgs(operation, i, keyPrefix);
   const def = CONTRACT_FN[contract];
   if (!def) return null;
   let keyTaken = false;
@@ -177,6 +187,124 @@ function buildArgs(contract, i, keyPrefix = 'bench') {
 /** The ledger key a given iteration wrote — used by read benchmarks. */
 function buildKey(i, keyPrefix = 'bench') {
   return `${keyPrefix}-${i}`;
+}
+
+
+/* ── market operations ─────────────────────────────────────────────────
+   The spatial contracts expose a second family of write functions: the
+   resource market. These do not fit the one-function-per-contract shape
+   the catalog was built around — ShareBandwidth needs two entities,
+   RelayFor needs six arguments across two positions — so they are
+   described separately and offered as extra targets rather than replacing
+   the primary function of a contract.
+
+   Why they are worth benchmarking: each one writes a different set of
+   keys, and Fabric validates read-write sets after ordering. A payment to
+   an operator touches one of only eight cell records; a transfer between
+   two entities touches two unique ones. The throughput difference between
+   those two shapes is a property of the ledger, not of the network being
+   modelled, and it is measurable here.
+
+   writePattern says which shape a call has:
+     'unique'  every key is per-entity — no contention expected
+     'shared'  at least one key is a cell or operator record — contention
+     'mixed'   both
+
+   Only contracts that carry the market code (the spatial ones) offer
+   these, and only when explicitly requested: including them by default
+   would change what a plain channel sweep measures.                      */
+
+const MARKET_FN = {
+  Mint: {
+    fn: 'Mint',
+    params: ['accountID', 'amount'],
+    writePattern: 'unique',
+    note: 'creates tokens on one account stripe',
+  },
+  Transfer: {
+    fn: 'Transfer',
+    params: ['from', 'to', 'amount'],
+    writePattern: 'unique',
+    note: 'two account stripes, both per-entity',
+  },
+  BuyQos: {
+    fn: 'BuyQos',
+    params: ['entityID', 'tier'],
+    writePattern: 'unique',
+    note: 'buyer account plus their QoS record',
+  },
+  ShareBandwidth: {
+    fn: 'ShareBandwidth',
+    params: ['from', 'to', 'hz', 'priceMicro'],
+    writePattern: 'unique',
+    note: 'two grants and two accounts, all per-entity',
+    needsGrant: true,
+  },
+  RelayFor: {
+    fn: 'RelayFor',
+    params: ['dealID', 'edgeEntity', 'edgeX', 'edgeY', 'relayEntity', 'relayX', 'relayY'],
+    writePattern: 'unique',
+    note: 'deal record plus two batteries and two accounts',
+  },
+};
+
+/** Values for market parameters. Pairs are derived from i so that no two
+    concurrent transactions touch the same account. */
+function marketValue(name, i, keyPrefix) {
+  switch (name) {
+    case 'accountID':
+    case 'entityID':
+    case 'from':
+    case 'edgeEntity':   return `${keyPrefix}-a-${i}`;
+    case 'to':
+    case 'relayEntity':  return `${keyPrefix}-b-${i}`;
+    case 'dealID':       return `${keyPrefix}-deal-${i}`;
+    case 'amount':       return '1000';
+    case 'tier':         return String(1 + (i % 2));
+    case 'hz':           return '20000';
+    case 'priceMicro':   return '500';
+    // The edge entity sits far out, the relay near the middle — otherwise
+    // the contract refuses the deal for gaining nothing.
+    case 'edgeX':        return String(500 + (i * 37) % 1500);
+    case 'edgeY':        return String(500 + (i * 53) % 1500);
+    case 'relayX':       return String(4000 + (i * 71) % 2000);
+    case 'relayY':       return String(4000 + (i * 89) % 2000);
+    default:             return `v-${i}`;
+  }
+}
+
+/** Build arguments for a market call. */
+function buildMarketArgs(opName, i, keyPrefix = 'mkt') {
+  const def = MARKET_FN[opName];
+  if (!def) return null;
+  return def.params.map((p) => marketValue(p, i, keyPrefix));
+}
+
+/** Market operations available on one spatial contract. */
+function marketTargets(channel, contract) {
+  if (!SPATIAL_CONTRACTS.has(contract)) return [];
+  return Object.keys(MARKET_FN).map((op) => {
+    const def = MARKET_FN[op];
+    return {
+      channel,
+      contract,
+      id: `${channel}/${contract}#${op}`,
+      caliperId: caliperId(channel, contract),
+      fn: def.fn,
+      params: def.params,
+      readFn: READ_FN,
+      readAllFn: READ_ALL_FN,
+      writable: true,
+      antennaDep: false,
+      needsSeed: false,
+      market: true,
+      operation: op,
+      writePattern: def.writePattern,
+      note: def.note,
+      needsGrant: !!def.needsGrant,
+      sampleArgs: buildMarketArgs(op, 1),
+    };
+  });
 }
 
 /* ── Target catalog ────────────────────────────────────────────────── */
@@ -271,6 +399,10 @@ function resolveTargets(sel = {}) {
     targets = [],
     includeAntennaDep = false,
     includeReadOnly = false,
+    // Market operations are opt-in: adding them to a plain sweep would
+    // change what that sweep measures.
+    includeMarket = false,
+    marketOnly = false,
   } = sel;
 
   let list = [];
@@ -317,6 +449,18 @@ function resolveTargets(sel = {}) {
 
   if (!includeReadOnly) list = list.filter((t) => t.writable);
   if (!includeAntennaDep) list = list.filter((t) => !t.antennaDep);
+
+  if (includeMarket || marketOnly) {
+    const seenPairs = new Set();
+    const extra = [];
+    for (const t of list) {
+      const pair = `${t.channel}/${t.contract}`;
+      if (seenPairs.has(pair)) continue;
+      seenPairs.add(pair);
+      extra.push(...marketTargets(t.channel, t.contract));
+    }
+    list = marketOnly ? extra : [...list, ...extra];
+  }
   return list;
 }
 
@@ -342,6 +486,10 @@ module.exports = {
   allTargets,
   catalog,
   caliperId,
+  MARKET_FN,
+  SPATIAL_CONTRACTS,
+  marketTargets,
+  buildMarketArgs,
   resolveTargets,
   writeFunctions,
   assertCatalogInSync,
