@@ -9535,13 +9535,25 @@ func stripeKey(accountID string, stripe int64) string {
     return accountPrefix + accountID + ":" + strconv.FormatInt(stripe, 10)
 }
 
-func (s *NetworkBase) readStripe(ctx contractapi.TransactionContextInterface, accountID string, stripe int64) (*Account, error) {
+func (s *NetworkBase) readStripe(ctx contractapi.TransactionContextInterface, accountID string, stripe int64, cfg *NetworkConfig) (*Account, error) {
     b, err := ctx.GetStub().GetState(stripeKey(accountID, stripe))
     if err != nil {
         return nil, err
     }
     if b == nil {
-        return &Account{AccountID: accountID}, nil
+        // A wallet opens at first touch with a starting balance, the same way
+        // energyOf hands out a full battery. Without it, benchmarking any
+        // paying operation measured "insufficient funds" rather than the
+        // operation itself — a cold BuyQos could never succeed, because the
+        // account it charges had never been minted into.
+        //
+        // Only stripe 0 carries the opening balance, so BalanceOf still sums
+        // to one starting balance rather than one per stripe.
+        opening := int64(0)
+        if stripe == 0 {
+            opening = cfg.InitialBalanceMicro
+        }
+        return &Account{AccountID: accountID, Balance: opening}, nil
     }
     var a Account
     if err := json.Unmarshal(b, &a); err != nil {
@@ -9565,7 +9577,7 @@ func (s *NetworkBase) credit(ctx contractapi.TransactionContextInterface, accoun
         return nil
     }
     st := stripeOf(ctx, accountID, cfg.Stripes)
-    a, err := s.readStripe(ctx, accountID, st)
+    a, err := s.readStripe(ctx, accountID, st, cfg)
     if err != nil {
         return err
     }
@@ -9585,7 +9597,7 @@ func (s *NetworkBase) debit(ctx contractapi.TransactionContextInterface, account
     start := stripeOf(ctx, accountID, cfg.Stripes)
     for i := int64(0); i < cfg.Stripes; i++ {
         st := (start + i) % cfg.Stripes
-        a, err := s.readStripe(ctx, accountID, st)
+        a, err := s.readStripe(ctx, accountID, st, cfg)
         if err != nil {
             return err
         }
@@ -9596,8 +9608,9 @@ func (s *NetworkBase) debit(ctx contractapi.TransactionContextInterface, account
             return s.writeStripe(ctx, a, st)
         }
     }
-    return fmt.Errorf("%s cannot cover %d micro-tokens across %d stripes",
-        accountID, amount, cfg.Stripes)
+    return fmt.Errorf(
+        "%s cannot cover %d micro-tokens across %d stripes — an account opens with %d, so this has been spent",
+        accountID, amount, cfg.Stripes, cfg.InitialBalanceMicro)
 }
 
 // Mint creates tokens. Bootstrap only — there is no supply counter, which
@@ -9622,7 +9635,7 @@ func (s *NetworkBase) BalanceOf(ctx contractapi.TransactionContextInterface, acc
     }
     total := Account{AccountID: accountID}
     for st := int64(0); st < cfg.Stripes; st++ {
-        a, err := s.readStripe(ctx, accountID, st)
+        a, err := s.readStripe(ctx, accountID, st, cfg)
         if err != nil {
             return nil, err
         }
@@ -9711,6 +9724,11 @@ func (s *NetworkBase) ShareBandwidth(ctx contractapi.TransactionContextInterface
     }
     available := g.HeldHz - g.SubletHz
     if available < amount {
+        if g.HeldHz == 0 {
+            return fmt.Errorf(
+                "%s holds no spectrum to sublet: a grant is issued when an entity is admitted, and only while spectrum accounting is on — call SetResources with trackBandwidth on, then admit %s before it can sell",
+                from, from)
+        }
         return fmt.Errorf("%s holds %d Hz with %d already sublet, so only %d Hz is free",
             from, g.HeldHz, g.SubletHz, available)
     }
