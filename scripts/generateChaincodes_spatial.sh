@@ -9475,6 +9475,11 @@ const (
     accountPrefix = "~ACC:"
     taskPrefix    = "~TASK:"   // relay deals
     grantPrefix   = "~GRANT:"
+    // The price of one QoS tier. Defined here beside the other market
+    // constants, though NetworkConfig — written by the network block — is
+    // what reads it: Go compiles both blocks into one package, so where a
+    // constant is declared does not matter, only that it is declared once.
+    defaultQosPrice    = int64(50000)  // 0.05 coin per tier
     defaultStripes     = int64(1)
     defaultPriceScale  = int64(1000)  // micro-tokens per µJ-equivalent
 )
