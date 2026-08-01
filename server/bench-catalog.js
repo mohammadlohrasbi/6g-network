@@ -108,6 +108,21 @@ const SHARED_REF_PARAMS = new Set(['antennaID']);
 // have to span that square — the old 1..100 range put every entity in one
 // corner and every transaction on the same cell.
 const GRID_SIZE_M = 10000;
+
+// Two reference points in the seed-42 antenna layout, used to place the
+// parties in a relay benchmark: RELAY_EDGE is the corner furthest from every
+// cell, RELAY_HUB sits almost on top of one.
+// Chosen by searching the seed-42 layout for the pairing that clears the
+// contract's own conditions most often. The relay sits 565 m from the edge
+// entity — close enough for the device-to-device hop to carry the payload,
+// far enough to reach a different cell.
+//
+// It clears about two thirds of the time, not always: shadow fading varies
+// per link, so some pairs come out with the relay no better placed than the
+// entity it would carry. A relay market where every deal is worthwhile
+// would be the unrealistic result.
+const RELAY_EDGE = { x: 3600, y: 8400 };
+const RELAY_OFFSET = { dx: -400, dy: -400 };
 const BENCH_SEED = '42';
 const ANTENNA_COUNT = 8;   // one macrocell per organization
 
@@ -238,12 +253,15 @@ const MARKET_FN = {
   },
   ShareBandwidth: {
     fn: 'ShareBandwidth',
-    params: ['from', 'to', 'hz', 'priceMicro'],
+    // 'from' deliberately reuses the key the contract's own write function
+    // creates, so the seller already holds a grant. Naming a fresh entity
+    // here meant the seller had nothing to sell and every call was refused.
+    params: ['fromAdmitted', 'to', 'hz', 'priceMicro'],
     writePattern: 'unique',
     note: 'two grants and two accounts, all per-entity',
     tapeSafe: true,
-    requires: 'trackBandwidth on, and the selling entity admitted first — '
-      + 'a grant only exists once the contract has issued one',
+    requires: 'trackBandwidth on, and the primary write run first — the '
+      + 'seller sells a grant the contract issued when it was admitted',
   },
   RelayFor: {
     fn: 'RelayFor',
@@ -262,6 +280,9 @@ const MARKET_FN = {
     concurrent transactions touch the same account. */
 function marketValue(name, i, keyPrefix) {
   switch (name) {
+    // Matches the ledger key the primary write function uses, so this
+    // entity has already been admitted and holds a grant.
+    case 'fromAdmitted': return `${keyPrefix}-${i}`;
     case 'accountID':
     case 'entityID':
     case 'from':
@@ -273,12 +294,24 @@ function marketValue(name, i, keyPrefix) {
     case 'tier':         return String(1 + (i % 2));
     case 'hz':           return '20000';
     case 'priceMicro':   return '500';
-    // The edge entity sits far out, the relay near the middle — otherwise
-    // the contract refuses the deal for gaining nothing.
-    case 'edgeX':        return String(500 + (i * 37) % 1500);
-    case 'edgeY':        return String(500 + (i * 53) % 1500);
-    case 'relayX':       return String(4000 + (i * 71) % 2000);
-    case 'relayY':       return String(4000 + (i * 89) % 2000);
+    // Relaying only makes sense when the relay has the better link, and the
+    // contract refuses the deal otherwise. The first attempt put the edge
+    // near the map origin and the relay in the middle, which failed every
+    // time: the antennas are placed pseudo-randomly from the seed, so "the
+    // middle" landed in a coverage gap while "the origin" sat beside a cell.
+    //
+    // These two regions are derived from the seed-42 layout: the corner
+    // around (9800, 1600) is the furthest any point gets from every cell —
+    // 6.6 km — and (3200, 7800) is within 20 m of antenna-5. That gives the
+    // edge entity a weak link and the relay a strong one, which is the
+    // situation relaying exists for.
+    //
+    // Change the scenario seed and these lose their meaning; RELAY_EDGE and
+    // RELAY_HUB below are the two values to recompute.
+    case 'edgeX':        return String(RELAY_EDGE.x - 200 + (i * 79) % 400);
+    case 'edgeY':        return String(RELAY_EDGE.y - 200 + (i * 113) % 400);
+    case 'relayX':       return String(RELAY_EDGE.x - 200 + (i * 79) % 400 + RELAY_OFFSET.dx);
+    case 'relayY':       return String(RELAY_EDGE.y - 200 + (i * 113) % 400 + RELAY_OFFSET.dy);
     default:             return `v-${i}`;
   }
 }
