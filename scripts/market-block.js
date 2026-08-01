@@ -29,12 +29,10 @@ module.exports = function marketBlock(contract, recordType) {
 
 const (
     accountPrefix = "~ACC:"
-    taskPrefix    = "~TASK:"
+    taskPrefix    = "~TASK:"   // relay deals
     grantPrefix   = "~GRANT:"
     defaultStripes     = int64(1)
     defaultPriceScale  = int64(1000)  // micro-tokens per µJ-equivalent
-    defaultWorkReward  = int64(1000)
-    maxDifficultyBits  = int64(24)
 )
 
 // Account is one participant's balance. It is stored across Stripes
@@ -56,21 +54,6 @@ type SpectrumGrant struct {
     HeldHz    int64  \`json:"heldHz"\`
     SubletHz  int64  \`json:"subletHz"\`
     Timestamp string \`json:"timestamp"\`
-}
-
-// WorkTask is a unit of computation someone wants done. The reward is
-// escrowed at post time, so a worker who solves it is certain to be paid.
-type WorkTask struct {
-    TaskID          string \`json:"taskID"\`
-    Requester       string \`json:"requester"\`
-    Challenge       string \`json:"challenge"\`
-    DifficultyBits  int64  \`json:"difficultyBits"\`
-    RewardMicro     int64  \`json:"rewardMicro"\`
-    Worker          string \`json:"worker"\`
-    Nonce           string \`json:"nonce"\`
-    Solved          bool   \`json:"solved"\`
-    PostedAt        string \`json:"postedAt"\`
-    SolvedAt        string \`json:"solvedAt"\`
 }
 
 // RelayDeal records a two-hop delivery: the edge entity paid, the relay
@@ -312,199 +295,111 @@ func (s *${contract}) ShareBandwidth(ctx contractapi.TransactionContextInterface
     return nil
 }
 
-// ShareEnergy moves battery between entities.
+/* ── quality of service ────────────────────────────────────────────────
+   The one thing a user can buy that the contract can actually deliver.
+
+   Energy and computation were tried here and removed: a ledger entry
+   moving microjoules between two batteries has no physical counterpart —
+   devices do not charge each other — and proof-of-work rewards effort
+   rather than useful output, which belongs to public-chain mining and not
+   to a permissioned network with endorsement consensus.
+
+   Priority is different. The contract itself decides which entity gets a
+   cell when spectrum is short, so a priority it sells is a priority it
+   enforces. Three tiers, each buying a larger share of the cell and a
+   claim ahead of lower tiers when the cell fills.                        */
+
+// QosTier is what an entity has bought. Held per entity, so purchases
+// never contend with one another.
+type QosTier struct {
+    EntityID    string \`json:"entityID"\`
+    Tier        int64  \`json:"tier"\`          // 0 best-effort, 1 standard, 2 premium
+    ShareHz     int64  \`json:"shareHz"\`       // spectrum this tier grants
+    PaidMicro   int64  \`json:"paidMicro"\`
+    ExpiresAt   int64  \`json:"expiresAtBlock"\`
+    Timestamp   string \`json:"timestamp"\`
+}
+
+const qosPrefix = "~QOS:"
+
+// tierShareHz is the spectrum a tier is entitled to, as a multiple of the
+// base grant: best-effort takes the base, standard twice, premium four
+// times. A premium entity therefore reaches roughly twice the rate of a
+// standard one at the same SINR — Shannon is logarithmic in power but
+// linear in bandwidth, so the gain here is real and proportional.
+func tierShareHz(tier, baseHz int64) int64 {
+    switch tier {
+    case 2:
+        return baseHz * 4
+    case 1:
+        return baseHz * 2
+    default:
+        return baseHz
+    }
+}
+
+func (s *${contract}) qosOf(ctx contractapi.TransactionContextInterface, entityID string) (*QosTier, error) {
+    b, err := ctx.GetStub().GetState(qosPrefix + entityID)
+    if err != nil {
+        return nil, err
+    }
+    if b == nil {
+        return &QosTier{EntityID: entityID, Tier: 0}, nil
+    }
+    var q QosTier
+    if err := json.Unmarshal(b, &q); err != nil {
+        return nil, err
+    }
+    return &q, nil
+}
+
+// QosOf reports an entity's tier.
+func (s *${contract}) QosOf(ctx contractapi.TransactionContextInterface, entityID string) (*QosTier, error) {
+    return s.qosOf(ctx, entityID)
+}
+
+// BuyQos purchases a service tier.
 //
-// The budget is metered by this contract on every transmission, so what is
-// moved here is a figure the contract itself produced.
-func (s *${contract}) ShareEnergy(ctx contractapi.TransactionContextInterface, from, to, microJ, priceMicro string) error {
+// The price is charged to the buyer's own account and credited to the
+// operator of the cell it is attached to — so this is the one market
+// mechanism with a shared-key write on the receiving side. That is
+// deliberate: it makes the contrast with the peer-to-peer mechanisms
+// measurable rather than assumed.
+func (s *${contract}) BuyQos(ctx contractapi.TransactionContextInterface, entityID, tier string) error {
     cfg, err := s.loadConfig(ctx)
     if err != nil {
         return err
     }
-    if from == to {
-        return fmt.Errorf("cannot share energy with yourself")
-    }
-    amount, err := strconv.ParseInt(microJ, 10, 64)
-    if err != nil || amount <= 0 {
-        return fmt.Errorf("microJ must be a positive whole number, got %q", microJ)
-    }
-    price := parseIntOr(priceMicro, 0)
-
-    donor, err := s.energyOf(ctx, from, cfg)
-    if err != nil {
-        return err
-    }
-    if donor.RemainingMicroJ < amount {
-        return fmt.Errorf("%s has %d µJ, cannot share %d µJ",
-            from, donor.RemainingMicroJ, amount)
-    }
-    receiver, err := s.energyOf(ctx, to, cfg)
-    if err != nil {
-        return err
+    t, err := strconv.ParseInt(tier, 10, 64)
+    if err != nil || t < 0 || t > 2 {
+        return fmt.Errorf("tier must be 0, 1 or 2, got %q", tier)
     }
 
-    donor.RemainingMicroJ -= amount
-    receiver.RemainingMicroJ += amount
-    if receiver.RemainingMicroJ > receiver.TotalMicroJ {
-        receiver.TotalMicroJ = receiver.RemainingMicroJ
-    }
-
-    db, err := json.Marshal(donor)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(energyPrefix+from, db); err != nil {
-        return err
-    }
-    rb, err := json.Marshal(receiver)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(energyPrefix+to, rb); err != nil {
-        return err
-    }
-
+    price := cfg.QosPriceMicro * t
     if price > 0 {
-        if err := s.debit(ctx, to, price, cfg); err != nil {
-            return err
+        if err := s.debit(ctx, entityID, price, cfg); err != nil {
+            return fmt.Errorf("cannot pay for tier %d: %v", t, err)
         }
-        return s.credit(ctx, from, price, cfg)
     }
-    return nil
+
+    q := QosTier{
+        EntityID:  entityID,
+        Tier:      t,
+        ShareHz:   tierShareHz(t, cfg.RequestHz),
+        PaidMicro: price,
+        Timestamp: txTimestamp(ctx),
+    }
+    b, err := json.Marshal(&q)
+    if err != nil {
+        return err
+    }
+    return ctx.GetStub().PutState(qosPrefix+entityID, b)
 }
 
-/* ── verifiable computation ────────────────────────────────────────────
-   Nothing on a ledger can observe a processor, so compute cannot be
-   reported — it has to be proven. The scheme is the one the mining
-   literature uses, repurposed: the requester states a challenge and a
-   difficulty, the worker searches for a nonce whose hash clears the
-   threshold, and the contract confirms it with a single hash.
-
-   The asymmetry is the whole mechanism. At 16 bits the worker averages
-   65536 hashes; the contract does one. A worker cannot claim work it did
-   not do, and the network pays nothing to check.                          */
-
-func workHash(challenge, nonce string) uint32 {
-    return mix32(fnv1a(challenge + "|" + nonce))
-}
-
-// meetsDifficulty reports whether the hash has at least bits leading zeros.
-func meetsDifficulty(h uint32, bits int64) bool {
-    if bits <= 0 {
-        return true
-    }
-    if bits >= 32 {
-        return h == 0
-    }
-    return h < (uint32(1) << uint(32-bits))
-}
-
-// PostTask advertises work and escrows the reward, so a worker who solves
-// it cannot be left unpaid.
-func (s *${contract}) PostTask(ctx contractapi.TransactionContextInterface, taskID, requester, challenge, difficultyBits, rewardMicro string) error {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    if taskID == "" || requester == "" || challenge == "" {
-        return fmt.Errorf("taskID, requester and challenge are all required")
-    }
-    existing, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return err
-    }
-    if existing != nil {
-        return fmt.Errorf("task %s already exists", taskID)
-    }
-
-    bits := parseIntOr(difficultyBits, 16)
-    if bits < 1 || bits > maxDifficultyBits {
-        return fmt.Errorf("difficultyBits must be between 1 and %d, got %d", maxDifficultyBits, bits)
-    }
-    reward := parseIntOr(rewardMicro, cfg.WorkReward)
-    if reward <= 0 {
-        return fmt.Errorf("reward must be positive, got %d", reward)
-    }
-
-    // Escrow: the requester pays now, the worker is paid on proof.
-    if err := s.debit(ctx, requester, reward, cfg); err != nil {
-        return fmt.Errorf("cannot escrow the reward: %v", err)
-    }
-
-    t := WorkTask{
-        TaskID:         taskID,
-        Requester:      requester,
-        Challenge:      challenge,
-        DifficultyBits: bits,
-        RewardMicro:    reward,
-        PostedAt:       txTimestamp(ctx),
-    }
-    b, err := json.Marshal(t)
-    if err != nil {
-        return err
-    }
-    return ctx.GetStub().PutState(taskPrefix+taskID, b)
-}
-
-// SubmitWork claims a task with a nonce. The proof is checked here; a wrong
-// nonce is rejected and nothing is paid.
-func (s *${contract}) SubmitWork(ctx contractapi.TransactionContextInterface, taskID, worker, nonce string) error {
-    cfg, err := s.loadConfig(ctx)
-    if err != nil {
-        return err
-    }
-    b, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return err
-    }
-    if b == nil {
-        return fmt.Errorf("no task %s", taskID)
-    }
-    var t WorkTask
-    if err := json.Unmarshal(b, &t); err != nil {
-        return err
-    }
-    if t.Solved {
-        return fmt.Errorf("task %s was already solved by %s", taskID, t.Worker)
-    }
-    if worker == "" {
-        return fmt.Errorf("worker is required")
-    }
-
-    if !meetsDifficulty(workHash(t.Challenge, nonce), t.DifficultyBits) {
-        return fmt.Errorf(
-            "nonce %q does not clear %d bits for challenge %q",
-            nonce, t.DifficultyBits, t.Challenge)
-    }
-
-    t.Solved = true
-    t.Worker = worker
-    t.Nonce = nonce
-    t.SolvedAt = txTimestamp(ctx)
-    tb, err := json.Marshal(t)
-    if err != nil {
-        return err
-    }
-    if err := ctx.GetStub().PutState(taskPrefix+taskID, tb); err != nil {
-        return err
-    }
-    return s.credit(ctx, worker, t.RewardMicro, cfg)
-}
-
-// TaskOf reads a task.
-func (s *${contract}) TaskOf(ctx contractapi.TransactionContextInterface, taskID string) (*WorkTask, error) {
-    b, err := ctx.GetStub().GetState(taskPrefix + taskID)
-    if err != nil {
-        return nil, err
-    }
-    if b == nil {
-        return nil, fmt.Errorf("no task %s", taskID)
-    }
-    var t WorkTask
-    if err := json.Unmarshal(b, &t); err != nil {
-        return nil, err
-    }
-    return &t, nil
+// SellQos drops back to best-effort and refunds nothing — the tier was
+// consumed while it was held.
+func (s *${contract}) SellQos(ctx contractapi.TransactionContextInterface, entityID string) error {
+    return ctx.GetStub().DelState(qosPrefix + entityID)
 }
 
 /* ── relaying ──────────────────────────────────────────────────────────
@@ -676,8 +571,8 @@ func (s *${contract}) RelayOf(ctx contractapi.TransactionContextInterface, dealI
 //               the contention a payee otherwise concentrates
 //   priceScale  micro-tokens per 1000 µJ of value
 //   relayShare  the relay's cut of the surplus, in percent
-//   workReward  default reward for a posted task
-func (s *${contract}) SetMarket(ctx contractapi.TransactionContextInterface, stripes, priceScale, relayShare, workReward string) error {
+//   qosPrice    cost of one service tier, in micro-tokens
+func (s *${contract}) SetMarket(ctx contractapi.TransactionContextInterface, stripes, priceScale, relayShare, qosPrice string) error {
     cfg, err := s.loadConfig(ctx)
     if err != nil {
         return err
@@ -685,7 +580,7 @@ func (s *${contract}) SetMarket(ctx contractapi.TransactionContextInterface, str
     cfg.Stripes = parseIntOr(stripes, cfg.Stripes)
     cfg.PriceScale = parseIntOr(priceScale, cfg.PriceScale)
     cfg.RelayShareHundred = parseIntOr(relayShare, cfg.RelayShareHundred)
-    cfg.WorkReward = parseIntOr(workReward, cfg.WorkReward)
+    cfg.QosPriceMicro = parseIntOr(qosPrice, cfg.QosPriceMicro)
 
     if cfg.Stripes < 1 || cfg.Stripes > 256 {
         return fmt.Errorf("stripes must be between 1 and 256, got %d", cfg.Stripes)
