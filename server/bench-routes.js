@@ -104,6 +104,8 @@ router.post('/preview', (req, res) => {
     res.json({
       targets: targets.map((t) => ({
         id: t.id, channel: t.channel, contract: t.contract, fn: t.fn,
+        market: !!t.market, operation: t.operation || null,
+        tapeSafe: t.tapeSafe !== false, requires: t.requires || null,
       })),
       count: targets.length,
       runs: targets.length * repeat,
