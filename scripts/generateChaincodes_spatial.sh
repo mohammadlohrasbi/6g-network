@@ -388,13 +388,23 @@ func (s *LocationBasedAssignment) AssignAntenna(ctx contractapi.TransactionConte
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -629,13 +639,23 @@ func (s *LocationBasedBandwidth) AssignBandwidth(ctx contractapi.TransactionCont
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -871,13 +891,23 @@ func (s *LocationBasedChannelAllocation) AllocateChannel(ctx contractapi.Transac
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1113,13 +1143,23 @@ func (s *LocationBasedCongestion) RecordCongestion(ctx contractapi.TransactionCo
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1355,13 +1395,23 @@ func (s *LocationBasedConnection) ConnectEntity(ctx contractapi.TransactionConte
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1597,13 +1647,23 @@ func (s *LocationBasedCoverage) RecordCoverage(ctx contractapi.TransactionContex
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -1839,13 +1899,23 @@ func (s *LocationBasedDynamicRouting) SetDynamicRoute(ctx contractapi.Transactio
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2081,13 +2151,23 @@ func (s *LocationBasedEnergy) RecordEnergy(ctx contractapi.TransactionContextInt
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2323,13 +2403,23 @@ func (s *LocationBasedFault) ReportFault(ctx contractapi.TransactionContextInter
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2565,13 +2655,23 @@ func (s *LocationBasedInterference) RecordInterference(ctx contractapi.Transacti
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -2807,13 +2907,23 @@ func (s *LocationBasedIoTAuthentication) AuthenticateIoT(ctx contractapi.Transac
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3049,13 +3159,23 @@ func (s *LocationBasedIoTBandwidth) AllocateIoTBandwidth(ctx contractapi.Transac
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3291,13 +3411,23 @@ func (s *LocationBasedIoTConnection) ConnectIoT(ctx contractapi.TransactionConte
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3533,13 +3663,23 @@ func (s *LocationBasedIoTFault) ReportIoTFault(ctx contractapi.TransactionContex
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -3775,13 +3915,23 @@ func (s *LocationBasedIoTRegistration) RegisterIoT(ctx contractapi.TransactionCo
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4018,13 +4168,23 @@ func (s *LocationBasedIoTResource) AllocateIoTResource(ctx contractapi.Transacti
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4261,13 +4421,23 @@ func (s *LocationBasedIoTRevocation) RevokeIoT(ctx contractapi.TransactionContex
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4504,13 +4674,23 @@ func (s *LocationBasedIoTSession) StartIoTSession(ctx contractapi.TransactionCon
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4747,13 +4927,23 @@ func (s *LocationBasedIoTStatus) UpdateIoTStatus(ctx contractapi.TransactionCont
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, deviceID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -4989,13 +5179,23 @@ func (s *LocationBasedLatency) RecordLatency(ctx contractapi.TransactionContextI
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5231,13 +5431,23 @@ func (s *LocationBasedNetworkHealth) RecordNetworkHealth(ctx contractapi.Transac
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5473,13 +5683,23 @@ func (s *LocationBasedNetworkLoad) RecordNetworkLoad(ctx contractapi.Transaction
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5715,13 +5935,23 @@ func (s *LocationBasedPowerManagement) SetPowerLevel(ctx contractapi.Transaction
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -5957,13 +6187,23 @@ func (s *LocationBasedPriority) AssignPriority(ctx contractapi.TransactionContex
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6199,13 +6439,23 @@ func (s *LocationBasedQoS) AssignQoS(ctx contractapi.TransactionContextInterface
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6442,13 +6692,23 @@ func (s *LocationBasedResourceAllocation) AllocateResource(ctx contractapi.Trans
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6684,13 +6944,23 @@ func (s *LocationBasedRoaming) PerformRoaming(ctx contractapi.TransactionContext
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -6926,13 +7196,23 @@ func (s *LocationBasedSessionManagement) ManageSession(ctx contractapi.Transacti
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7169,13 +7449,23 @@ func (s *LocationBasedSignalQuality) RecordSignalQuality(ctx contractapi.Transac
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7411,13 +7701,23 @@ func (s *LocationBasedSignalStrength) RecordSignalStrength(ctx contractapi.Trans
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7653,13 +7953,23 @@ func (s *LocationBasedStatus) UpdateStatus(ctx contractapi.TransactionContextInt
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -7895,13 +8205,23 @@ func (s *LocationBasedTraffic) RecordTraffic(ctx contractapi.TransactionContextI
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, entityID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -8137,13 +8457,23 @@ func (s *LocationBasedUserActivity) RecordUserActivity(ctx contractapi.Transacti
     // Record what this entity now holds, so a later sublet can be checked
     // against a figure this contract issued rather than one the caller
     // claims to own.
-    if cfg.TrackBandwidth {
+    //
+    // This is written whether or not cell-level accounting is on. The two
+    // are different keys with different costs: the grant is per-entity and
+    // never contended, while AllocatedHz sits on one of eight cell records
+    // and is the expensive part. Gating both together meant the spectrum
+    // market simply did not work unless the contentious half was enabled.
+    {
         g, gerr := s.grantOf(ctx, userID)
         if gerr != nil {
             return gerr
         }
         g.Cell = rep.ServingCell
-        g.HeldHz += rep.GrantedHz
+        held := rep.GrantedHz
+        if held <= 0 {
+            held = cfg.RequestHz
+        }
+        g.HeldHz += held
         if gerr := s.saveGrant(ctx, g); gerr != nil {
             return gerr
         }
@@ -9918,11 +10248,18 @@ func (s *NetworkBase) RelayFor(ctx contractapi.TransactionContextInterface, deal
     if err != nil {
         return err
     }
-    edgeReports, _, err := s.evaluate(antennas, cfg, edgeEntity, ex, ey)
+    // Both cellular links are measured against the entity's own slice, the
+    // same width the device-to-device hop below uses. Evaluating them at the
+    // cell's full band — which is what evaluate does while spectrum
+    // accounting is off — made the direct path look almost free next to a
+    // hop priced on 100 kHz, so every deal was refused for costing more than
+    // it saved. Relay economics is a comparison, and a comparison needs both
+    // sides on the same scale.
+    edgeReports, _, err := s.evaluateWithShare(antennas, cfg, edgeEntity, ex, ey, cfg.RequestHz)
     if err != nil {
         return err
     }
-    relayReports, _, err := s.evaluate(antennas, cfg, relayEntity, rx, ry)
+    relayReports, _, err := s.evaluateWithShare(antennas, cfg, relayEntity, rx, ry, cfg.RequestHz)
     if err != nil {
         return err
     }
