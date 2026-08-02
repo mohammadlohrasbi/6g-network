@@ -175,7 +175,11 @@ function buildTargetPicker() {
       el.className = 'pick';
       el.dataset.id = t.id;
       el.dataset.search = `${c.channel} ${t.contract} ${t.fn || ''}`.toLowerCase();
-      const flag = !t.writable ? ' · read only' : t.antennaDep ? ' · needs antenna' : '';
+      const flag = !t.writable ? ' · read only'
+      : t.antennaDep ? ' · needs antenna'
+      : t.market && t.tapeSafe === false ? ' · Caliper only'
+      : t.market && t.requires ? ' · has prerequisites'
+      : '';
       el.innerHTML =
         `<span class="p-name">${t.contract}</span>` +
         `<span class="p-meta">${c.channel}${flag}</span>`;
@@ -269,6 +273,23 @@ function schedulePreview() {
   state.previewTimer = setTimeout(runPreview, 220);
 }
 
+function marketWarning(targets) {
+  const el = $('scopeNote');
+  if (!el) return;
+  const caliperOnly = targets.filter((t) => t.tapeSafe === false);
+  const needsPrep = targets.filter((t) => t.requires && t.tapeSafe !== false);
+  const parts = [];
+  if (state.tool === 'tape' && caliperOnly.length) {
+    parts.push(`${caliperOnly.length} market target${caliperOnly.length > 1 ? 's need' : ' needs'} `
+      + 'Caliper — Tape repeats one argument set and these need fresh state each call');
+  }
+  if (needsPrep.length) {
+    parts.push('some market targets expect the contract\'s own write function to have run first');
+  }
+  el.textContent = parts.join('. ');
+  el.hidden = parts.length === 0;
+}
+
 async function runPreview() {
   const set = (count, runs, time) => {
     $('scopeCount').textContent = count;
@@ -278,6 +299,7 @@ async function runPreview() {
   try {
     const p = await post('/bench/preview', requestBody());
     set(p.count, p.runs, formatDuration(p.estimatedSeconds));
+    marketWarning(p.targets || []);
     $('scopeSummary').classList.toggle('is-empty', p.count === 0);
   } catch (err) {
     set('—', '—', '—');
