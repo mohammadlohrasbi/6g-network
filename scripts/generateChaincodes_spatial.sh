@@ -9393,7 +9393,9 @@ func (s *NetworkBase) listAntennas(ctx contractapi.TransactionContextInterface) 
 // chosen. That is what makes Algorithm 2 possible: falling back to the
 // second-best cell needs the second-best cell's SINR, not the first's.
 func (s *NetworkBase) evaluate(antennas []*Antenna, cfg *NetworkConfig, entityID string, x, y int64) ([]*CellReport, []*Antenna, error) {
-    return s.evaluateWithShare(antennas, cfg, entityID, x, y, cfg.RequestHz)
+    // 0 keeps the existing behaviour: the rate follows the cell's band
+    // unless spectrum accounting is on.
+    return s.evaluateWithShare(antennas, cfg, entityID, x, y, 0)
 }
 
 // evaluateWithShare is evaluate with an explicit spectrum slice, so a
@@ -9450,13 +9452,29 @@ func (s *NetworkBase) evaluateWithShare(antennas []*Antenna, cfg *NetworkConfig,
         // slice this entity is granted rather than the whole cell. That is
         // the difference between "this link could carry 77 Mbps" and "this
         // entity can carry 0.39 Mbps".
+        // requestHz of 0 means "whatever the cell offers" — the default when
+        // spectrum is not being accounted for. A positive value is a slice
+        // the caller insists on, which is how RelayFor prices both sides of
+        // a deal on the same scale: without it the direct path was measured
+        // against 20 MHz while the device-to-device hop was measured against
+        // 100 kHz, and every deal was refused for costing more than it saved.
+        //
+        // Note this parameter used to be ignored entirely — the body read
+        // cfg.RequestHz and only when tracking was on, so passing a share in
+        // did nothing at all.
         rateBandwidth := a.BandwidthHz
         granted := int64(0)
         free := a.BandwidthHz
+        if requestHz > 0 {
+            rateBandwidth = requestHz
+        }
         if cfg.TrackBandwidth {
-            granted = cfg.RequestHz
+            granted = requestHz
+            if granted <= 0 {
+                granted = cfg.RequestHz
+            }
             free = a.BandwidthHz - a.AllocatedHz
-            rateBandwidth = cfg.RequestHz
+            rateBandwidth = granted
         }
         capacity := ShannonBps(rateBandwidth, sinr)
 
@@ -9544,9 +9562,10 @@ func (s *NetworkBase) admit(ctx contractapi.TransactionContextInterface, entityI
 
     // A purchased tier widens the slice this entity is evaluated against,
     // so the rate it sees reflects what it paid for.
-    requestHz := cfg.RequestHz
+    requestHz := int64(0)
     tier := int64(0)
     if cfg.TrackBandwidth {
+        requestHz = cfg.RequestHz
         q, qerr := s.qosOf(ctx, entityID)
         if qerr != nil {
             return nil, nil, qerr
@@ -9610,9 +9629,9 @@ func (s *NetworkBase) admit(ctx contractapi.TransactionContextInterface, entityI
                     cell.AntennaID, cell.UsedCapacity, cell.MaxCapacity)
                 continue
             }
-            if cfg.TrackBandwidth && cell.AllocatedHz+requestHz > cell.BandwidthHz {
+            if cfg.TrackBandwidth && cell.AllocatedHz+effectiveHz(cfg, requestHz) > cell.BandwidthHz {
                 lastErr = fmt.Errorf("cell %s has no spectrum left: %d Hz free, %d Hz requested",
-                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, requestHz)
+                    cell.AntennaID, cell.BandwidthHz-cell.AllocatedHz, effectiveHz(cfg, requestHz))
                 continue
             }
             if useLoadRule {
