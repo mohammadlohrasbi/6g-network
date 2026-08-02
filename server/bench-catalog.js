@@ -259,9 +259,13 @@ const MARKET_FN = {
     params: ['fromAdmitted', 'to', 'hz', 'priceMicro'],
     writePattern: 'unique',
     note: 'two grants and two accounts, all per-entity',
-    tapeSafe: true,
-    requires: 'trackBandwidth on, and the primary write run first — the '
-      + 'seller sells a grant the contract issued when it was admitted',
+    // A grant is finite: 100 kHz sold 20 kHz at a time runs out after five
+    // sales. Tape repeats one seller for the whole run, so it would clear
+    // five transactions and refuse the rest.
+    tapeSafe: false,
+    requires: 'the contract\'s own write function run first, so the seller '
+      + 'holds a grant to sell — and Caliper, because a grant only covers a '
+      + 'few sales and Tape reuses one seller throughout',
   },
   RelayFor: {
     fn: 'RelayFor',
