@@ -228,6 +228,11 @@
         <span class="hint">Passes over the whole selection, for variance</span>
       </div>
       <div class="field">
+        <label for="tapeConcurrency">Targets at once</label>
+        <input type="number" id="tapeConcurrency" value="1" min="1" max="32">
+        <span class="hint">1 measures each in isolation; more puts channels under load together</span>
+      </div>
+      <div class="field">
         <label for="tapeTimeout">Give up after</label>
         <input type="number" id="tapeTimeout" value="300" min="30" max="3600">
         <span class="hint">Seconds per target before the tool is killed</span>
@@ -276,6 +281,11 @@
         <span class="hint">Only used when the read round is on</span>
       </div>
       <div class="field">
+        <label for="calConcurrency">Targets at once</label>
+        <input type="number" id="calConcurrency" value="1" min="1" max="16">
+        <span class="hint">Each target starts its own workers — 2 or 3 suits a 4 GB host</span>
+      </div>
+      <div class="field">
         <label for="calTimeout">Give up after</label>
         <input type="number" id="calTimeout" value="600" min="60" max="3600">
         <span class="hint">Seconds per target before the tool is killed</span>
@@ -305,6 +315,7 @@
 
     <div class="readouts">
       <div class="readout accent-trace"><div class="k">Mean throughput</div><div class="v" id="mTps">—<span class="u">tps</span></div></div>
+      <div class="readout accent-signal" hidden><div class="k">Network aggregate</div><div class="v" id="mAggregate">—<span class="u">tps</span></div></div>
       <div class="readout accent-signal"><div class="k">Mean latency</div><div class="v" id="mLat">—<span class="u">ms</span></div></div>
       <div class="readout accent-ok"><div class="k">Committed</div><div class="v" id="mOk">—</div></div>
       <div class="readout accent-rx"><div class="k">Rejected</div><div class="v" id="mBad">—</div></div>
