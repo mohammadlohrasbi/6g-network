@@ -209,6 +209,35 @@ for (const { name, go, isShared } of files) {
     if (!declaredConsts.has(id)) bad(name, `constant ${id} is used but never declared`);
   }
 
+  // A helper called but never declared. The constant check below caught
+  // defaultQosPrice; this catches the same mistake for functions, which is
+  // how effectiveHz — used in the admission check but declared nowhere —
+  // reached the compiler and took all twenty channels down with it.
+  const declaredFns = new Set();
+  for (const m of both.matchAll(/^func (?:\([^)]*\) )?(\w+)\(/gm)) declaredFns.add(m[1]);
+  const goBuiltins = new Set([
+    'append', 'cap', 'close', 'complex', 'copy', 'delete', 'imag', 'len',
+    'make', 'new', 'panic', 'print', 'println', 'real', 'recover',
+    'int64', 'int', 'int32', 'uint', 'uint32', 'uint64', 'string', 'byte',
+    'bool', 'rune', 'error', 'float64', 'float32',
+    'if', 'for', 'switch', 'return', 'func', 'range', 'defer', 'go', 'select',
+    'var', 'const', 'type', 'else', 'case', 'default', 'break', 'continue',
+  ]);
+  // Bare calls only: anything with a receiver or package qualifier is out
+  // of scope for this check.
+  // Comments carry mathematical notation — log2(x), log10(d) — that looks
+  // like a call and is not one, so they come out first.
+  const code = both
+    .split('\n')
+    .map((l) => l.replace(/\/\/.*$/, ''))
+    .join('\n');
+  for (const m of code.matchAll(/(?:^|[^.\w"])([a-z]\w*)\(/gm)) {
+    const fn = m[1];
+    if (goBuiltins.has(fn) || declaredFns.has(fn)) continue;
+    bad(name, `helper ${fn}() is called but never declared`);
+    break;
+  }
+
   if (!isShared && !/func main\(\)/.test(go)) bad(name, 'no main');
   if (!isShared && !new RegExp(`NewChaincode\\(new\\(${name}\\)\\)`).test(go)) bad(name, 'main does not register this contract');
 
