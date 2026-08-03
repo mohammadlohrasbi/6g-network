@@ -305,7 +305,7 @@ function runTapeTarget(target, opts, job) {
       return resolve({ ok: false, error: `Could not start tape: ${err.message}` });
     }
 
-    job._child = child;
+    job._children.add(child);
     const timer = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch (_) { /* already gone */ }
     }, opts.timeoutMs);
@@ -314,12 +314,12 @@ function runTapeTarget(target, opts, job) {
     child.stderr.on('data', (d) => { out += d.toString(); });
     child.on('error', (err) => {
       clearTimeout(timer);
-      job._child = null;
+      job._children.delete(child);
       resolve({ ok: false, error: `tape could not run: ${err.message}` });
     });
     child.on('close', (code) => {
       clearTimeout(timer);
-      job._child = null;
+      job._children.delete(child);
       const m = parseTape(out);
       // A spatial contract refuses every write until its antenna layout
       // exists. That reads as a flat failure unless it is named.
@@ -556,7 +556,7 @@ function runCaliperTarget(target, opts, job) {
       return resolve({ ok: false, error: `Could not start caliper: ${err.message}` });
     }
 
-    job._child = child;
+    job._children.add(child);
     const timer = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch (_) { /* already gone */ }
     }, opts.timeoutMs);
@@ -565,12 +565,12 @@ function runCaliperTarget(target, opts, job) {
     child.stderr.on('data', (d) => { out += d.toString(); });
     child.on('error', (err) => {
       clearTimeout(timer);
-      job._child = null;
+      job._children.delete(child);
       resolve({ ok: false, error: `caliper could not run: ${err.message}` });
     });
     child.on('close', (code) => {
       clearTimeout(timer);
-      job._child = null;
+      job._children.delete(child);
       const m = parseCaliper(out);
       // Caliper exits 0 even when every round failed, so the presence of
       // results decides the outcome, not the exit code.
@@ -675,12 +675,13 @@ function publicJob(job) {
     current: job.current,
     results: job.results,
     summary: job.summary,
+    waves: job.waves,
     error: job.error,
   };
 }
 
 /** Aggregate per-target results into one headline set of figures. */
-function summarize(results) {
+function summarize(results, job) {
   const done = results.filter((r) => r.ok);
   const committed = results.reduce((n, r) => n + (r.successCount || 0), 0);
   const rejected = results.reduce((n, r) => n + (r.failedCount || 0), 0);
@@ -705,6 +706,29 @@ function summarize(results) {
     latencyMean: mean(latList),
     fastestTarget: best ? best.id : null,
     slowestTarget: worst ? worst.id : null,
+    ...waveSummary(job),
+  };
+}
+
+/* Aggregate figures across waves.
+ *
+ * aggregateTps is what the network actually carried; sumOfTargetTps is what
+ * the targets each reported. With concurrency of 1 they agree. Above that,
+ * the gap between them is the measurement: if the network scales, the
+ * aggregate rises with the wave width; if it saturates, the aggregate flat-
+ * tens while each target's own rate falls.
+ */
+function waveSummary(job) {
+  if (!job || !job.waves || !job.waves.length) return {};
+  const widths = new Set(job.waves.map((w) => w.size));
+  const agg = job.waves.map((w) => w.aggregateTps).filter(Number.isFinite);
+  const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
+  return {
+    concurrency: Math.max(...job.waves.map((w) => w.size)),
+    waveCount: job.waves.length,
+    mixedWidths: widths.size > 1,
+    aggregateTpsMean: mean(agg),
+    aggregateTpsMax: agg.length ? Math.max(...agg) : 0,
   };
 }
 
@@ -752,6 +776,11 @@ function normalizeOptions(body = {}) {
     txNumber,
     workers: Math.max(1, Math.min(16, Number(body.workers) || 2)),
     repeat: Math.max(1, Math.min(10, Number(body.repeat) || 1)),
+    // How many targets run at once. 1 measures each contract in isolation;
+    // higher values put several channels under load together, which is what
+    // a live network looks like. Capped at 32 — each Caliper target starts
+    // its own worker processes, and a 4 GB host runs out well before that.
+    concurrency: Math.max(1, Math.min(32, Number(body.concurrency) || 1)),
     readPhase: !!body.readPhase,
     readRate: Number(body.readTps) || 0,
     burst: Number(body.burst) || 0,
@@ -792,7 +821,8 @@ function startJob(body = {}) {
     summary: null,
     error: null,
     cancelled: false,
-    _child: null,
+    waves: [],
+    _children: new Set(),
   };
 
   jobs.set(job.id, job);
@@ -809,31 +839,23 @@ function startJob(body = {}) {
   return job;
 }
 
-async function runJob(job) {
-  const { options, targets, tool } = job;
-  const runner = tool === 'caliper' ? runCaliperTarget : runTapeTarget;
+/* Running one target.
+   Split out of the loop so a wave of targets can be started together —
+   see runJob. */
+async function runOneTarget(job, target, rep, runner) {
+  const { options, tool } = job;
 
-  for (let rep = 1; rep <= options.repeat; rep++) {
-    for (const target of targets) {
-      if (job.cancelled) break;
+  // A distinct prefix per repeat keeps each pass writing fresh keys.
+  // Under concurrency it also keeps waves from colliding with each other.
+  const opts = {
+    ...options,
+    keyPrefix: options.repeat > 1
+      ? `${options.keyPrefix}${rep}`
+      : options.keyPrefix,
+  };
 
-      job.current = {
-        id: target.id,
-        channel: target.channel,
-        contract: target.contract,
-        fn: target.fn,
-        repeat: rep,
-        startedAt: new Date().toISOString(),
-      };
-
-      // A distinct prefix per repeat keeps each pass writing fresh keys.
-      const opts = {
-        ...options,
-        keyPrefix: options.repeat > 1
-          ? `${options.keyPrefix}${rep}`
-          : options.keyPrefix,
-      };
-
+  const startedAtMs = Date.now();
+  {
       let outcome;
       try {
         if (tool === 'tape' && target.market && target.tapeSafe === false) {
@@ -879,15 +901,77 @@ async function runJob(job) {
         error: outcome.error || null,
         output: outcome.output || '',
         finishedAt: new Date().toISOString(),
+        startedAtMs: startedAtMs,
+        finishedAtMs: Date.now(),
       });
 
-      job.summary = summarize(job.results);
+      job.summary = summarize(job.results, job);
+  }
+}
+
+/* Running the whole job.
+ *
+ * Concurrency of 1 runs targets one after another, which measures what each
+ * contract can do with the network to itself. That is a controlled figure,
+ * good for comparing contracts, but it is not what a live 6G network looks
+ * like: there every channel carries traffic at once.
+ *
+ * Higher concurrency starts that many targets together. Fabric gives each
+ * channel its own ledger and its own ordering, so channels are logically
+ * independent — but they share these eight peers, one orderer, and one
+ * host. Whether the isolation holds under simultaneous load is a question
+ * only this mode can ask.
+ *
+ * Targets are grouped into waves. A wave finishes before the next starts,
+ * so the aggregate figure below covers a period when exactly that many
+ * targets were active.
+ */
+async function runJob(job) {
+  const { options, targets, tool } = job;
+  const runner = tool === 'caliper' ? runCaliperTarget : runTapeTarget;
+  const width = Math.max(1, Math.min(32, options.concurrency || 1));
+
+  for (let rep = 1; rep <= options.repeat; rep++) {
+    for (let i = 0; i < targets.length; i += width) {
+      if (job.cancelled) break;
+      const wave = targets.slice(i, i + width);
+
+      job.current = {
+        id: wave.map((t) => t.id).join(', '),
+        channel: wave.length === 1 ? wave[0].channel : `${wave.length} targets`,
+        contract: wave.length === 1 ? wave[0].contract : 'concurrent wave',
+        fn: wave.length === 1 ? wave[0].fn : '',
+        repeat: rep,
+        waveSize: wave.length,
+        startedAt: new Date().toISOString(),
+      };
+
+      const waveStart = Date.now();
+      await Promise.all(wave.map((t) => runOneTarget(job, t, rep, runner)));
+      const waveMs = Date.now() - waveStart;
+
+      // What the network carried while this wave was in flight. With one
+      // target it equals that target's own rate; with several it is the
+      // figure that says whether the network scaled or saturated.
+      const waveResults = job.results.slice(-wave.length);
+      const committed = waveResults.reduce((n, r) => n + (r.successCount || 0), 0);
+      job.waves.push({
+        repeat: rep,
+        size: wave.length,
+        targets: wave.map((t) => t.id),
+        channels: [...new Set(wave.map((t) => t.channel))],
+        durationSec: waveMs / 1000,
+        committed,
+        aggregateTps: waveMs > 0 ? (committed * 1000) / waveMs : 0,
+        sumOfTargetTps: waveResults.reduce((n, r) => n + (r.tps || 0), 0),
+      });
+      job.summary = summarize(job.results, job);
     }
     if (job.cancelled) break;
   }
 
   job.current = null;
-  job.summary = summarize(job.results);
+  job.summary = summarize(job.results, job);
   job.status = job.cancelled ? 'cancelled' : 'finished';
   job.finishedAt = new Date().toISOString();
 
@@ -906,8 +990,8 @@ function cancelJob(id) {
   const job = jobs.get(id);
   if (!job) return null;
   job.cancelled = true;
-  if (job._child) {
-    try { job._child.kill('SIGKILL'); } catch (_) { /* already gone */ }
+  for (const child of job._children) {
+    try { child.kill('SIGKILL'); } catch (_) { /* already gone */ }
   }
   return job;
 }
