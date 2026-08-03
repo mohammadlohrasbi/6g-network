@@ -9510,6 +9510,18 @@ func fairShareHz(antennas []*Antenna) int64 {
     return total / int64(len(antennas))
 }
 
+// effectiveHz resolves a possibly-zero spectrum share against the
+// configured one. Callers pass 0 to mean "whatever the cell offers", which
+// evaluateWithShare understands, but the admission check needs a concrete
+// figure to compare against the cell's free band.
+func effectiveHz(cfg *NetworkConfig, requestHz int64) int64 {
+    if requestHz > 0 {
+        return requestHz
+    }
+    return cfg.RequestHz
+}
+
+
 // loadDeviation is |Σ X_j − ε_m·X̄|, the balance metric the paper reports.
 func loadDeviation(a *Antenna, share int64) int64 {
     target := (share * a.LoadFactor) / 100
@@ -10697,6 +10709,28 @@ SHARED_EOF
       go mod vendor >/dev/null 2>&1
     )
 done
+
+# Compile one contract before declaring success.
+#
+# Every contract shares the same shared.go, so if one builds they all do —
+# and if one does not, deploying is a waste of several minutes that ends in
+# "0/4 committed" with the real cause buried in a build log. The structural
+# check catches a lot but it is not a compiler, and four separate rounds of
+# this project ended with a compile error reaching the network.
+FIRST="${contracts[0]}"
+if command -v go >/dev/null 2>&1 && [ -d "chaincode/$FIRST" ]; then
+    echo ""
+    echo "Compiling $FIRST as a check..."
+    if (cd "chaincode/$FIRST" && go build ./... 2>&1); then
+        echo "  build OK — the shared code compiles, so every contract does"
+        rm -f "chaincode/$FIRST/$FIRST" 2>/dev/null
+    else
+        echo ""
+        echo "  BUILD FAILED. The contracts were written but will not deploy." >&2
+        echo "  Fix the error above before running deploy-staged.sh." >&2
+        exit 1
+    fi
+fi
 
 echo "Regenerated ${#contracts[@]} of ${#ALL_CONTRACTS[@]} location-aware contracts in $SCRIPT_DIR/chaincode"
 for contract in "${contracts[@]}"; do
