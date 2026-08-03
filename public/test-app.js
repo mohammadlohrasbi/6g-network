@@ -241,6 +241,7 @@ function toolOptions() {
       txNumber: num('calTx'),
       workers: num('calWorkers'),
       repeat: num('calRepeat'),
+      concurrency: num('calConcurrency'),
       readPhase: $('calReadPhase').checked,
       readTps: num('calReadRate'),
       policy: 'any',
@@ -258,6 +259,7 @@ function toolOptions() {
     connections: num('tapeConns'),
     clientsPerConn: num('tapeClients'),
     repeat: num('tapeRepeat'),
+    concurrency: num('tapeConcurrency'),
     policy: $('tapePolicy').value,
   };
 }
@@ -408,6 +410,21 @@ function render(job) {
   const s = job.summary || {};
   const set = (id, v) => { $(id).firstChild.nodeValue = v; };
   set('mTps', (s.tpsMean || 0).toFixed(2));
+  // With targets running together, the aggregate is what the network
+  // carried; each target's own rate only tells half the story.
+  const s2 = job.summary || {};
+  const aggEl = $('mAggregate');
+  if (aggEl) {
+    const box = aggEl.closest('.readout');
+    if (s2.concurrency > 1) {
+      if (box) box.hidden = false;
+      aggEl.firstChild.nodeValue = (s2.aggregateTpsMean || 0).toFixed(2);
+      aggEl.title = `${s2.waveCount} waves of up to ${s2.concurrency} targets`;
+    } else if (box) {
+      box.hidden = true;
+    }
+  }
+
   const anyLatency = (job.results || []).some((r) => r.latencyReported);
   set('mLat', anyLatency ? (s.latencyMean || 0).toFixed(1) : 'n/r');
   $('mLat').title = anyLatency ? '' : 'Tape does not report latency — run Caliper for latency figures';
